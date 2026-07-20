@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: api
+  mvc:
+    servlet:
+      path: /api
+
+  # This tells Spring Boot to look for and load application-dev.yaml
+  profiles:
+    active: dev

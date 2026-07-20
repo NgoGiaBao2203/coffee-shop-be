@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="coffee.api.mapper.CustomUserMapper">
+
+  <resultMap id="UserProfileResultMap" type="coffee.api.model.UserProfile">
+    <result property="profileId"   column="profile_id"/>
+    <result property="email"       column="email"/>
+    <result property="username"    column="username"/>
+    <result property="password"    column="password"/>
+    <result property="fullName"    column="full_name"/>
+    <result property="createdAt"   column="created_at"/>
+    <result property="updatedAt"   column="updated_at"/>
+    <result property="phoneNumber" column="phone_number"/>
+    <result property="roleName"    column="role_name"/>
+    <result property="isDeleted"   column="is_deleted"/>
+  </resultMap>
+
+  <select id="findByProfileId"
+          parameterType="java.util.UUID"
+          resultMap="UserProfileResultMap">
+    SELECT p.profile_id,
+           p.email,
+           p.username,
+           p.password,
+           p.full_name,
+           p.created_at,
+           p.updated_at,
+           p.phone_number,
+           p.is_deleted,
+           r.role_name
+    FROM profiles p
+           INNER JOIN roles r ON r.role_id = p.role_id
+    WHERE p.profile_id = #{userId}
+      AND p.is_deleted = false
+      AND r.is_deleted = false
+  </select>
+
+  <select id="findByEmail"
+          parameterType="string"
+          resultMap="UserProfileResultMap">
+    SELECT
+      p.profile_id,
+      p.email,
+      p.username,
+      p.password,
+      p.full_name,
+      p.created_at,
+      p.updated_at,
+      p.phone_number,
+      p.is_deleted,
+      r.role_name
+    FROM profiles p
+           INNER JOIN roles r ON r.role_id = p.role_id
+    WHERE p.email = #{email}
+      AND p.is_deleted = false
+      AND r.is_deleted = false
+  </select>
+
+</mapper>
