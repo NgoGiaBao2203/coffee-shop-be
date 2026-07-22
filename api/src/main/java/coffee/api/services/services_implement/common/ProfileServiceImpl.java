@@ -1,12 +1,13 @@
 package coffee.api.services.services_implement.common;
 
-import coffee.api.dto.result.ProfileResult;
-import coffee.api.model.UserProfile;
 import coffee.api.dto.request.common.UserProfileRequest;
+import coffee.api.dto.result.ProfileResult;
 import coffee.api.exceptions.AccountDisableException;
 import coffee.api.exceptions.InvalidUsernameOrPasswordException;
-import coffee.api.repository.common.GetUserProfileRepository;
+import coffee.api.mapper.GetUserProfileMapper;
+import coffee.api.model.UserProfile;
 import coffee.api.services.services_interface.common.IProfileService;
+import coffee.api.utils.ConvertRoleVN;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -14,7 +15,7 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class ProfileServiceImpl implements IProfileService {
-  private final GetUserProfileRepository getUserProfileRepository;
+  private final GetUserProfileMapper getUserProfileMapper;
   private final PasswordEncoder passwordEncoder;
 
   @Override
@@ -27,7 +28,7 @@ public class ProfileServiceImpl implements IProfileService {
   }
 
   private UserProfile retrieveUserProfile(String email) {
-    UserProfile profile = getUserProfileRepository.findByUsername(email);
+    UserProfile profile = getUserProfileMapper.findByUsername(email);
     if (profile == null) {
       throw new InvalidUsernameOrPasswordException("Username not found");
     }
@@ -44,10 +45,11 @@ public class ProfileServiceImpl implements IProfileService {
     result.setEmail(profile.getEmail());
     result.setUsername(profile.getUsername());
     result.setPhoneNumber(profile.getPhoneNumber());
-    result.setRoleName(profile.getRoleName());
+    String vnRole = ConvertRoleVN.toVietnamese(profile.getRoleName());
+    result.setRoleName(vnRole);
     result.setCreatedAt(profile.getCreatedAt());
     result.setUpdatedAt(profile.getUpdatedAt());
     result.setIsDeleted(profile.getIsDeleted());
-    return  result;
+    return result;
   }
 }

@@ -8,12 +8,12 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
@@ -137,5 +137,29 @@ public class GlobalExceptionHandler {
     return ResponseEntity
       .status(HttpStatus.FORBIDDEN)
       .body(ErrorApiResponse.of(ResponseCode.ACCOUNT_DISABLE, ex.getMessage()));
+  }
+
+  @ExceptionHandler(DataNotFoundException.class)
+  public ResponseEntity<ErrorApiResponse> handleDataNotFoundException(DataNotFoundException ex) {
+    log.error("Data Not Found: {}", ex.getId());
+    return ResponseEntity
+      .status(HttpStatus.BAD_REQUEST)
+      .body(ErrorApiResponse.of(ResponseCode.NOT_FOUND, ex.getMessage()));
+  }
+
+  @ExceptionHandler(PhoneNumberExistedException.class)
+  public ResponseEntity<ErrorApiResponse> handlePhoneNumberExistedException(PhoneNumberExistedException ex) {
+    log.error("Phone Number Existed: {}", ex.getPhoneNumber());
+    return ResponseEntity
+      .status(HttpStatus.CONFLICT)
+      .body(ErrorApiResponse.of(ResponseCode.CONFLICT, ex.getMessage()));
+  }
+
+  @ExceptionHandler(EmailExistedException.class)
+  public ResponseEntity<ErrorApiResponse> handleEmailExistedException(EmailExistedException ex) {
+    log.error("Email Existed: {}", ex.getEmail());
+    return ResponseEntity
+      .status(HttpStatus.CONFLICT)
+      .body(ErrorApiResponse.of(ResponseCode.CONFLICT, ex.getMessage()));
   }
 }

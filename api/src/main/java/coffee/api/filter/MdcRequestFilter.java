@@ -21,9 +21,11 @@ public class MdcRequestFilter extends OncePerRequestFilter {
   private static final String TRACE_ID_HEADER = "X-Trace-Id";
 
   @Override
-  protected void doFilterInternal(@NonNull HttpServletRequest request,
-                                  HttpServletResponse response,
-                                  FilterChain filterChain) throws ServletException, IOException {
+  protected void doFilterInternal(
+    @NonNull HttpServletRequest request,
+    HttpServletResponse response,
+    FilterChain filterChain
+  ) throws ServletException, IOException {
     try {
       String traceId = resolveTraceId(request);
       MDC.put(MdcKey.TRACE_ID, traceId);

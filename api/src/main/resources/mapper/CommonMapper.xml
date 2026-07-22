@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="coffee.api.mapper.CommonMapper">
+
+  <!-- 1. Check if staff exists by Profile ID -->
+  <select id="checkStaffExisted" resultType="java.lang.Boolean">
+    SELECT EXISTS (
+      SELECT 1
+      FROM profiles
+      WHERE profile_id = #{profileId}
+        AND is_deleted = false
+    )
+  </select>
+
+  <!-- 2. Check if username already exists (for creation/validation) -->
+  <select id="checkStaffExistedByUsername" resultType="java.lang.Boolean">
+    SELECT EXISTS (
+      SELECT 1
+      FROM profiles
+      WHERE username = #{username}
+        AND is_deleted = false
+    )
+  </select>
+
+  <!-- 3. Check if phone number exists anywhere (global check for registration) -->
+  <select id="checkStaffPhoneExistedForCreate" resultType="java.lang.Boolean">
+    SELECT EXISTS (
+      SELECT 1
+      FROM profiles
+      WHERE phone_number = #{phoneNumber}
+        AND is_deleted = false
+    )
+  </select>
+
+  <!-- 4. Check if email already exists -->
+  <select id="checkStaffEmailExisted" resultType="java.lang.Boolean">
+    SELECT EXISTS (
+      SELECT 1
+      FROM profiles
+      WHERE email = #{email}
+        AND is_deleted = false
+    )
+  </select>
+
+  <!-- 5. Check if phone number is taken by ANOTHER account (for updates) -->
+  <select id="checkStaffPhoneExisted" resultType="java.lang.Boolean">
+    SELECT EXISTS (
+      SELECT 1
+      FROM profiles
+      WHERE phone_number = #{phoneNumber}
+        AND profile_id != #{profileId}
+        AND is_deleted = false
+    )
+  </select>
+
+</mapper>

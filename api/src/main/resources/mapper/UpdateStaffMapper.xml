@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="coffee.api.mapper.UpdateStaffMapper">
+
+  <update id="updateStaff">
+    <!-- 1. Update the main profiles table -->
+    UPDATE profiles
+    <set>
+      full_name = #{fullName},
+      phone_number = #{phoneNumber},
+      updated_at = NOW(),
+      <!-- Only update role_id in profiles if current user is an OWNER -->
+      <if test="currentUserRoleName == 'OWNER'">
+        role_id = #{roleId}
+      </if>
+    </set>
+    WHERE profile_id = #{profileId};
+
+    <!-- 2. Update the profile_shops table if current user is an OWNER -->
+    <if test="currentUserRoleName == 'OWNER'">
+      UPDATE profile_shops
+      SET
+      shop_id = #{shopId},
+      role_id = #{roleId},
+      update_at = NOW()
+      WHERE profile_id = #{profileId};
+    </if>
+  </update>
+
+</mapper>

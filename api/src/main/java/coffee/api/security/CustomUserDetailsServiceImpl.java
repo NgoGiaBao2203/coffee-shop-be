@@ -1,7 +1,7 @@
 package coffee.api.security;
 
+import coffee.api.mapper.CustomUserMapper;
 import coffee.api.model.UserProfile;
-import coffee.api.repository.CustomUserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -19,11 +19,11 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class CustomUserDetailsServiceImpl implements ICustomUserDetailsService{
-  private final CustomUserRepository customUserRepository;
+  private final CustomUserMapper customUserMapper;
 
   @Override
   public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-    UserProfile user = customUserRepository.findByEmail(username);
+    UserProfile user = customUserMapper.findByEmail(username);
 
     if (user == null) {
       throw new UsernameNotFoundException("User not found with email: " + username);
@@ -42,7 +42,7 @@ public class CustomUserDetailsServiceImpl implements ICustomUserDetailsService{
 
   @Override
   public CustomUserDetail loadUserById(UUID userId) {
-    UserProfile user = customUserRepository.findByProfileId(userId);
+    UserProfile user = customUserMapper.findByProfileId(userId);
     if (user == null) {
       throw new UsernameNotFoundException("User not found with id: " + userId);
     }

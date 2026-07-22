@@ -1,7 +1,6 @@
 package coffee.api.controllers.common;
 
 import coffee.api.dto.result.ProfileResult;
-import coffee.api.model.UserProfile;
 import coffee.api.dto.request.common.UserProfileRequest;
 import coffee.api.dto.response.common.UserProfileResponse;
 import coffee.api.enums.ResponseCode;

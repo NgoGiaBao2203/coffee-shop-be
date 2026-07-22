@@ -4,18 +4,20 @@ import coffee.api.dto.request.user.SearchUsersRequest;
 import coffee.api.dto.response.base_response.PageResponse;
 import coffee.api.dto.response.base_response.PaginationMeta;
 import coffee.api.dto.result.ProfileResult;
-import coffee.api.repository.staff.GetStaffsRepository;
+import coffee.api.mapper.GetStaffsMapper;
 import coffee.api.services.services_interface.staff.IGetStaffsService;
+import coffee.api.utils.ConvertRoleVN;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class GetStaffsServiceImpl implements IGetStaffsService {
-  private final GetStaffsRepository getStaffsRepository;
+  private final GetStaffsMapper getStaffsMapper;
 
   @Override
   public PageResponse<ProfileResult> process(
@@ -28,7 +30,7 @@ public class GetStaffsServiceImpl implements IGetStaffsService {
     String sortDirection = request.directionValue();
     int size = request.getSize();
     int offset = request.calcOffset();
-    long totalElements = getStaffsRepository.countStaffsFiltered(
+    long totalElements = getStaffsMapper.countStaffsFiltered(
       search,
       currentUserRoleName,
       currentUserId
@@ -39,7 +41,7 @@ public class GetStaffsServiceImpl implements IGetStaffsService {
       .totalElements(totalElements)
       .totalPages(request.totalPages(totalElements))
       .build();
-    List<ProfileResult> items = getStaffsRepository.getStaffsFiltered(
+    List<ProfileResult> rawItems = getStaffsMapper.getStaffsFiltered(
       search,
       sortBy,
       sortDirection,
@@ -48,6 +50,12 @@ public class GetStaffsServiceImpl implements IGetStaffsService {
       currentUserRoleName,
       currentUserId
     );
-    return PageResponse.of("Get staff list successfully", items, pagination);
+    List<ProfileResult> processedItems = rawItems.stream()
+      .peek(profile -> {
+        String vnRole = ConvertRoleVN.toVietnamese(profile.getRoleName());
+        profile.setRoleName(vnRole);
+      })
+      .collect(Collectors.toList());
+    return PageResponse.of("Get staff list successfully", processedItems, pagination);
   }
 }
