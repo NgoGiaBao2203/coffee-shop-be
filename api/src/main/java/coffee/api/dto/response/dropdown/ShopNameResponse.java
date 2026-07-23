@@ -22,18 +22,6 @@ public class ShopNameResponse extends BaseApiResponse {
 
   public static ShopNameResponse of(
     ResponseCode responseCode,
-    String message
-  ) {
-    return ShopNameResponse.builder()
-      .code(responseCode.getCode())
-      .message(message)
-      .traceId(MdcUtil.getTraceId())
-      .shopNameResults(null)
-      .build();
-  }
-
-  public static ShopNameResponse of(
-    ResponseCode responseCode,
     String message,
     List<ShopNameResult> shopNameResults
   ) {

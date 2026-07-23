@@ -20,18 +20,6 @@ public class UserProfileResponse extends BaseApiResponse {
 
   public static UserProfileResponse of(
     ResponseCode responseCode,
-    String message
-  ) {
-    return UserProfileResponse.builder()
-      .code(responseCode.getCode())
-      .message(message)
-      .traceId(MdcUtil.getTraceId())
-      .userProfile(null)
-      .build();
-  }
-
-  public static UserProfileResponse of(
-    ResponseCode responseCode,
     String message,
     ProfileResult userProfile
   ) {

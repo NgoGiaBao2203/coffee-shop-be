@@ -20,18 +20,6 @@ import java.util.List;
 public class RoleResponse extends BaseApiResponse {
   private List<RoleResult> roleResult;
 
-  public static RoleResponse of(
-    ResponseCode responseCode,
-    String message
-  ) {
-    return RoleResponse.builder()
-      .code(responseCode.getCode())
-      .message(message)
-      .traceId(MdcUtil.getTraceId())
-      .roleResult(null)
-      .build();
-  }
-
   // Update this to accept List<RoleResult> instead of a single element
   public static RoleResponse of(
     ResponseCode responseCode,

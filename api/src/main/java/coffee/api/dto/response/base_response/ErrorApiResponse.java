@@ -2,6 +2,7 @@ package coffee.api.dto.response.base_response;
 
 import coffee.api.enums.ResponseCode;
 import coffee.api.utils.MdcUtil;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -14,6 +15,7 @@ import java.util.List;
 @SuperBuilder
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "code", "message", "errorDetails", "traceId" })
 public class ErrorApiResponse extends BaseApiResponse {
   private List<ErrorDetail> errorDetails;
