@@ -6,12 +6,17 @@
 <mapper namespace="coffee.api.mapper.DeleteStaffMapper">
 
   <update id="deleteStaff">
+    <!-- 1. HARD DELETE the staff-shop relationship assignment -->
+    DELETE FROM profile_shops
+    WHERE profile_id = #{profileId};
+
+    <!-- 2. SOFT DELETE the user profile -->
     UPDATE profiles
     SET
-      is_deleted = true,
-      updated_at = NOW()
+    updated_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh',
+    deleted_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh'
     WHERE profile_id = #{profileId}
-      AND is_deleted = false
+    AND deleted_at IS NULL;
   </update>
 
 </mapper>

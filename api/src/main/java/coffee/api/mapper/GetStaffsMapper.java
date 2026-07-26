@@ -11,6 +11,8 @@ import java.util.UUID;
 public interface GetStaffsMapper {
   List<ProfileResult> getStaffsFiltered(
     @Param("search") String search,
+    @Param("roleId") String roleId,
+    @Param("branchShopId") String branchShopId,
     @Param("sortBy") String sortBy,
     @Param("sortDirection") String sortDirection,
     @Param("size") int size,
@@ -21,6 +23,8 @@ public interface GetStaffsMapper {
 
   long countStaffsFiltered(
     @Param("search") String search,
+    @Param("roleId") String roleId,
+    @Param("branchShopId") String branchShopId,
     @Param("currentUserRoleName") String currentUserRoleName,
     @Param("currentUserId") UUID currentUserId
   );

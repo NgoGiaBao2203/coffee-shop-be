@@ -16,6 +16,10 @@ public class SearchUsersRequest {
   @Max(value = 100, message = ValidationMessage.Msg.SIZE_MAX)
   private int size = 10;
 
+  private String roleId;
+
+  private String branchShopId;
+
   private String search;
 
   @Pattern(
