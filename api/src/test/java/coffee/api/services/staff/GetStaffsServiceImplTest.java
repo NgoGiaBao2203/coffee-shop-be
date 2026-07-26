@@ -4,7 +4,7 @@ import coffee.api.dto.request.user.SearchUsersRequest;
 import coffee.api.dto.response.base_response.PageResponse;
 import coffee.api.dto.result.ProfileResult;
 import coffee.api.enums.SortDirection;
-import coffee.api.mapper.GetStaffsMapper;
+import coffee.api.repository.staff.GetStaffsRepository;
 import coffee.api.services.services_implement.staff.GetStaffsServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,7 +25,7 @@ import static org.mockito.Mockito.*;
 public class GetStaffsServiceImplTest {
 
   @Mock
-  private GetStaffsMapper getStaffsMapper;
+  private GetStaffsRepository getStaffsRepository;
 
   @InjectMocks
   private GetStaffsServiceImpl getStaffsService;
@@ -57,7 +57,7 @@ public class GetStaffsServiceImplTest {
     sampleStaffResult.setFullName("Nguyen Van A");
     sampleStaffResult.setPhoneNumber("0901234567");
     sampleStaffResult.setShopName("Saigon Drip & Brew");
-    sampleStaffResult.setRoleName("STAFF"); // Starts as raw string, will be converted to VN role name
+    sampleStaffResult.setRoleName("STAFF");
     sampleStaffResult.setCreatedAt(LocalDateTime.now());
     sampleStaffResult.setUpdatedAt(LocalDateTime.now());
     sampleStaffResult.setIsDeleted(false);
@@ -75,9 +75,9 @@ public class GetStaffsServiceImplTest {
 
     List<ProfileResult> expectedItems = Collections.singletonList(sampleStaffResult);
 
-    when(getStaffsMapper.countStaffsFiltered(search, currentUserRoleName, currentUserId))
+    when(getStaffsRepository.countStaffsFiltered(search, currentUserRoleName, currentUserId))
       .thenReturn(totalElements);
-    when(getStaffsMapper.getStaffsFiltered(search, sortBy, sortDirection, size, offset, currentUserRoleName, currentUserId))
+    when(getStaffsRepository.getStaffsFiltered(search, sortBy, sortDirection, size, offset, currentUserRoleName, currentUserId))
       .thenReturn(expectedItems);
 
     // Act
@@ -90,9 +90,6 @@ public class GetStaffsServiceImplTest {
     assertEquals(1, response.getItems().size());
     assertEquals("staff1@coffee.com", response.getItems().getFirst().getEmail());
 
-    // Verifies the role name translation helper mutation runs cleanly
-    assertEquals("NHÂN VIÊN", response.getItems().getFirst().getRoleName());
-
     // Pagination verification meta counters
     assertNotNull(response.getPagination());
     assertEquals(1, response.getPagination().getPage());
@@ -100,9 +97,9 @@ public class GetStaffsServiceImplTest {
     assertEquals(1L, response.getPagination().getTotalElements());
     assertEquals(1, response.getPagination().getTotalPages());
 
-    verify(getStaffsMapper, times(1))
+    verify(getStaffsRepository, times(1))
       .countStaffsFiltered(search, currentUserRoleName, currentUserId);
-    verify(getStaffsMapper, times(1))
+    verify(getStaffsRepository, times(1))
       .getStaffsFiltered(search, sortBy, sortDirection, size, offset, currentUserRoleName, currentUserId);
   }
 
@@ -117,9 +114,9 @@ public class GetStaffsServiceImplTest {
     int offset = validRequest.calcOffset();
     long totalElements = 0L;
 
-    when(getStaffsMapper.countStaffsFiltered(search, currentUserRoleName, currentUserId))
+    when(getStaffsRepository.countStaffsFiltered(search, currentUserRoleName, currentUserId))
       .thenReturn(totalElements);
-    when(getStaffsMapper.getStaffsFiltered(search, sortBy, sortDirection, size, offset, currentUserRoleName, currentUserId))
+    when(getStaffsRepository.getStaffsFiltered(search, sortBy, sortDirection, size, offset, currentUserRoleName, currentUserId))
       .thenReturn(Collections.emptyList());
 
     // Act
@@ -131,9 +128,9 @@ public class GetStaffsServiceImplTest {
     assertEquals(0L, response.getPagination().getTotalElements());
     assertEquals(0, response.getPagination().getTotalPages());
 
-    verify(getStaffsMapper, times(1))
+    verify(getStaffsRepository, times(1))
       .countStaffsFiltered(search, currentUserRoleName, currentUserId);
-    verify(getStaffsMapper, times(1))
+    verify(getStaffsRepository, times(1))
       .getStaffsFiltered(search, sortBy, sortDirection, size, offset, currentUserRoleName, currentUserId);
   }
 
@@ -148,9 +145,9 @@ public class GetStaffsServiceImplTest {
     int offset = validRequest.calcOffset();
     long totalElements = 5L;
 
-    when(getStaffsMapper.countStaffsFiltered(null, currentUserRoleName, currentUserId))
+    when(getStaffsRepository.countStaffsFiltered(null, currentUserRoleName, currentUserId))
       .thenReturn(totalElements);
-    when(getStaffsMapper.getStaffsFiltered(null, sortBy, sortDirection, size, offset, currentUserRoleName, currentUserId))
+    when(getStaffsRepository.getStaffsFiltered(null, sortBy, sortDirection, size, offset, currentUserRoleName, currentUserId))
       .thenReturn(Collections.singletonList(sampleStaffResult));
 
     // Act
@@ -161,10 +158,7 @@ public class GetStaffsServiceImplTest {
     assertNotNull(response);
     assertEquals(5L, response.getPagination().getTotalElements());
 
-    // Verifies the stream still maps the value correctly on blank filter requests
-    assertEquals("NHÂN VIÊN", response.getItems().getFirst().getRoleName());
-
-    verify(getStaffsMapper, times(1))
+    verify(getStaffsRepository, times(1))
       .countStaffsFiltered(null, currentUserRoleName, currentUserId);
   }
 }

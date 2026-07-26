@@ -16,5 +16,6 @@ public class UserProfile {
   private LocalDateTime updatedAt;
   private String phoneNumber;
   private String roleName;
+  private String shopName;
   private Boolean isDeleted;
 }

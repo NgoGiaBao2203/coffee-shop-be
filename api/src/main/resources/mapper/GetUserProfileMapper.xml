@@ -4,6 +4,8 @@
 
   <resultMap id="UserProfileResultMap" type="coffee.api.model.UserProfile">
     <result property="profileId"   column="profile_id"/>
+    <result property="shopId"      column="shop_id"/>
+    <result property="shopName"    column="shop_name"/>
     <result property="email"       column="email"/>
     <result property="username"    column="username"/>
     <result property="password"    column="password"/>
@@ -20,6 +22,7 @@
           resultMap="UserProfileResultMap">
     SELECT
       p.profile_id,
+      s.shop_name,
       p.email,
       p.username,
       p.password,
@@ -30,8 +33,9 @@
       p.is_deleted,
       r.role_name
     FROM profiles p
--- Join directly on the foreign key column we just added to the profiles table
-           INNER JOIN roles r ON r.role_id = p.role_id
+           LEFT JOIN profile_shops ps ON ps.profile_id = p.profile_id
+           LEFT JOIN shops s          ON s.shop_id = ps.shop_id AND s.is_deleted = false
+           INNER JOIN roles r         ON r.role_id = COALESCE(ps.role_id, p.role_id)
     WHERE p.username = #{username}
       AND p.is_deleted = false
       AND r.is_deleted = false;

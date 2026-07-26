@@ -6,52 +6,50 @@
 <mapper namespace="coffee.api.mapper.CreateStaffMapper">
 
   <insert id="createStaff">
-    <!-- 1. Insert into profiles table -->
-    INSERT INTO profiles (
-    profile_id,
-    email,
-    username,
-    full_name,
-    password,
-    phone_number,
-    role_id,
-    is_deleted,
-    created_at
-    ) VALUES (
-    gen_random_uuid(), <!-- Generates a safe runtime UUID here directly -->
-    #{email},
-    #{username},
-    #{fullName},
-    '$2a$10$bb2BXUmirgikrz7RMR1D9OV69RBckkaNZMV8dva.3WjggnOIhLudW',
-    #{phoneNumber},
-    CASE
-    WHEN #{currentUserRoleName} = 'OWNER' THEN #{roleId}
-    ELSE (SELECT role_id FROM roles WHERE role_name = 'STAFF' LIMIT 1)
-    END,
-    false,
-    NOW()
-    );
-
-    <!-- 2. Insert into profile_shops table using a subquery lookup on the unique username -->
+    WITH new_profile AS (
+      INSERT INTO profiles (
+                            profile_id,
+                            email,
+                            username,
+                            full_name,
+                            password,
+                            phone_number,
+                            role_id,
+                            is_deleted,
+                            created_at
+        ) VALUES (
+                   gen_random_uuid(),
+                   #{email},
+                   #{username},
+                   #{fullName},
+                   '$2a$10$bb2BXUmirgikrz7RMR1D9OV69RBckkaNZMV8dva.3WjggnOIhLudW',
+                   #{phoneNumber},
+                   CASE
+                     WHEN #{currentUserRoleName} = 'OWNER' THEN #{roleId}
+                     ELSE (SELECT role_id FROM roles WHERE role_name = 'STAFF' AND is_deleted = false LIMIT 1)
+                     END,
+                   false,
+                   NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh'
+                 )
+        RETURNING profile_id
+    )
     INSERT INTO profile_shops (
-    profile_shop_id,
-    profile_id,
-    shop_id,
-    role_id,
-    created_at
-    ) VALUES (
-    gen_random_uuid(),
-    (SELECT profile_id FROM profiles WHERE username = #{username} LIMIT 1),
-    CASE
-    WHEN #{currentUserRoleName} = 'OWNER' THEN #{shopId}
-    ELSE (SELECT shop_id FROM profile_shops WHERE profile_id = #{currentUserId} LIMIT 1)
-    END,
-    CASE
-    WHEN #{currentUserRoleName} = 'OWNER' THEN #{roleId}
-    ELSE (SELECT role_id FROM roles WHERE role_name = 'STAFF' LIMIT 1)
-    END,
-    NOW()
-    );
+      profile_shop_id,
+      profile_id,
+      shop_id,
+      role_id,
+      created_at
+    )
+    SELECT
+      gen_random_uuid(),
+      np.profile_id,
+      #{shopId},
+      CASE
+        WHEN #{currentUserRoleName} = 'OWNER' THEN #{roleId}
+        ELSE (SELECT role_id FROM roles WHERE role_name = 'STAFF' AND is_deleted = false LIMIT 1)
+        END,
+      NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh'
+    FROM new_profile np;
   </insert>
 
 </mapper>

@@ -47,6 +47,7 @@ public class ProfileServiceImpl implements IProfileService {
     result.setPhoneNumber(profile.getPhoneNumber());
     String vnRole = ConvertRoleVN.toVietnamese(profile.getRoleName());
     result.setRoleName(vnRole);
+    result.setShopName(profile.getShopName());
     result.setCreatedAt(profile.getCreatedAt());
     result.setUpdatedAt(profile.getUpdatedAt());
     result.setIsDeleted(profile.getIsDeleted());

@@ -25,7 +25,7 @@
       SET
       shop_id = #{shopId},
       role_id = #{roleId},
-      update_at = NOW()
+      update_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh'
       WHERE profile_id = #{profileId};
     </if>
   </update>

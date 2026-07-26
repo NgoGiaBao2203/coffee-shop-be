@@ -5,54 +5,64 @@
 
 <mapper namespace="coffee.api.mapper.CommonMapper">
 
-  <!-- 1. Check if staff exists by Profile ID -->
+  <!-- 1. Check if ACTIVE staff exists by Profile ID -->
   <select id="checkStaffExisted" resultType="java.lang.Boolean">
     SELECT EXISTS (
       SELECT 1
       FROM profiles
       WHERE profile_id = #{profileId}
-        AND is_deleted = false
+        AND deleted_at IS NULL
     )
   </select>
 
-  <!-- 2. Check if username already exists (for creation/validation) -->
+  <!-- 2. Check if username already exists for active users -->
   <select id="checkStaffExistedByUsername" resultType="java.lang.Boolean">
     SELECT EXISTS (
       SELECT 1
       FROM profiles
       WHERE username = #{username}
-        AND is_deleted = false
+        AND deleted_at IS NULL
     )
   </select>
 
-  <!-- 3. Check if phone number exists anywhere (global check for registration) -->
+  <!-- 3. Check if phone number exists for active users during creation -->
   <select id="checkStaffPhoneExistedForCreate" resultType="java.lang.Boolean">
     SELECT EXISTS (
       SELECT 1
       FROM profiles
       WHERE phone_number = #{phoneNumber}
-        AND is_deleted = false
+        AND deleted_at IS NULL
     )
   </select>
 
-  <!-- 4. Check if email already exists -->
+  <!-- 4. Check if email already exists for active users -->
   <select id="checkStaffEmailExisted" resultType="java.lang.Boolean">
     SELECT EXISTS (
       SELECT 1
       FROM profiles
       WHERE email = #{email}
-        AND is_deleted = false
+        AND deleted_at IS NULL
     )
   </select>
 
-  <!-- 5. Check if phone number is taken by ANOTHER account (for updates) -->
+  <!-- 5. Check if phone number is taken by ANOTHER active account (for updates) -->
   <select id="checkStaffPhoneExisted" resultType="java.lang.Boolean">
     SELECT EXISTS (
       SELECT 1
       FROM profiles
       WHERE phone_number = #{phoneNumber}
         AND profile_id != #{profileId}
-        AND is_deleted = false
+        AND deleted_at IS NULL
+    )
+  </select>
+
+  <!-- 6. Check if drink exists by Drink ID -->
+  <select id="checkDrinkExisted" resultType="java.lang.Boolean">
+    SELECT EXISTS (
+    SELECT 1
+    FROM drinks
+    WHERE drink_id = #{drinkId}
+    AND deleted_at IS NULL
     )
   </select>
 

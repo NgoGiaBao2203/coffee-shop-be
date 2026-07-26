@@ -28,7 +28,6 @@ mybatis:
     # Converts snake_case columns (e.g., first_name) to camelCase fields (e.g., firstName)
     map-underscore-to-camel-case: true
     jdbc-type-for-null: OTHER
-    # Directs MyBatis to route its internal statements into your slf4j/logback stream
     log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
 
 springdoc:
