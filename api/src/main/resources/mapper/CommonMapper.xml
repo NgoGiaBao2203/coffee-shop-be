@@ -66,4 +66,35 @@
     )
   </select>
 
+  <!-- 7. Check if shop exists -->
+  <select id="checkShopExisted" resultType="boolean">
+    SELECT EXISTS (
+      SELECT 1
+      FROM shops
+      WHERE shop_id = #{shopId}
+        AND is_deleted = false
+    )
+  </select>
+
+  <!-- 8. Check if category exists -->
+  <select id="checkCategoryExisted" resultType="boolean">
+    SELECT EXISTS (
+    SELECT 1
+    FROM drink_categories
+    WHERE drink_category_id = #{categoryId}
+    AND is_deleted = FALSE
+    <choose>
+      <!-- OWNER: Can access any category regardless of shop -->
+      <when test="currentUserRoleName == 'OWNER'">
+        <!-- No shop restriction -->
+      </when>
+
+      <!-- MANAGER: Must belong to their specific shop -->
+      <when test="currentUserRoleName == 'MANAGER'">
+        AND shop_id = #{currentUserShopId}
+      </when>
+    </choose>
+    )
+  </select>
+
 </mapper>

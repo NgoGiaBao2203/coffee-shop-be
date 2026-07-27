@@ -6,6 +6,11 @@
 
   <sql id="categoryFilterCondition">
     WHERE c.is_deleted = false
+    <!-- Role-based Shop Filter -->
+    <if test="currentUserRoleName != 'OWNER'">
+      AND c.shop_id = #{currentUserShopId}
+    </if>
+    <!-- Search Filter -->
     <if test="search != null and search != ''">
       AND LOWER(c.category_name) LIKE LOWER(CONCAT('%', #{search}, '%'))
     </if>
@@ -24,7 +29,10 @@
       <when test="sortBy == 'shopId'">c.shop_id</when>
       <otherwise>c.drink_category_id</otherwise>
     </choose>
-    ${sortDirection}
+    <choose>
+      <when test="sortDirection != null and sortDirection.equalsIgnoreCase('DESC')">DESC</when>
+      <otherwise>ASC</otherwise>
+    </choose>
     LIMIT #{size} OFFSET #{offset}
   </select>
 

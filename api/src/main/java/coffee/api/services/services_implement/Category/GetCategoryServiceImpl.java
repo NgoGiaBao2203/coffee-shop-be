@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -19,11 +20,15 @@ public class GetCategoryServiceImpl implements IGetCategoryService {
   private final GetCategoriesMapper getCategoriesMapper;
 
   @Override
-  public PageResponse<CategoryResult> process(SearchCategoriesRequest request) {
+  public PageResponse<CategoryResult> process(
+    SearchCategoriesRequest request,
+    String currentUserRoleName,
+    UUID currentUserShopId
+  ) {
     long totalElements = getCategoriesMapper.countCategoriesFiltered(
       request.trimmedSearch(),
-      null,
-      null
+      currentUserRoleName,
+      currentUserShopId
     );
 
     List<CategoryResult> categories = getCategoriesMapper.getCategoriesFiltered(
@@ -32,8 +37,8 @@ public class GetCategoryServiceImpl implements IGetCategoryService {
       request.getSortDirection().toString(),
       request.getSize(),
       request.calcOffset(),
-      null,
-      null
+      currentUserRoleName,
+      currentUserShopId
     );
 
     if (categories == null) {

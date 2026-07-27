@@ -15,13 +15,13 @@ public interface GetDrinksMapper {
     @Param("sortDirection") String sortDirection,
     @Param("size") int size,
     @Param("offset") int offset,
-    @Param("currentUserRoleName") String currentUserRoleName,
-    @Param("currentUserId") UUID currentUserId
+    @Param("currentUserShopId") UUID currentUserShopId,
+    @Param("currentUserRoleName") String currentUserRoleName
   );
 
   long countDrinksFiltered(
     @Param("search") String search,
-    @Param("currentUserRoleName") String currentUserRoleName,
-    @Param("currentUserId") UUID currentUserId
+    @Param("currentUserShopId") UUID currentUserShopId,
+    @Param("currentUserRoleName") String currentUserRoleName
   );
 }

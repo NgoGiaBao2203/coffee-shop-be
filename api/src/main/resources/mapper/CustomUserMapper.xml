@@ -12,6 +12,7 @@
     <result property="updatedAt"   column="updated_at"/>
     <result property="phoneNumber" column="phone_number"/>
     <result property="roleName"    column="role_name"/>
+    <result property="shopId"      column="shop_id"/>
     <result property="isDeleted"   column="is_deleted"/>
   </resultMap>
 
@@ -27,32 +28,35 @@
            p.updated_at,
            p.phone_number,
            p.is_deleted,
-           r.role_name
+           r.role_name,
+           ps.shop_id
     FROM profiles p
            INNER JOIN roles r ON r.role_id = p.role_id
+           LEFT JOIN profile_shops ps ON ps.profile_id = p.profile_id
     WHERE p.profile_id = #{userId}
-      AND p.is_deleted = false
+      AND p.deleted_at IS NULL
       AND r.is_deleted = false
   </select>
 
   <select id="findByEmail"
           parameterType="string"
           resultMap="UserProfileResultMap">
-    SELECT
-      p.profile_id,
-      p.email,
-      p.username,
-      p.password,
-      p.full_name,
-      p.created_at,
-      p.updated_at,
-      p.phone_number,
-      p.is_deleted,
-      r.role_name
+    SELECT p.profile_id,
+           p.email,
+           p.username,
+           p.password,
+           p.full_name,
+           p.created_at,
+           p.updated_at,
+           p.phone_number,
+           p.is_deleted,
+           r.role_name,
+           ps.shop_id
     FROM profiles p
            INNER JOIN roles r ON r.role_id = p.role_id
+           LEFT JOIN profile_shops ps ON ps.profile_id = p.profile_id
     WHERE p.email = #{email}
-      AND p.is_deleted = false
+      AND p.deleted_at IS NULL
       AND r.is_deleted = false
   </select>
 

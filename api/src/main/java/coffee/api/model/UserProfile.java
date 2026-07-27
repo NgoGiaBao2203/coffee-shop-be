@@ -17,5 +17,6 @@ public class UserProfile {
   private String phoneNumber;
   private String roleName;
   private String shopName;
+  private UUID shopId;
   private Boolean isDeleted;
 }

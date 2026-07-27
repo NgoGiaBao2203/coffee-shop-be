@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -18,11 +19,15 @@ public class GetDrinkServiceImpl implements IGetDrinkService {
   private final GetDrinksMapper getDrinksMapper;
 
   @Override
-  public PageResponse<DrinkResult> process(SearchDrinksRequest request) {
+  public PageResponse<DrinkResult> process(
+    SearchDrinksRequest request,
+    String currentUserRoleName,
+    UUID currentUserShopId
+  ) {
     long totalElements = getDrinksMapper.countDrinksFiltered(
       request.trimmedSearch(),
-      null,
-      null
+      currentUserShopId,
+      currentUserRoleName
     );
 
     List<DrinkResult> drinks = getDrinksMapper.getDrinksFiltered(
@@ -31,8 +36,8 @@ public class GetDrinkServiceImpl implements IGetDrinkService {
       request.getSortDirection().toString(),
       request.getSize(),
       request.calcOffset(),
-      null,
-      null
+      currentUserShopId,
+      currentUserRoleName
     );
 
     if (drinks == null) {

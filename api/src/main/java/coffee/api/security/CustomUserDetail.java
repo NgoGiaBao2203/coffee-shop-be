@@ -14,15 +14,17 @@ public class CustomUserDetail implements UserDetails {
   private final String email;
   private final String password;
   private final String roleName;
+  private final UUID shopId;
   private final Boolean active;
   private final Collection<? extends GrantedAuthority> authorities;
 
-  public CustomUserDetail(UUID userId, String email, String password, Boolean active, String roleName, Collection<? extends GrantedAuthority> authorities) {
+  public CustomUserDetail(UUID userId, String email, String password, Boolean active, String roleName, UUID shopId, Collection<? extends GrantedAuthority> authorities) {
     this.userId = userId;
     this.email = email;
     this.password = password;
     this.active = active;
     this.roleName = roleName;
+    this.shopId = shopId;
     this.authorities = authorities;
   }
 

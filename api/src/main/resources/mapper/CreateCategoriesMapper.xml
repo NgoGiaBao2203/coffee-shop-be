@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="coffee.api.mapper.CreateCategoriesMapper">
+
+  <insert id="createCategories">
+    INSERT INTO drink_categories (
+    drink_category_id,
+    shop_id,
+    category_name,
+    is_deleted
+    ) VALUES (
+    gen_random_uuid(),
+    <choose>
+      <when test="currentUserRoleName == 'OWNER'">
+        #{request.shopId}
+      </when>
+      <otherwise>
+        #{currentUserShopId}
+      </otherwise>
+    </choose>,
+    #{request.categoryName},
+    false
+    )
+  </insert>
+
+</mapper>

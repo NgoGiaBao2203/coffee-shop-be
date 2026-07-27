@@ -36,6 +36,7 @@ public class CustomUserDetailsServiceImpl implements ICustomUserDetailsService{
       user.getPassword(),
       user.getIsDeleted(),
       user.getRoleName(),
+      user.getShopId(),
       authorities
     );
   }
@@ -54,6 +55,7 @@ public class CustomUserDetailsServiceImpl implements ICustomUserDetailsService{
       user.getPassword(),
       user.getIsDeleted(),
       user.getRoleName(),
+      user.getShopId(),
       authorities
     );
   }

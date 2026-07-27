@@ -7,6 +7,8 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
+import java.util.UUID;
+
 @Data
 public class SearchDrinksRequest {
 
@@ -18,6 +20,7 @@ public class SearchDrinksRequest {
   private int size = 10;
 
   private String search;
+  private UUID shopId;
 
   @Pattern(
     regexp = "^(drinkId|drinkCategoryId|drinkName|size|price|status|createdAt|updatedAt|isDeleted)$",
@@ -38,5 +41,9 @@ public class SearchDrinksRequest {
   public String trimmedSearch() {
     if (search == null || search.isBlank()) return null;
     return search.trim();
+  }
+
+  public String directionValue() {
+    return sortDirection != null ? sortDirection.name() : SortDirection.ASC.name();
   }
 }

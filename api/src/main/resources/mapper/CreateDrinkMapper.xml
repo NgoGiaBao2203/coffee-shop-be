@@ -5,14 +5,17 @@
 <mapper namespace="coffee.api.mapper.CreateDrinkMapper">
 
   <select id="checkDrinkExistedByName" resultType="java.lang.Boolean">
-    SELECT CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END
+    SELECT EXISTS (
+    SELECT 1
     FROM drinks
     WHERE drink_name = #{drinkName}
     AND shop_id = #{shopId}
     AND is_deleted = FALSE
+    )
   </select>
 
   <insert id="createDrink">
+    WITH inserted_drink AS (
     INSERT INTO drinks (
     drink_id,
     drink_name,
@@ -22,7 +25,7 @@
     drink_category_id,
     shop_id
     ) VALUES (
-    #{drinkId},
+    gen_random_uuid(),
     #{drinkName},
     #{imageUrl},
     #{status},
@@ -30,20 +33,19 @@
     #{drinkCategoryId},
     #{shopId}
     )
-  </insert>
-
-  <insert id="createDrinkDetail">
+    RETURNING drink_id
+    )
     INSERT INTO drink_details (
     drink_detail_id,
     size,
     price,
     drink_id
-    ) VALUES (
-    #{drinkDetailId},
+    ) SELECT
+    COALESCE(#{drinkDetailId}, gen_random_uuid()),
     #{size},
     #{price},
-    #{drinkId}
-    )
+    drink_id
+    FROM inserted_drink;
   </insert>
 
 </mapper>

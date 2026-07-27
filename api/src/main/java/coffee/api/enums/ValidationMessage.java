@@ -3,6 +3,7 @@ package coffee.api.enums;
 public enum ValidationMessage {
   // ── Generic ──────────────────────────────────────────────────────
   FIELD_REQUIRED(Msg.FIELD_REQUIRED),
+  SPECIAL_CHARACTERS(Msg.SPECIAL_CHARACTERS),
 
   // ── User fields ──────────────────────────────────────────────────
   PASSWORD_MIN_LENGTH(Msg.PASSWORD_MIN_LENGTH),
@@ -29,6 +30,8 @@ public enum ValidationMessage {
     public static final String SIZE_MIN = "EV004";
     public static final String SIZE_MAX = "EV005";
     public static final String SORT_BY_INVALID = "EV006";
+    public static final String SPECIAL_CHARACTERS = "EV007";
+    private Msg(String code) {}
 
     private Msg() {
     }
