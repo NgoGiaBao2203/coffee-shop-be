@@ -8,71 +8,82 @@
   <!-- 1. Check if ACTIVE staff exists by Profile ID -->
   <select id="checkStaffExisted" resultType="java.lang.Boolean">
     SELECT EXISTS (
-      SELECT 1
-      FROM profiles
-      WHERE profile_id = #{profileId}
-        AND deleted_at IS NULL
+    SELECT 1
+    FROM profiles
+    WHERE profile_id = #{profileId}
+    AND deleted_at IS NULL
     )
   </select>
 
   <!-- 2. Check if username already exists for active users -->
   <select id="checkStaffExistedByUsername" resultType="java.lang.Boolean">
     SELECT EXISTS (
-      SELECT 1
-      FROM profiles
-      WHERE username = #{username}
-        AND deleted_at IS NULL
+    SELECT 1
+    FROM profiles
+    WHERE username = #{username}
+    AND deleted_at IS NULL
     )
   </select>
 
   <!-- 3. Check if phone number exists for active users during creation -->
   <select id="checkStaffPhoneExistedForCreate" resultType="java.lang.Boolean">
     SELECT EXISTS (
-      SELECT 1
-      FROM profiles
-      WHERE phone_number = #{phoneNumber}
-        AND deleted_at IS NULL
+    SELECT 1
+    FROM profiles
+    WHERE phone_number = #{phoneNumber}
+    AND deleted_at IS NULL
     )
   </select>
 
   <!-- 4. Check if email already exists for active users -->
   <select id="checkStaffEmailExisted" resultType="java.lang.Boolean">
     SELECT EXISTS (
-      SELECT 1
-      FROM profiles
-      WHERE email = #{email}
-        AND deleted_at IS NULL
+    SELECT 1
+    FROM profiles
+    WHERE email = #{email}
+    AND deleted_at IS NULL
     )
   </select>
 
   <!-- 5. Check if phone number is taken by ANOTHER active account (for updates) -->
   <select id="checkStaffPhoneExisted" resultType="java.lang.Boolean">
     SELECT EXISTS (
-      SELECT 1
-      FROM profiles
-      WHERE phone_number = #{phoneNumber}
-        AND profile_id != #{profileId}
-        AND deleted_at IS NULL
+    SELECT 1
+    FROM profiles
+    WHERE phone_number = #{phoneNumber}
+    AND profile_id != #{profileId}
+    AND deleted_at IS NULL
     )
   </select>
 
-  <!-- 6. Check if drink exists by Drink ID -->
+  <!-- 6. Check if drink exists by Drink ID with Role/Shop check -->
   <select id="checkDrinkExisted" resultType="java.lang.Boolean">
     SELECT EXISTS (
     SELECT 1
     FROM drinks
     WHERE drink_id = #{drinkId}
-    AND deleted_at IS NULL
+    AND is_deleted = FALSE
+    <choose>
+      <!-- OWNER: Can access any drink regardless of shop -->
+      <when test="currentUserRoleName == 'OWNER'">
+        <!-- No shop restriction -->
+      </when>
+
+      <!-- MANAGER: Must belong to their specific shop -->
+      <when test="currentUserRoleName == 'MANAGER'">
+        AND shop_id = #{currentUserShopId}
+      </when>
+    </choose>
     )
   </select>
 
   <!-- 7. Check if shop exists -->
   <select id="checkShopExisted" resultType="boolean">
     SELECT EXISTS (
-      SELECT 1
-      FROM shops
-      WHERE shop_id = #{shopId}
-        AND is_deleted = false
+    SELECT 1
+    FROM shops
+    WHERE shop_id = #{shopId}
+    AND is_deleted = false
     )
   </select>
 

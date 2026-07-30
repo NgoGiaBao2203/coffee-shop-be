@@ -13,7 +13,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@JsonPropertyOrder({ "code", "message", "errorDetails", "traceId" })
+@JsonPropertyOrder({"code", "message", "errorDetails", "traceId"})
 public class DeleteDrinkResponse extends BaseApiResponse {
   public static DeleteDrinkResponse of(
     ResponseCode responseCode,

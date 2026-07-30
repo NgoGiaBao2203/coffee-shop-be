@@ -7,5 +7,9 @@ import java.util.UUID;
 
 @Mapper
 public interface DeleteDrinkMapper {
-  void deleteDrink(@Param("drinkId") UUID drinkId);
+  void deleteDrink(
+    @Param("drinkId") UUID drinkId,
+    @Param("currentUserRoleName") String currentUserRoleName,
+    @Param("currentUserShopId") UUID currentUserShopId
+  );
 }

@@ -28,7 +28,9 @@ public interface CommonMapper {
     @Param("currentUserShopId") UUID currentUserShopId
   );
 
-  Boolean checkDrinkExisted(@Param("drinkId") UUID drinkId);
-
-  void deleteDrink(@Param("drinkId") UUID drinkId); //
+  Boolean checkDrinkExisted(
+    @Param("drinkId") UUID drinkId,
+    @Param("currentUserRoleName") String currentUserRoleName,
+    @Param("currentUserShopId") UUID currentUserShopId
+  );
 }

@@ -7,10 +7,20 @@
 
   <update id="deleteDrink">
     UPDATE drinks
-    SET
-    is_deleted = true
+    SET is_deleted = TRUE
     WHERE drink_id = #{drinkId}
-    AND is_deleted = false
+    AND is_deleted = FALSE
+    <choose>
+      <!-- OWNER can soft-delete drinks across all shops -->
+      <when test="currentUserRoleName == 'OWNER'">
+        <!-- No shop restriction -->
+      </when>
+
+      <!-- MANAGER can only soft delete drinks belonging to their shop -->
+      <when test="currentUserRoleName == 'MANAGER'">
+        AND shop_id = #{currentUserShopId}
+      </when>
+    </choose>
   </update>
 
 </mapper>
