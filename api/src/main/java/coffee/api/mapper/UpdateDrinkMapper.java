@@ -14,7 +14,9 @@ public interface UpdateDrinkMapper {
     @Param("imageUrl") String imageUrl,
     @Param("status") Integer status,
     @Param("drinkCategoryId") UUID drinkCategoryId,
+    @Param("price") Float price,
+    @Param("size") String size,
     @Param("shopId") UUID shopId,
-    @Param("updatedBy") String updatedBy
+    @Param("currentUserRoleName") String currentUserRoleName
   );
 }
