@@ -6,15 +6,40 @@
 <mapper namespace="coffee.api.mapper.UpdateDrinkMapper">
 
   <update id="updateDrink">
+    <!-- Update table drinks -->
+    WITH updated_drink AS (
     UPDATE drinks
-    SET
-    drink_name = #{drinkName},
-    image_url = #{imageUrl},
-    status = #{status},
-    drink_category_id = #{drinkCategoryId},
-    shop_id = #{shopId}
+    <set>
+      drink_name = #{drinkName},
+      image_url = #{imageUrl},
+      status = #{status},
+      drink_category_id = #{drinkCategoryId},
+
+      <if test="currentUserRoleName == 'OWNER' and shopId != null">
+        shop_id = #{shopId},
+      </if>
+    </set>
     WHERE drink_id = #{drinkId}
-    AND is_deleted = false
+    AND is_deleted = FALSE
+
+    <choose>
+      <when test="currentUserRoleName == 'OWNER'">
+        <!-- Full access -->
+      </when>
+      <when test="currentUserRoleName == 'MANAGER'">
+        AND shop_id = #{shopId}
+      </when>
+      <otherwise>
+        AND 1 = 0
+      </otherwise>
+    </choose>
+    RETURNING drink_id
+    )
+    <!-- Update table drink_details -->
+    UPDATE drink_details
+    SET price = #{price}
+    WHERE drink_id IN (SELECT drink_id FROM updated_drink)
+    AND size = #{size};
   </update>
 
 </mapper>

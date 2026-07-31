@@ -1,10 +1,10 @@
 package coffee.api.controllers.drink;
 
 import coffee.api.dto.request.drink.EditDrinksRequest;
-import coffee.api.dto.response.staff.EditStaffResponse;
+import coffee.api.dto.response.drink.EditDrinkResponse;
 import coffee.api.enums.ResponseCode;
 import coffee.api.security.CustomUserDetail;
-import coffee.api.services.services_interface.drink.IEditDrinkService;
+import coffee.api.services.services_interface.drink.IEditDrinksService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,19 +17,23 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 public class EditDrinksController {
-  private final IEditDrinkService editDrinkService;
+  private final IEditDrinksService editDrinksService;
 
   @PutMapping("drink/edit")
   @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
-  public ResponseEntity<EditStaffResponse>  editStaff(
+  public ResponseEntity<EditDrinkResponse> editDrink(
     @AuthenticationPrincipal CustomUserDetail customUserDetail,
     @RequestBody @Valid EditDrinksRequest request
   ) {
-    editDrinkService.process(request, customUserDetail.getRoleName());
+    editDrinksService.process(
+      request,
+      customUserDetail.getRoleName(),
+      customUserDetail.getShopId()
+    );
     return ResponseEntity.ok().body(
-      EditStaffResponse.of(
+      EditDrinkResponse.of(
         ResponseCode.SUCCESS,
-        "Drink edited successfully"
+        "Drink updated successfully"
       )
     );
   }
