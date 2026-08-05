@@ -3,6 +3,7 @@ package coffee.api.exceptions;
 import coffee.api.dto.response.base_response.ErrorApiResponse;
 import coffee.api.dto.response.base_response.ErrorDetail;
 import coffee.api.enums.ResponseCode;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -170,6 +171,20 @@ public class GlobalExceptionHandler {
     log.error("Request error: {}", ex.getMessage());
     return ResponseEntity
       .status(HttpStatus.BAD_REQUEST)
-      .body(ErrorApiResponse.of(ResponseCode.BAD_REQUEST, ex.getMessage()));
+      .body(ErrorApiResponse.of(ResponseCode.INVALID_REQUEST, ex.getMessage()));
+  }
+
+  @ExceptionHandler(InvalidRequestWithErrorDetailsException.class)
+  public ResponseEntity<ErrorApiResponse> handleInvalidRequestWithDetails(
+    InvalidRequestWithErrorDetailsException ex
+  ) {
+    log.error("Invalid Request With Error Details: {}", ex.getErrorDetails());
+    return ResponseEntity
+      .status(HttpStatus.BAD_REQUEST)
+      .body(ErrorApiResponse.of(
+        ResponseCode.INVALID_REQUEST,
+        ex.getMessage(),
+        ex.getErrorDetails()
+      ));
   }
 }

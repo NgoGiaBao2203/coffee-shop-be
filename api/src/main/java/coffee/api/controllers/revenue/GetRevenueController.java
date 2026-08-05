@@ -1,10 +1,10 @@
-package coffee.api.controllers.category;
+package coffee.api.controllers.revenue;
 
-import coffee.api.dto.request.category.SearchCategoriesRequest;
+import coffee.api.dto.request.revenue.SearchRevenueRequest;
 import coffee.api.dto.response.base_response.PageResponse;
-import coffee.api.dto.result.CategoryResult;
+import coffee.api.dto.result.RevenueResult;
 import coffee.api.security.CustomUserDetail;
-import coffee.api.services.services_interface.category.IGetCategoryService;
+import coffee.api.services.services_interface.revenue.IGetRevenueService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,17 +15,17 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-public class GetCategoryController {
+public class GetRevenueController {
 
-  private final IGetCategoryService getCategoryService;
+  private final IGetRevenueService getRevenueService;
 
-  @PostMapping("categories")
+  @PostMapping("revenues")
   @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'STAFF')")
-  public PageResponse<CategoryResult> getCategories(
+  public PageResponse<RevenueResult> GetRevenue(
     @AuthenticationPrincipal CustomUserDetail customUserDetail,
-    @RequestBody @Valid SearchCategoriesRequest request
+    @RequestBody @Valid SearchRevenueRequest request
   ) {
-    return getCategoryService.process(
+    return getRevenueService.process(
       request,
       customUserDetail.getRoleName(),
       customUserDetail.getShopId()
