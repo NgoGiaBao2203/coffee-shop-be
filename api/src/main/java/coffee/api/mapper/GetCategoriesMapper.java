@@ -17,12 +17,14 @@ public interface GetCategoriesMapper {
     @Param("size") int size,
     @Param("offset") int offset,
     @Param("currentUserRoleName") String currentUserRoleName,
-    @Param("currentUserShopId") UUID currentUserShopId
+    @Param("currentUserShopId") UUID currentUserShopId,
+    @Param("branchShopId") UUID branchShopId
   );
 
   long countCategoriesFiltered(
     @Param("search") String search,
     @Param("currentUserRoleName") String currentUserRoleName,
-    @Param("currentUserShopId") UUID currentUserShopId
+    @Param("currentUserShopId") UUID currentUserShopId,
+    @Param("branchShopId") UUID branchShopId
   );
 }

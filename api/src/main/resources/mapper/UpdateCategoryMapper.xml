@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="coffee.api.mapper.UpdateCategoryMapper">
+
+  <update id="updateCategory">
+    UPDATE drink_categories
+    SET
+    category_name = #{request.categoryName},
+    is_deleted = false
+    WHERE drink_category_id = #{request.categoryId}
+
+    <choose>
+      <!-- OWNER can update anything -->
+      <when test="currentUserRoleName == 'OWNER'">
+        <!-- no extra condition -->
+      </when>
+
+      <!-- MANAGER can update only categories from their shop -->
+      <when test="currentUserRoleName == 'MANAGER'">
+        AND shop_id = #{currentUserShopId}
+      </when>
+    </choose>
+  </update>
+
+</mapper>

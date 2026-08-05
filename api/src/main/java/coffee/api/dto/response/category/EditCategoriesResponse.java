@@ -1,8 +1,6 @@
-package coffee.api.dto.response.drink;
+package coffee.api.dto.response.category;
 
-import coffee.api.dto.result.DrinkResult;
 import coffee.api.dto.response.base_response.BaseApiResponse;
-import coffee.api.dto.response.base_response.PageResponse;
 import coffee.api.enums.ResponseCode;
 import coffee.api.utils.MdcUtil;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -16,20 +14,15 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @JsonPropertyOrder({"code", "message", "errorDetails", "traceId"})
-public class GetDrinkResponse extends BaseApiResponse {
-  private PageResponse<DrinkResult> drinks;
-
-
-  public static GetDrinkResponse of(
+public class EditCategoriesResponse extends BaseApiResponse {
+  public static EditCategoriesResponse of(
     ResponseCode responseCode,
-    String message,
-    PageResponse<DrinkResult> drinks
+    String message
   ) {
-    return GetDrinkResponse.builder()
+    return EditCategoriesResponse.builder()
       .code(responseCode.getCode())
       .message(message)
       .traceId(MdcUtil.getTraceId())
-      .drinks(drinks)
       .build();
   }
 }

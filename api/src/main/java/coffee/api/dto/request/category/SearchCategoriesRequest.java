@@ -7,6 +7,8 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
+import java.util.UUID;
+
 @Data
 public class SearchCategoriesRequest {
 
@@ -16,6 +18,8 @@ public class SearchCategoriesRequest {
   @Min(value = 1, message = ValidationMessage.Msg.SIZE_MIN)
   @Max(value = 100, message = ValidationMessage.Msg.SIZE_MAX)
   private int size = 10;
+
+  private UUID branchShopId;
 
   private String search;
 
