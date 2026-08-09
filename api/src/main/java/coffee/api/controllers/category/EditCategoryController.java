@@ -22,20 +22,14 @@ public class EditCategoryController {
   @PutMapping("category/edit")
   @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
   public ResponseEntity<EditCategoriesResponse> editCategories(
-    @AuthenticationPrincipal CustomUserDetail customUserDetail,
-    @RequestBody @Valid EditCategoriesRequest request
-  ) {
+      @AuthenticationPrincipal CustomUserDetail customUserDetail,
+      @RequestBody @Valid EditCategoriesRequest request) {
     editCategoriesService.process(
-      request,
-      customUserDetail.getRoleName(),
-      customUserDetail.getUserId(),
-      customUserDetail.getShopId()
-    );
-    return ResponseEntity.ok().body(
-      EditCategoriesResponse.of(
-        ResponseCode.SUCCESS,
-        "Category edited successfully"
-      )
-    );
+        request,
+        customUserDetail.getRoleName(),
+        customUserDetail.getUserId(),
+        customUserDetail.getShopId());
+    return ResponseEntity.ok()
+        .body(EditCategoriesResponse.of(ResponseCode.SUCCESS, "Category edited successfully"));
   }
 }

@@ -2,88 +2,57 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="coffee.api.mapper.GetDrinksMapper">
 
+  <!-- Result map to populate basic drink details without variants -->
   <resultMap id="DrinkResultMap" type="coffee.api.dto.result.DrinkResult">
-    <result property="drinkId" column="drink_id"/>
-    <result property="drinkCategoryId" column="drink_category_id"/>
+    <id property="drinkId" column="drink_id" javaType="java.util.UUID"/>
+    <result property="drinkCategoryId" column="drink_category_id" javaType="java.util.UUID"/>
     <result property="drinkName" column="drink_name"/>
-    <result property="size" column="size"/>
-    <result property="price" column="price"/>
     <result property="imageUrl" column="image_url"/>
     <result property="status" column="status"/>
     <result property="isDeleted" column="is_deleted"/>
   </resultMap>
 
-  <sql id="selectDrinksSql">
-    SELECT
-    d.drink_id,
-    d.drink_category_id,
-    d.drink_name,
-    dd.size,
-    TO_CHAR(dd.price, 'FM999,999,999') || 'đ' AS price,
-    d.image_url,
-    CASE
-    WHEN d.status = 1 THEN 'Đang bán'
-    WHEN d.status = 0 THEN 'Ngừng bán'
-    ELSE 'Không xác định'
-    END AS status,
-    d.is_deleted
-    FROM
-    drinks AS d
-    JOIN
-    drink_details AS dd ON d.drink_id = dd.drink_id
-    JOIN
-    drink_categories AS dc ON d.drink_category_id = dc.drink_category_id
-  </sql>
-
+  <!-- Reusable SQL fragment for filtering conditions based on search query and role-based permissions -->
   <sql id="filterConditions">
     <where>
       d.is_deleted = false AND dc.is_deleted = false
 
-      <!-- If currentRoleName is not equal OWNER filter by ghopId -->
+      <!-- Restrict access by shopId if the current user is not an OWNER -->
       <if test="currentUserRoleName != 'OWNER'">
         AND d.shop_id = #{currentUserShopId}
       </if>
 
+      <!-- Case-insensitive search by drink name or category name -->
       <if test="search != null and search != ''">
         AND (d.drink_name ILIKE '%' || #{search} || '%' OR dc.category_name ILIKE '%' || #{search} || '%')
       </if>
     </where>
   </sql>
 
-  <select id="findAll" resultMap="DrinkResultMap">
-    <include refid="selectDrinksSql"/>
-    <where>
-      d.is_deleted = false AND dc.is_deleted = false
-    </where>
-  </select>
-
+  <!-- Fetch paginated list of basic drink items for catalog display (1 record per drink) -->
   <select id="getDrinksFiltered" resultMap="DrinkResultMap">
-    <include refid="selectDrinksSql"/>
+    SELECT
+    d.drink_id,
+    d.drink_category_id,
+    d.drink_name,
+    d.image_url,
+    d.status,
+    d.is_deleted
+    FROM drinks AS d
+    JOIN drink_categories AS dc ON d.drink_category_id = dc.drink_category_id
     <include refid="filterConditions"/>
-    <if test="sortBy != null and sortBy != ''">
-      ORDER BY
-      <choose>
-        <when test="sortBy == 'drinkId'">d.drink_id</when>
-        <when test="sortBy == 'drinkName'">d.drink_name</when>
-        <when test="sortBy == 'price'">dd.price</when>
-        <when test="sortBy == 'imageUrl'">d.image_url</when>
-        <when test="sortBy == 'status'">d.status</when>
-        <when test="sortBy == 'isDeleted'">d.is_deleted</when>
-        <otherwise>d.drink_id</otherwise>
-      </choose>
+    ORDER BY d.drink_id
+    <if test="sortDirection != null and sortDirection != ''">
       ${sortDirection}
     </if>
     LIMIT #{size} OFFSET #{offset}
   </select>
 
+  <!-- Count total unique drinks matching filter conditions for pagination metadata -->
   <select id="countDrinksFiltered" resultType="long">
-    SELECT count(*)
-    FROM
-    drinks AS d
-    JOIN
-    drink_details AS dd ON d.drink_id = dd.drink_id
-    JOIN
-    drink_categories AS dc ON d.drink_category_id = dc.drink_category_id
+    SELECT count(DISTINCT d.drink_id)
+    FROM drinks AS d
+    JOIN drink_categories AS dc ON d.drink_category_id = dc.drink_category_id
     <include refid="filterConditions"/>
   </select>
 

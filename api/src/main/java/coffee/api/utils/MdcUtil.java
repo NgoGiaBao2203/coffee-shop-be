@@ -1,13 +1,11 @@
 package coffee.api.utils;
 
 import coffee.api.config.MdcKey;
+import java.util.UUID;
 import org.slf4j.MDC;
 
-import java.util.UUID;
-
 public final class MdcUtil {
-  private MdcUtil() {
-  }
+  private MdcUtil() {}
 
   public static String getTraceId() {
     String traceId = MDC.get(MdcKey.TRACE_ID);

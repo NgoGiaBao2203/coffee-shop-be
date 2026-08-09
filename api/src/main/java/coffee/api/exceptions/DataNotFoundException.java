@@ -1,8 +1,7 @@
 package coffee.api.exceptions;
 
-import lombok.Getter;
-
 import java.util.UUID;
+import lombok.Getter;
 
 @Getter
 public class DataNotFoundException extends RuntimeException {
@@ -11,4 +10,5 @@ public class DataNotFoundException extends RuntimeException {
   public DataNotFoundException(String message, UUID id) {
     super(message);
     this.id = id;
-  }}
+  }
+}

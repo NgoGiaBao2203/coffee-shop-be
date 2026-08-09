@@ -16,14 +16,11 @@ import lombok.experimental.SuperBuilder;
 @JsonPropertyOrder({"code", "message", "errorDetails", "traceId"})
 public class CreateDrinkResponse extends BaseApiResponse {
 
-  public static CreateDrinkResponse of(
-    ResponseCode responseCode,
-    String message
-  ) {
+  public static CreateDrinkResponse of(ResponseCode responseCode, String message) {
     return CreateDrinkResponse.builder()
-      .code(responseCode.getCode())
-      .message(message)
-      .traceId(MdcUtil.getTraceId())
-      .build();
+        .code(responseCode.getCode())
+        .message(message)
+        .traceId(MdcUtil.getTraceId())
+        .build();
   }
 }

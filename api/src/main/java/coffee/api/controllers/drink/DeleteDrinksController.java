@@ -22,19 +22,11 @@ public class DeleteDrinksController {
   @DeleteMapping("drink/delete")
   @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
   public ResponseEntity<DeleteDrinkResponse> deleteDrink(
-    @AuthenticationPrincipal CustomUserDetail customUserDetail,
-    @RequestBody @Valid DeleteDrinksRequest request
-  ) {
+      @AuthenticationPrincipal CustomUserDetail customUserDetail,
+      @RequestBody @Valid DeleteDrinksRequest request) {
     deleteDrinksService.process(
-      request,
-      customUserDetail.getRoleName(),
-      customUserDetail.getShopId()
-    );
-    return ResponseEntity.ok().body(
-      DeleteDrinkResponse.of(
-        ResponseCode.SUCCESS,
-        "Drink deleted successfully"
-      )
-    );
+        request, customUserDetail.getRoleName(), customUserDetail.getShopId());
+    return ResponseEntity.ok()
+        .body(DeleteDrinkResponse.of(ResponseCode.SUCCESS, "Drink deleted successfully"));
   }
 }

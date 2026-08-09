@@ -1,10 +1,17 @@
 package coffee.api.services.services_implement.staff;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
 import coffee.api.dto.request.user.SearchUsersRequest;
 import coffee.api.dto.response.base_response.PageResponse;
 import coffee.api.dto.result.ProfileResult;
 import coffee.api.enums.SortDirection;
 import coffee.api.mapper.GetStaffsMapper;
+import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,22 +19,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
 @ExtendWith(MockitoExtension.class)
 public class GetStaffsServiceImplTest {
 
-  @Mock
-  private GetStaffsMapper getStaffsMapper;
+  @Mock private GetStaffsMapper getStaffsMapper;
 
-  @InjectMocks
-  private GetStaffsServiceImpl getStaffsService;
+  @InjectMocks private GetStaffsServiceImpl getStaffsService;
 
   private SearchUsersRequest validRequest;
   private ProfileResult sampleStaffResult;
@@ -79,15 +76,24 @@ public class GetStaffsServiceImplTest {
     List<ProfileResult> expectedItems = Collections.singletonList(sampleStaffResult);
 
     when(getStaffsMapper.countStaffsFiltered(
-      search, roleId, branchShopId, currentUserRoleName, currentUserId
-    )).thenReturn(totalElements);
+            search, roleId, branchShopId, currentUserRoleName, currentUserId))
+        .thenReturn(totalElements);
 
     when(getStaffsMapper.getStaffsFiltered(
-      search, roleId, branchShopId, sortBy, sortDirection, size, offset, currentUserRoleName, currentUserId
-    )).thenReturn(expectedItems);
+            search,
+            roleId,
+            branchShopId,
+            sortBy,
+            sortDirection,
+            size,
+            offset,
+            currentUserRoleName,
+            currentUserId))
+        .thenReturn(expectedItems);
 
     // Act
-    PageResponse<ProfileResult> response = getStaffsService.process(validRequest, currentUserRoleName, currentUserId);
+    PageResponse<ProfileResult> response =
+        getStaffsService.process(validRequest, currentUserRoleName, currentUserId);
 
     // Assert
     assertNotNull(response);
@@ -107,9 +113,18 @@ public class GetStaffsServiceImplTest {
     assertEquals(1, response.getPagination().getTotalPages());
 
     verify(getStaffsMapper, times(1))
-      .countStaffsFiltered(search, roleId, branchShopId, currentUserRoleName, currentUserId);
+        .countStaffsFiltered(search, roleId, branchShopId, currentUserRoleName, currentUserId);
     verify(getStaffsMapper, times(1))
-      .getStaffsFiltered(search, roleId, branchShopId, sortBy, sortDirection, size, offset, currentUserRoleName, currentUserId);
+        .getStaffsFiltered(
+            search,
+            roleId,
+            branchShopId,
+            sortBy,
+            sortDirection,
+            size,
+            offset,
+            currentUserRoleName,
+            currentUserId);
   }
 
   @Test
@@ -126,15 +141,24 @@ public class GetStaffsServiceImplTest {
     long totalElements = 0L;
 
     when(getStaffsMapper.countStaffsFiltered(
-      search, roleId, branchShopId, currentUserRoleName, currentUserId
-    )).thenReturn(totalElements);
+            search, roleId, branchShopId, currentUserRoleName, currentUserId))
+        .thenReturn(totalElements);
 
     when(getStaffsMapper.getStaffsFiltered(
-      search, roleId, branchShopId, sortBy, sortDirection, size, offset, currentUserRoleName, currentUserId
-    )).thenReturn(Collections.emptyList());
+            search,
+            roleId,
+            branchShopId,
+            sortBy,
+            sortDirection,
+            size,
+            offset,
+            currentUserRoleName,
+            currentUserId))
+        .thenReturn(Collections.emptyList());
 
     // Act
-    PageResponse<ProfileResult> response = getStaffsService.process(validRequest, currentUserRoleName, currentUserId);
+    PageResponse<ProfileResult> response =
+        getStaffsService.process(validRequest, currentUserRoleName, currentUserId);
 
     // Assert
     assertNotNull(response);
@@ -143,9 +167,18 @@ public class GetStaffsServiceImplTest {
     assertEquals(0, response.getPagination().getTotalPages());
 
     verify(getStaffsMapper, times(1))
-      .countStaffsFiltered(search, roleId, branchShopId, currentUserRoleName, currentUserId);
+        .countStaffsFiltered(search, roleId, branchShopId, currentUserRoleName, currentUserId);
     verify(getStaffsMapper, times(1))
-      .getStaffsFiltered(search, roleId, branchShopId, sortBy, sortDirection, size, offset, currentUserRoleName, currentUserId);
+        .getStaffsFiltered(
+            search,
+            roleId,
+            branchShopId,
+            sortBy,
+            sortDirection,
+            size,
+            offset,
+            currentUserRoleName,
+            currentUserId);
   }
 
   @Test
@@ -162,15 +195,24 @@ public class GetStaffsServiceImplTest {
     long totalElements = 5L;
 
     when(getStaffsMapper.countStaffsFiltered(
-      null, roleId, branchShopId, currentUserRoleName, currentUserId
-    )).thenReturn(totalElements);
+            null, roleId, branchShopId, currentUserRoleName, currentUserId))
+        .thenReturn(totalElements);
 
     when(getStaffsMapper.getStaffsFiltered(
-      null, roleId, branchShopId, sortBy, sortDirection, size, offset, currentUserRoleName, currentUserId
-    )).thenReturn(Collections.singletonList(sampleStaffResult));
+            null,
+            roleId,
+            branchShopId,
+            sortBy,
+            sortDirection,
+            size,
+            offset,
+            currentUserRoleName,
+            currentUserId))
+        .thenReturn(Collections.singletonList(sampleStaffResult));
 
     // Act
-    PageResponse<ProfileResult> response = getStaffsService.process(validRequest, currentUserRoleName, currentUserId);
+    PageResponse<ProfileResult> response =
+        getStaffsService.process(validRequest, currentUserRoleName, currentUserId);
 
     // Assert
     assertNull(search);
@@ -179,8 +221,17 @@ public class GetStaffsServiceImplTest {
     assertEquals("NHÂN VIÊN", response.getItems().getFirst().getRoleName());
 
     verify(getStaffsMapper, times(1))
-      .countStaffsFiltered(null, roleId, branchShopId, currentUserRoleName, currentUserId);
+        .countStaffsFiltered(null, roleId, branchShopId, currentUserRoleName, currentUserId);
     verify(getStaffsMapper, times(1))
-      .getStaffsFiltered(null, roleId, branchShopId, sortBy, sortDirection, size, offset, currentUserRoleName, currentUserId);
+        .getStaffsFiltered(
+            null,
+            roleId,
+            branchShopId,
+            sortBy,
+            sortDirection,
+            size,
+            offset,
+            currentUserRoleName,
+            currentUserId);
   }
 }

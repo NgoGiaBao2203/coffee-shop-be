@@ -1,17 +1,17 @@
 package coffee.api.config;
 
+import java.sql.*;
+import java.util.UUID;
 import org.apache.ibatis.type.BaseTypeHandler;
 import org.apache.ibatis.type.JdbcType;
 import org.apache.ibatis.type.MappedTypes;
-
-import java.sql.*;
-import java.util.UUID;
 
 @MappedTypes(UUID.class)
 public class UUIDTypeHandler extends BaseTypeHandler<UUID> {
 
   @Override
-  public void setNonNullParameter(PreparedStatement ps, int i, UUID parameter, JdbcType jdbcType) throws SQLException {
+  public void setNonNullParameter(PreparedStatement ps, int i, UUID parameter, JdbcType jdbcType)
+      throws SQLException {
     ps.setObject(i, parameter);
   }
 

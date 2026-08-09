@@ -7,10 +7,9 @@ import coffee.api.exceptions.UserExistException;
 import coffee.api.mapper.CommonMapper;
 import coffee.api.mapper.CreateStaffMapper;
 import coffee.api.services.services_interface.staff.ICreateStaffService;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -24,7 +23,8 @@ public class CreateStaffServiceImpl implements ICreateStaffService {
     if (isStaffExited) {
       throw new UserExistException("Staff is existed");
     }
-    Boolean isPhoneNumberExisted = commonMapper.checkStaffPhoneExistedForCreate(request.getPhoneNumber());
+    Boolean isPhoneNumberExisted =
+        commonMapper.checkStaffPhoneExistedForCreate(request.getPhoneNumber());
     if (isPhoneNumberExisted) {
       throw new PhoneNumberExistedException("Staff phone is existed", request.getPhoneNumber());
     }
@@ -33,14 +33,13 @@ public class CreateStaffServiceImpl implements ICreateStaffService {
       throw new EmailExistedException("Staff email is existed", request.getEmail());
     }
     createStaffMapper.createStaff(
-      request.getEmail(),
-      request.getUsername(),
-      request.getFullName(),
-      request.getPhoneNumber(),
-      request.getRoleId(),
-      request.getShopId(),
-      currentUserId,
-      currentUserRoleName
-    );
+        request.getEmail(),
+        request.getUsername(),
+        request.getFullName(),
+        request.getPhoneNumber(),
+        request.getRoleId(),
+        request.getShopId(),
+        currentUserId,
+        currentUserRoleName);
   }
 }

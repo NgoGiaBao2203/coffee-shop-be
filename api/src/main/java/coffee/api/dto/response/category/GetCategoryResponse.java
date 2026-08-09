@@ -19,17 +19,13 @@ import lombok.experimental.SuperBuilder;
 public class GetCategoryResponse extends BaseApiResponse {
   private PageResponse<CategoryResult> categories;
 
-
   public static GetCategoryResponse of(
-    ResponseCode responseCode,
-    String message,
-    PageResponse<CategoryResult> categories
-  ) {
+      ResponseCode responseCode, String message, PageResponse<CategoryResult> categories) {
     return GetCategoryResponse.builder()
-      .code(responseCode.getCode())
-      .message(message)
-      .traceId(MdcUtil.getTraceId())
-      .categories(categories)
-      .build();
+        .code(responseCode.getCode())
+        .message(message)
+        .traceId(MdcUtil.getTraceId())
+        .categories(categories)
+        .build();
   }
 }

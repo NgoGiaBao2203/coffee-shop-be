@@ -5,10 +5,9 @@ import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.mapper.CommonMapper;
 import coffee.api.mapper.DeleteCategoryMapper;
 import coffee.api.services.services_interface.category.IDeleteCategoriesService;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -18,22 +17,14 @@ public class DeleteCategoriesServiceImpl implements IDeleteCategoriesService {
 
   @Override
   public void process(
-    DeleteCategoriesRequest request,
-    String currentUserRoleName,
-    UUID currentUserShopId
-  ) {
-    Boolean isCategoryExisted = commonMapper.checkCategoryExisted(
-      request.getCategoryId(),
-      currentUserRoleName,
-      currentUserShopId
-    );
+      DeleteCategoriesRequest request, String currentUserRoleName, UUID currentUserShopId) {
+    Boolean isCategoryExisted =
+        commonMapper.checkCategoryExisted(
+            request.getCategoryId(), currentUserRoleName, currentUserShopId);
     if (!isCategoryExisted) {
       throw new DataNotFoundException("Data not found", request.getCategoryId());
     }
     deleteCategoryMapper.deleteCategory(
-      request.getCategoryId(),
-      currentUserRoleName,
-      currentUserShopId
-    );
+        request.getCategoryId(), currentUserRoleName, currentUserShopId);
   }
 }

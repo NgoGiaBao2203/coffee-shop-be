@@ -1,7 +1,6 @@
 package coffee.api.dto.response.category;
 
 import coffee.api.dto.response.base_response.BaseApiResponse;
-import coffee.api.dto.response.staff.CreateStaffResponse;
 import coffee.api.enums.ResponseCode;
 import coffee.api.utils.MdcUtil;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -14,16 +13,13 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@JsonPropertyOrder({ "code", "message", "errorDetails", "traceId" })
+@JsonPropertyOrder({"code", "message", "errorDetails", "traceId"})
 public class CreateCategoriesResponse extends BaseApiResponse {
-  public static CreateCategoriesResponse of(
-    ResponseCode responseCode,
-    String message
-  ) {
+  public static CreateCategoriesResponse of(ResponseCode responseCode, String message) {
     return CreateCategoriesResponse.builder()
-      .code(responseCode.getCode())
-      .message(message)
-      .traceId(MdcUtil.getTraceId())
-      .build();
+        .code(responseCode.getCode())
+        .message(message)
+        .traceId(MdcUtil.getTraceId())
+        .build();
   }
 }

@@ -21,16 +21,11 @@ public class EditStaffController {
 
   @PutMapping("staff/edit")
   @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
-  public ResponseEntity<EditStaffResponse>  editStaff(
-    @AuthenticationPrincipal CustomUserDetail customUserDetail,
-    @RequestBody @Valid EditStaffRequest request
-  ) {
+  public ResponseEntity<EditStaffResponse> editStaff(
+      @AuthenticationPrincipal CustomUserDetail customUserDetail,
+      @RequestBody @Valid EditStaffRequest request) {
     editStaffService.process(request, customUserDetail.getRoleName());
-    return ResponseEntity.ok().body(
-      EditStaffResponse.of(
-        ResponseCode.SUCCESS,
-        "Staff edited successfully"
-      )
-    );
+    return ResponseEntity.ok()
+        .body(EditStaffResponse.of(ResponseCode.SUCCESS, "Staff edited successfully"));
   }
 }

@@ -23,9 +23,9 @@ public class SearchUsersRequest {
   private String search;
 
   @Pattern(
-    regexp = "^(profileId|email|username|fullName|phoneNumber|shopName|roleName|createdAt|updatedAt|isDeleted)$",
-    message = ValidationMessage.Msg.SORT_BY_INVALID
-  )
+      regexp =
+          "^(profileId|email|username|fullName|phoneNumber|shopName|roleName|createdAt|updatedAt|isDeleted)$",
+      message = ValidationMessage.Msg.SORT_BY_INVALID)
   private String sortBy = "profileId";
 
   private SortDirection sortDirection = SortDirection.ASC;

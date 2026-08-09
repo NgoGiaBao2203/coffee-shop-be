@@ -13,16 +13,13 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@JsonPropertyOrder({ "code", "message", "errorDetails", "traceId" })
+@JsonPropertyOrder({"code", "message", "errorDetails", "traceId"})
 public class DeleteCategoriesResponse extends BaseApiResponse {
-  public static DeleteCategoriesResponse of(
-    ResponseCode responseCode,
-    String message
-  ) {
+  public static DeleteCategoriesResponse of(ResponseCode responseCode, String message) {
     return DeleteCategoriesResponse.builder()
-      .code(responseCode.getCode())
-      .message(message)
-      .traceId(MdcUtil.getTraceId())
-      .build();
+        .code(responseCode.getCode())
+        .message(message)
+        .traceId(MdcUtil.getTraceId())
+        .build();
   }
 }

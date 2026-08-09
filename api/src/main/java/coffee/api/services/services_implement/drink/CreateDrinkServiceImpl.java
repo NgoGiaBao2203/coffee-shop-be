@@ -4,10 +4,9 @@ import coffee.api.dto.request.drink.CreateDrinksRequest;
 import coffee.api.exceptions.UserExistException;
 import coffee.api.mapper.CreateDrinkMapper;
 import coffee.api.services.services_interface.drink.ICreateDrinkService;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -16,15 +15,12 @@ public class CreateDrinkServiceImpl implements ICreateDrinkService {
   private final CreateDrinkMapper createDrinksMapper;
 
   @Override
-  public void process(
-    CreateDrinksRequest request,
-    UUID currentShopID,
-    String roleName
-  ) {
+  public void process(CreateDrinksRequest request, UUID currentShopID, String roleName) {
 
     UUID targetShopId = validateShopId(roleName, request.getShopId(), currentShopID);
 
-    Boolean isDrinkExisted = createDrinksMapper.checkDrinkExistedByName(targetShopId, request.getDrinkName());
+    Boolean isDrinkExisted =
+        createDrinksMapper.checkDrinkExistedByName(targetShopId, request.getDrinkName());
     if (isDrinkExisted) {
       throw new UserExistException("Drink is existed");
     }
@@ -39,16 +35,15 @@ public class CreateDrinkServiceImpl implements ICreateDrinkService {
     }
 
     createDrinksMapper.createDrink(
-      request.getDrinkCategoryId(),
-      request.getDrinkDetailId(),
-      targetShopId,
-      request.getDrinkName(),
-      request.getImageUrl(),
-      request.getStatus(),
-      request.getIsDeleted(),
-      size,
-      request.getPrice()
-    );
+        request.getDrinkCategoryId(),
+        request.getDrinkDetailId(),
+        targetShopId,
+        request.getDrinkName(),
+        request.getImageUrl(),
+        request.getStatus(),
+        request.getIsDeleted(),
+        size,
+        request.getPrice());
   }
 
   private UUID validateShopId(String roleName, UUID requestShopId, UUID currentShopId) {

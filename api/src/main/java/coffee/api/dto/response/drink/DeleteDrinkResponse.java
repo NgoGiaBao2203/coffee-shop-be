@@ -15,14 +15,11 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 @JsonPropertyOrder({"code", "message", "errorDetails", "traceId"})
 public class DeleteDrinkResponse extends BaseApiResponse {
-  public static DeleteDrinkResponse of(
-    ResponseCode responseCode,
-    String message
-  ) {
+  public static DeleteDrinkResponse of(ResponseCode responseCode, String message) {
     return DeleteDrinkResponse.builder()
-      .code(responseCode.getCode())
-      .message(message)
-      .traceId(MdcUtil.getTraceId())
-      .build();
+        .code(responseCode.getCode())
+        .message(message)
+        .traceId(MdcUtil.getTraceId())
+        .build();
   }
 }

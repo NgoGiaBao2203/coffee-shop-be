@@ -2,17 +2,15 @@ package coffee.api.exceptions;
 
 import coffee.api.dto.response.base_response.ErrorApiResponse;
 import coffee.api.enums.ResponseCode;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.web.access.AccessDeniedHandler;
-import org.springframework.stereotype.Component;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.jspecify.annotations.NonNull;
-
-import org.springframework.security.access.AccessDeniedException;
-import tools.jackson.databind.ObjectMapper;
-
 import java.io.IOException;
+import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.stereotype.Component;
+import tools.jackson.databind.ObjectMapper;
 
 @Component
 @Slf4j
@@ -24,8 +22,10 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
   }
 
   @Override
-  public void handle(@NonNull HttpServletRequest request, HttpServletResponse response,
-                     AccessDeniedException accessDeniedException) {
+  public void handle(
+      @NonNull HttpServletRequest request,
+      HttpServletResponse response,
+      AccessDeniedException accessDeniedException) {
 
     response.setStatus(HttpServletResponse.SC_FORBIDDEN);
     response.setContentType("application/json;charset=UTF-8");

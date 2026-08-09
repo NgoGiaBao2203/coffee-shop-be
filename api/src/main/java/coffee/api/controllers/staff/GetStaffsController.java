@@ -21,16 +21,12 @@ public class GetStaffsController {
   @PostMapping("staffs")
   @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
   public PageResponse<ProfileResult> getUserList(
-    @AuthenticationPrincipal CustomUserDetail customUserDetail,
-    @RequestBody(required = false) @Valid SearchUsersRequest request
-  ) {
+      @AuthenticationPrincipal CustomUserDetail customUserDetail,
+      @RequestBody(required = false) @Valid SearchUsersRequest request) {
     if (request == null) {
       request = new SearchUsersRequest();
     }
     return getStaffsrService.process(
-      request,
-      customUserDetail.getRoleName(),
-      customUserDetail.getUserId()
-    );
+        request, customUserDetail.getRoleName(), customUserDetail.getUserId());
   }
 }

@@ -1,11 +1,10 @@
 package coffee.api.security;
 
+import java.util.Collection;
+import java.util.UUID;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-
-import java.util.Collection;
-import java.util.UUID;
 
 @Getter
 @SuppressWarnings("ALL")
@@ -18,7 +17,14 @@ public class CustomUserDetail implements UserDetails {
   private final Boolean active;
   private final Collection<? extends GrantedAuthority> authorities;
 
-  public CustomUserDetail(UUID userId, String email, String password, Boolean active, String roleName, UUID shopId, Collection<? extends GrantedAuthority> authorities) {
+  public CustomUserDetail(
+      UUID userId,
+      String email,
+      String password,
+      Boolean active,
+      String roleName,
+      UUID shopId,
+      Collection<? extends GrantedAuthority> authorities) {
     this.userId = userId;
     this.email = email;
     this.password = password;

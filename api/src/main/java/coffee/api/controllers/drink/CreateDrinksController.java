@@ -23,19 +23,12 @@ public class CreateDrinksController {
   @PostMapping("drink/create")
   @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
   public ResponseEntity<CreateDrinkResponse> createDrink(
-    @AuthenticationPrincipal CustomUserDetail customUserDetail,
-    @RequestBody @Valid CreateDrinksRequest request
-  ) {
+      @AuthenticationPrincipal CustomUserDetail customUserDetail,
+      @RequestBody @Valid CreateDrinksRequest request) {
     createDrinkService.process(
-      request,
-      customUserDetail.getShopId(),
-      customUserDetail.getRoleName()
-    );
+        request, customUserDetail.getShopId(), customUserDetail.getRoleName());
 
     return ResponseEntity.ok()
-      .body(CreateDrinkResponse.of(
-        ResponseCode.SUCCESS,
-        "Drink created successfully"
-      ));
+        .body(CreateDrinkResponse.of(ResponseCode.SUCCESS, "Drink created successfully"));
   }
 }

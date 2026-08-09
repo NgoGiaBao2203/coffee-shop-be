@@ -1,11 +1,16 @@
 package coffee.api.services.services_implement.common;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
 import coffee.api.dto.request.common.UserProfileRequest;
 import coffee.api.dto.result.ProfileResult;
 import coffee.api.exceptions.AccountDisableException;
 import coffee.api.exceptions.InvalidUsernameOrPasswordException;
 import coffee.api.mapper.GetUserProfileMapper;
 import coffee.api.model.UserProfile;
+import java.time.LocalDateTime;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,22 +19,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.time.LocalDateTime;
-import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
 @ExtendWith(MockitoExtension.class)
 public class ProfileServiceImplTest {
-  @Mock
-  private GetUserProfileMapper getUserProfileMapper;
+  @Mock private GetUserProfileMapper getUserProfileMapper;
 
-  @Mock
-  private PasswordEncoder passwordEncoder;
+  @Mock private PasswordEncoder passwordEncoder;
 
-  @InjectMocks
-  private ProfileServiceImpl profileService;
+  @InjectMocks private ProfileServiceImpl profileService;
 
   private UserProfileRequest validRequest;
   private UserProfile activeProfile;
@@ -57,7 +53,8 @@ public class ProfileServiceImplTest {
   void process_Success_TC001() {
     // Arrange
     when(getUserProfileMapper.findByUsername(validRequest.getUsername())).thenReturn(activeProfile);
-    when(passwordEncoder.matches(validRequest.getPassword(), activeProfile.getPassword())).thenReturn(true);
+    when(passwordEncoder.matches(validRequest.getPassword(), activeProfile.getPassword()))
+        .thenReturn(true);
 
     // Act
     ProfileResult result = profileService.process(validRequest);
@@ -70,7 +67,8 @@ public class ProfileServiceImplTest {
     assertEquals("QUẢN LÝ", result.getRoleName());
 
     verify(getUserProfileMapper, times(1)).findByUsername(validRequest.getUsername());
-    verify(passwordEncoder, times(1)).matches(validRequest.getPassword(), activeProfile.getPassword());
+    verify(passwordEncoder, times(1))
+        .matches(validRequest.getPassword(), activeProfile.getPassword());
   }
 
   @Test
@@ -79,10 +77,9 @@ public class ProfileServiceImplTest {
     when(getUserProfileMapper.findByUsername(validRequest.getUsername())).thenReturn(null);
 
     // Act & Assert
-    InvalidUsernameOrPasswordException exception = assertThrows(
-      InvalidUsernameOrPasswordException.class,
-      () -> profileService.process(validRequest)
-    );
+    InvalidUsernameOrPasswordException exception =
+        assertThrows(
+            InvalidUsernameOrPasswordException.class, () -> profileService.process(validRequest));
 
     assertEquals("Username not found", exception.getMessage());
     verify(passwordEncoder, never()).matches(anyString(), anyString());
@@ -96,13 +93,12 @@ public class ProfileServiceImplTest {
     deletedProfile.setEmail("test@coffee.com");
     deletedProfile.setIsDeleted(true);
 
-    when(getUserProfileMapper.findByUsername(validRequest.getUsername())).thenReturn(deletedProfile);
+    when(getUserProfileMapper.findByUsername(validRequest.getUsername()))
+        .thenReturn(deletedProfile);
 
     // Act & Assert
-    AccountDisableException exception = assertThrows(
-      AccountDisableException.class,
-      () -> profileService.process(validRequest)
-    );
+    AccountDisableException exception =
+        assertThrows(AccountDisableException.class, () -> profileService.process(validRequest));
 
     assertEquals("Profile was disabled", exception.getMessage());
     // Verifies exception payload maps the profile's email address
@@ -118,13 +114,12 @@ public class ProfileServiceImplTest {
     nullDeletedProfile.setEmail("test@coffee.com");
     nullDeletedProfile.setIsDeleted(null);
 
-    when(getUserProfileMapper.findByUsername(validRequest.getUsername())).thenReturn(nullDeletedProfile);
+    when(getUserProfileMapper.findByUsername(validRequest.getUsername()))
+        .thenReturn(nullDeletedProfile);
 
     // Act & Assert
-    AccountDisableException exception = assertThrows(
-      AccountDisableException.class,
-      () -> profileService.process(validRequest)
-    );
+    AccountDisableException exception =
+        assertThrows(AccountDisableException.class, () -> profileService.process(validRequest));
 
     assertEquals("Profile was disabled", exception.getMessage());
     assertEquals("test@coffee.com", exception.getUsername());
@@ -135,13 +130,13 @@ public class ProfileServiceImplTest {
   void process_ThrowsInvalidUsernameOrPasswordExceptionWhenPasswordIncorrect_TC005() {
     // Arrange
     when(getUserProfileMapper.findByUsername(validRequest.getUsername())).thenReturn(activeProfile);
-    when(passwordEncoder.matches(validRequest.getPassword(), activeProfile.getPassword())).thenReturn(false);
+    when(passwordEncoder.matches(validRequest.getPassword(), activeProfile.getPassword()))
+        .thenReturn(false);
 
     // Act & Assert
-    InvalidUsernameOrPasswordException exception = assertThrows(
-      InvalidUsernameOrPasswordException.class,
-      () -> profileService.process(validRequest)
-    );
+    InvalidUsernameOrPasswordException exception =
+        assertThrows(
+            InvalidUsernameOrPasswordException.class, () -> profileService.process(validRequest));
 
     assertEquals("Invalid password", exception.getMessage());
   }

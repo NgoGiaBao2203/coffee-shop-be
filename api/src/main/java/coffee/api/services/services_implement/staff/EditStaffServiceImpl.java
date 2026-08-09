@@ -21,20 +21,17 @@ public class EditStaffServiceImpl implements IEditStaffService {
     if (!isStaffExited) {
       throw new DataNotFoundException("Data not found", request.getProfileId());
     }
-    Boolean isStaffPhoneExited = commonMapper.checkStaffPhoneExisted(
-      request.getProfileId(),
-      request.getPhoneNumber()
-    );
+    Boolean isStaffPhoneExited =
+        commonMapper.checkStaffPhoneExisted(request.getProfileId(), request.getPhoneNumber());
     if (isStaffPhoneExited) {
       throw new PhoneNumberExistedException("Phone number exited", request.getPhoneNumber());
     }
     updateStaffMapper.updateStaff(
-      request.getProfileId(),
-      request.getFullName(),
-      request.getPhoneNumber(),
-      request.getRoleId(),
-      request.getShopId(),
-      currentUserRoleName
-    );
+        request.getProfileId(),
+        request.getFullName(),
+        request.getPhoneNumber(),
+        request.getRoleId(),
+        request.getShopId(),
+        currentUserRoleName);
   }
 }

@@ -1,10 +1,15 @@
 package coffee.api.services.services_implement.drink;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
 import coffee.api.dto.request.drink.DeleteDrinksRequest;
 import coffee.api.enums.Roles;
 import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.mapper.CommonMapper;
 import coffee.api.mapper.DeleteDrinkMapper;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,23 +17,14 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-
 @ExtendWith(MockitoExtension.class)
 public class DeleteDrinkServiceImplTest {
 
-  @Mock
-  private CommonMapper commonMapper;
+  @Mock private CommonMapper commonMapper;
 
-  @Mock
-  private DeleteDrinkMapper deleteDrinkMapper;
+  @Mock private DeleteDrinkMapper deleteDrinkMapper;
 
-  @InjectMocks
-  private DeleteDrinkServiceImpl deleteDrinkService;
+  @InjectMocks private DeleteDrinkServiceImpl deleteDrinkService;
 
   private DeleteDrinksRequest validRequest;
   private UUID drinkId;
@@ -48,45 +44,41 @@ public class DeleteDrinkServiceImplTest {
   @Test
   void process_Success_TC001() {
     // Arrange
-    when(commonMapper.checkDrinkExisted(
-      drinkId, currentUserRoleName, currentUserShopId
-    )).thenReturn(true);
+    when(commonMapper.checkDrinkExisted(drinkId, currentUserRoleName, currentUserShopId))
+        .thenReturn(true);
 
-    doNothing().when(deleteDrinkMapper).deleteDrink(
-      drinkId, currentUserRoleName, currentUserShopId
-    );
+    doNothing()
+        .when(deleteDrinkMapper)
+        .deleteDrink(drinkId, currentUserRoleName, currentUserShopId);
 
     // Act
-    assertDoesNotThrow(() ->
-      deleteDrinkService.process(validRequest, currentUserRoleName, currentUserShopId)
-    );
+    assertDoesNotThrow(
+        () -> deleteDrinkService.process(validRequest, currentUserRoleName, currentUserShopId));
 
     // Assert
     verify(commonMapper, times(1))
-      .checkDrinkExisted(drinkId, currentUserRoleName, currentUserShopId);
+        .checkDrinkExisted(drinkId, currentUserRoleName, currentUserShopId);
     verify(deleteDrinkMapper, times(1))
-      .deleteDrink(drinkId, currentUserRoleName, currentUserShopId);
+        .deleteDrink(drinkId, currentUserRoleName, currentUserShopId);
   }
 
   @Test
   void process_ThrowsDataNotFoundException_WhenDrinkDoesNotExist_TC002() {
     // Arrange
-    when(commonMapper.checkDrinkExisted(
-      drinkId, currentUserRoleName, currentUserShopId
-    )).thenReturn(false);
+    when(commonMapper.checkDrinkExisted(drinkId, currentUserRoleName, currentUserShopId))
+        .thenReturn(false);
 
     // Act & Assert
-    DataNotFoundException exception = assertThrows(
-      DataNotFoundException.class,
-      () -> deleteDrinkService.process(validRequest, currentUserRoleName, currentUserShopId)
-    );
+    DataNotFoundException exception =
+        assertThrows(
+            DataNotFoundException.class,
+            () -> deleteDrinkService.process(validRequest, currentUserRoleName, currentUserShopId));
 
     assertEquals("Data not found", exception.getMessage());
 
     verify(commonMapper, times(1))
-      .checkDrinkExisted(drinkId, currentUserRoleName, currentUserShopId);
-    verify(deleteDrinkMapper, never())
-      .deleteDrink(any(), any(), any());
+        .checkDrinkExisted(drinkId, currentUserRoleName, currentUserShopId);
+    verify(deleteDrinkMapper, never()).deleteDrink(any(), any(), any());
   }
 
   @Test
@@ -94,41 +86,33 @@ public class DeleteDrinkServiceImplTest {
     // Arrange
     String ownerRole = Roles.OWNER.getValue();
 
-    when(commonMapper.checkDrinkExisted(
-      drinkId, ownerRole, currentUserShopId
-    )).thenReturn(true);
+    when(commonMapper.checkDrinkExisted(drinkId, ownerRole, currentUserShopId)).thenReturn(true);
 
-    doNothing().when(deleteDrinkMapper).deleteDrink(
-      drinkId, ownerRole, currentUserShopId
-    );
+    doNothing().when(deleteDrinkMapper).deleteDrink(drinkId, ownerRole, currentUserShopId);
 
     // Act
-    assertDoesNotThrow(() ->
-      deleteDrinkService.process(validRequest, ownerRole, currentUserShopId)
-    );
+    assertDoesNotThrow(
+        () -> deleteDrinkService.process(validRequest, ownerRole, currentUserShopId));
 
     // Assert
-    verify(commonMapper, times(1))
-      .checkDrinkExisted(drinkId, ownerRole, currentUserShopId);
-    verify(deleteDrinkMapper, times(1))
-      .deleteDrink(drinkId, ownerRole, currentUserShopId);
+    verify(commonMapper, times(1)).checkDrinkExisted(drinkId, ownerRole, currentUserShopId);
+    verify(deleteDrinkMapper, times(1)).deleteDrink(drinkId, ownerRole, currentUserShopId);
   }
 
   @Test
   void process_ThrowsException_WhenCheckDrinkExistedFails_TC004() {
     // Arrange:
     when(commonMapper.checkDrinkExisted(any(), any(), any()))
-      .thenThrow(new RuntimeException("Database error"));
+        .thenThrow(new RuntimeException("Database error"));
 
     // Act & Assert
-    RuntimeException exception = assertThrows(
-      RuntimeException.class,
-      () -> deleteDrinkService.process(validRequest, currentUserRoleName, currentUserShopId)
-    );
+    RuntimeException exception =
+        assertThrows(
+            RuntimeException.class,
+            () -> deleteDrinkService.process(validRequest, currentUserRoleName, currentUserShopId));
 
     assertEquals("Database error", exception.getMessage());
 
-    verify(deleteDrinkMapper, never())
-      .deleteDrink(any(), any(), any());
+    verify(deleteDrinkMapper, never()).deleteDrink(any(), any(), any());
   }
 }
