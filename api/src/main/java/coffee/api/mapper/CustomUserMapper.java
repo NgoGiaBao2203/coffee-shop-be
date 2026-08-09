@@ -1,10 +1,9 @@
 package coffee.api.mapper;
 
 import coffee.api.model.UserProfile;
+import java.util.UUID;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-
-import java.util.UUID;
 
 @Mapper
 public interface CustomUserMapper {

@@ -22,6 +22,7 @@ public enum ResponseCode {
   INTERNAL_SERVER_ERROR("ER500");
 
   private final String code;
+
   ResponseCode(String code) {
     this.code = code;
   }

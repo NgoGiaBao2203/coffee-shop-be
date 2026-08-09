@@ -4,6 +4,7 @@ import coffee.api.exceptions.CustomAccessDeniedHandler;
 import coffee.api.exceptions.CustomAuthenticationEntryPoint;
 import coffee.api.security.ICustomUserDetailsService;
 import coffee.api.security.UserIdHeaderAuthenticationFilter;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -19,8 +20,6 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import tools.jackson.databind.ObjectMapper;
-
-import java.util.List;
 
 @Configuration
 @EnableMethodSecurity
@@ -39,27 +38,30 @@ public class SecurityConfig {
   @Bean
   public FilterRegistrationBean<UserIdHeaderAuthenticationFilter> userIdFilterRegistration() {
     FilterRegistrationBean<UserIdHeaderAuthenticationFilter> registration =
-      new FilterRegistrationBean<>(userIdHeaderAuthenticationFilter());
+        new FilterRegistrationBean<>(userIdHeaderAuthenticationFilter());
     registration.setEnabled(false);
     return registration;
   }
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) {
-    return http
-      .csrf(AbstractHttpConfigurer::disable)
-      .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-      .authorizeHttpRequests(auth -> auth
-        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
-        .requestMatchers("/common/**", "/error").permitAll()
-        .anyRequest().authenticated()
-      )
-      .addFilterBefore(userIdHeaderAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
-      .exceptionHandling(ex -> ex
-        .accessDeniedHandler(customAccessDeniedHandler)
-        .authenticationEntryPoint(customAuthenticationEntryPoint)
-      )
-      .build();
+    return http.csrf(AbstractHttpConfigurer::disable)
+        .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+        .authorizeHttpRequests(
+            auth ->
+                auth.requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**")
+                    .permitAll()
+                    .requestMatchers("/common/**", "/error")
+                    .permitAll()
+                    .anyRequest()
+                    .authenticated())
+        .addFilterBefore(
+            userIdHeaderAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
+        .exceptionHandling(
+            ex ->
+                ex.accessDeniedHandler(customAccessDeniedHandler)
+                    .authenticationEntryPoint(customAuthenticationEntryPoint))
+        .build();
   }
 
   @Bean

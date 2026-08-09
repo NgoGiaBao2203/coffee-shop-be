@@ -22,19 +22,11 @@ public class EditDrinksController {
   @PutMapping("drink/edit")
   @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
   public ResponseEntity<EditDrinkResponse> editDrink(
-    @AuthenticationPrincipal CustomUserDetail customUserDetail,
-    @RequestBody @Valid EditDrinksRequest request
-  ) {
+      @AuthenticationPrincipal CustomUserDetail customUserDetail,
+      @RequestBody @Valid EditDrinksRequest request) {
     editDrinksService.process(
-      request,
-      customUserDetail.getRoleName(),
-      customUserDetail.getShopId()
-    );
-    return ResponseEntity.ok().body(
-      EditDrinkResponse.of(
-        ResponseCode.SUCCESS,
-        "Drink updated successfully"
-      )
-    );
+        request, customUserDetail.getRoleName(), customUserDetail.getShopId());
+    return ResponseEntity.ok()
+        .body(EditDrinkResponse.of(ResponseCode.SUCCESS, "Drink updated successfully"));
   }
 }

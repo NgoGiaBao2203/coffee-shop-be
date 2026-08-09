@@ -1,11 +1,17 @@
 package coffee.api.services.services_implement.category;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
 import coffee.api.dto.request.category.SearchCategoriesRequest;
 import coffee.api.dto.response.base_response.PageResponse;
 import coffee.api.dto.result.CategoryResult;
 import coffee.api.enums.Roles;
 import coffee.api.enums.SortDirection;
 import coffee.api.mapper.GetCategoriesMapper;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,21 +19,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
 @ExtendWith(MockitoExtension.class)
 public class GetCategoryServiceImplTest {
 
-  @Mock
-  private GetCategoriesMapper getCategoriesMapper;
+  @Mock private GetCategoriesMapper getCategoriesMapper;
 
-  @InjectMocks
-  private GetCategoryServiceImpl getCategoryService;
+  @InjectMocks private GetCategoryServiceImpl getCategoryService;
 
   private SearchCategoriesRequest validRequest;
   private CategoryResult sampleCategoryResult;
@@ -70,17 +67,23 @@ public class GetCategoryServiceImplTest {
     List<CategoryResult> expectedItems = Collections.singletonList(sampleCategoryResult);
 
     when(getCategoriesMapper.countCategoriesFiltered(
-      search, currentUserRoleName, currentUserShopId, branchShopId
-    )).thenReturn(totalElements);
+            search, currentUserRoleName, currentUserShopId, branchShopId))
+        .thenReturn(totalElements);
 
     when(getCategoriesMapper.getCategoriesFiltered(
-      search, sortBy, sortDirection, size, offset, currentUserRoleName, currentUserShopId, branchShopId
-    )).thenReturn(expectedItems);
+            search,
+            sortBy,
+            sortDirection,
+            size,
+            offset,
+            currentUserRoleName,
+            currentUserShopId,
+            branchShopId))
+        .thenReturn(expectedItems);
 
     // Act
-    PageResponse<CategoryResult> response = getCategoryService.process(
-      validRequest, currentUserRoleName, currentUserShopId
-    );
+    PageResponse<CategoryResult> response =
+        getCategoryService.process(validRequest, currentUserRoleName, currentUserShopId);
 
     // Assert
     assertNotNull(response);
@@ -97,15 +100,23 @@ public class GetCategoryServiceImplTest {
     assertEquals(1, response.getPagination().getTotalPages());
 
     verify(getCategoriesMapper, times(1))
-      .countCategoriesFiltered(search, currentUserRoleName, currentUserShopId, branchShopId);
+        .countCategoriesFiltered(search, currentUserRoleName, currentUserShopId, branchShopId);
     verify(getCategoriesMapper, times(1))
-      .getCategoriesFiltered(search, sortBy, sortDirection, size, offset, currentUserRoleName, currentUserShopId, branchShopId);
+        .getCategoriesFiltered(
+            search,
+            sortBy,
+            sortDirection,
+            size,
+            offset,
+            currentUserRoleName,
+            currentUserShopId,
+            branchShopId);
   }
 
   @Test
   void process_SuccessWithEmptyResults_TC002() {
     // Arrange
-      validRequest.setSearch("NonExistentCategory");
+    validRequest.setSearch("NonExistentCategory");
     UUID branchShopId = validRequest.getBranchShopId();
     String search = validRequest.trimmedSearch();
     String sortBy = validRequest.getSortBy();
@@ -115,17 +126,23 @@ public class GetCategoryServiceImplTest {
     long totalElements = 0L;
 
     when(getCategoriesMapper.countCategoriesFiltered(
-      search, currentUserRoleName, currentUserShopId, branchShopId
-    )).thenReturn(totalElements);
+            search, currentUserRoleName, currentUserShopId, branchShopId))
+        .thenReturn(totalElements);
 
     when(getCategoriesMapper.getCategoriesFiltered(
-      search, sortBy, sortDirection, size, offset, currentUserRoleName, currentUserShopId, branchShopId
-    )).thenReturn(Collections.emptyList());
+            search,
+            sortBy,
+            sortDirection,
+            size,
+            offset,
+            currentUserRoleName,
+            currentUserShopId,
+            branchShopId))
+        .thenReturn(Collections.emptyList());
 
     // Act
-    PageResponse<CategoryResult> response = getCategoryService.process(
-      validRequest, currentUserRoleName, currentUserShopId
-    );
+    PageResponse<CategoryResult> response =
+        getCategoryService.process(validRequest, currentUserRoleName, currentUserShopId);
 
     // Assert
     assertNotNull(response);
@@ -134,15 +151,23 @@ public class GetCategoryServiceImplTest {
     assertEquals(0, response.getPagination().getTotalPages());
 
     verify(getCategoriesMapper, times(1))
-      .countCategoriesFiltered(search, currentUserRoleName, currentUserShopId, branchShopId);
+        .countCategoriesFiltered(search, currentUserRoleName, currentUserShopId, branchShopId);
     verify(getCategoriesMapper, times(1))
-      .getCategoriesFiltered(search, sortBy, sortDirection, size, offset, currentUserRoleName, currentUserShopId, branchShopId);
+        .getCategoriesFiltered(
+            search,
+            sortBy,
+            sortDirection,
+            size,
+            offset,
+            currentUserRoleName,
+            currentUserShopId,
+            branchShopId);
   }
 
   @Test
   void process_SuccessWithNullAndBlankSearchStrings_TC003() {
     // Arrange
-    validRequest.setSearch("   ");// Trimmable whitespace input
+    validRequest.setSearch("   "); // Trimmable whitespace input
     UUID branchShopId = validRequest.getBranchShopId();
     String search = validRequest.trimmedSearch(); // Evaluates to null
     String sortBy = validRequest.getSortBy();
@@ -152,17 +177,23 @@ public class GetCategoryServiceImplTest {
     long totalElements = 5L;
 
     when(getCategoriesMapper.countCategoriesFiltered(
-      null, currentUserRoleName, currentUserShopId, branchShopId
-    )).thenReturn(totalElements);
+            null, currentUserRoleName, currentUserShopId, branchShopId))
+        .thenReturn(totalElements);
 
     when(getCategoriesMapper.getCategoriesFiltered(
-      null, sortBy, sortDirection, size, offset, currentUserRoleName, currentUserShopId, branchShopId
-    )).thenReturn(Collections.singletonList(sampleCategoryResult));
+            null,
+            sortBy,
+            sortDirection,
+            size,
+            offset,
+            currentUserRoleName,
+            currentUserShopId,
+            branchShopId))
+        .thenReturn(Collections.singletonList(sampleCategoryResult));
 
     // Act
-    PageResponse<CategoryResult> response = getCategoryService.process(
-      validRequest, currentUserRoleName, currentUserShopId
-    );
+    PageResponse<CategoryResult> response =
+        getCategoryService.process(validRequest, currentUserRoleName, currentUserShopId);
 
     // Assert
     assertNull(search);
@@ -171,9 +202,17 @@ public class GetCategoryServiceImplTest {
     assertEquals("Espresso", response.getItems().getFirst().getCategoryName());
 
     verify(getCategoriesMapper, times(1))
-      .countCategoriesFiltered(null, currentUserRoleName, currentUserShopId, branchShopId);
+        .countCategoriesFiltered(null, currentUserRoleName, currentUserShopId, branchShopId);
     verify(getCategoriesMapper, times(1))
-      .getCategoriesFiltered(null, sortBy, sortDirection, size, offset, currentUserRoleName, currentUserShopId, branchShopId);
+        .getCategoriesFiltered(
+            null,
+            sortBy,
+            sortDirection,
+            size,
+            offset,
+            currentUserRoleName,
+            currentUserShopId,
+            branchShopId);
   }
 
   @Test
@@ -188,17 +227,23 @@ public class GetCategoryServiceImplTest {
     long totalElements = 0L;
 
     when(getCategoriesMapper.countCategoriesFiltered(
-      search, currentUserRoleName, currentUserShopId, branchShopId
-    )).thenReturn(totalElements);
+            search, currentUserRoleName, currentUserShopId, branchShopId))
+        .thenReturn(totalElements);
 
     when(getCategoriesMapper.getCategoriesFiltered(
-      search, sortBy, sortDirection, size, offset, currentUserRoleName, currentUserShopId, branchShopId
-    )).thenReturn(null);
+            search,
+            sortBy,
+            sortDirection,
+            size,
+            offset,
+            currentUserRoleName,
+            currentUserShopId,
+            branchShopId))
+        .thenReturn(null);
 
     // Act
-    PageResponse<CategoryResult> response = getCategoryService.process(
-      validRequest, currentUserRoleName, currentUserShopId
-    );
+    PageResponse<CategoryResult> response =
+        getCategoryService.process(validRequest, currentUserRoleName, currentUserShopId);
 
     // Assert
     assertNotNull(response);
@@ -207,9 +252,17 @@ public class GetCategoryServiceImplTest {
     assertEquals(0L, response.getPagination().getTotalElements());
 
     verify(getCategoriesMapper, times(1))
-      .countCategoriesFiltered(search, currentUserRoleName, currentUserShopId, branchShopId);
+        .countCategoriesFiltered(search, currentUserRoleName, currentUserShopId, branchShopId);
     verify(getCategoriesMapper, times(1))
-      .getCategoriesFiltered(search, sortBy, sortDirection, size, offset, currentUserRoleName, currentUserShopId, branchShopId);
+        .getCategoriesFiltered(
+            search,
+            sortBy,
+            sortDirection,
+            size,
+            offset,
+            currentUserRoleName,
+            currentUserShopId,
+            branchShopId);
   }
 
   @Test
@@ -228,18 +281,23 @@ public class GetCategoryServiceImplTest {
     List<CategoryResult> expectedItems = Collections.singletonList(sampleCategoryResult);
 
     when(getCategoriesMapper.countCategoriesFiltered(
-      search, currentUserRoleName, currentUserShopId, branchShopId
-    )).thenReturn(totalElements);
+            search, currentUserRoleName, currentUserShopId, branchShopId))
+        .thenReturn(totalElements);
 
     when(getCategoriesMapper.getCategoriesFiltered(
-      search, sortBy, sortDirection, size, offset,
-      currentUserRoleName, currentUserShopId, branchShopId
-    )).thenReturn(expectedItems);
+            search,
+            sortBy,
+            sortDirection,
+            size,
+            offset,
+            currentUserRoleName,
+            currentUserShopId,
+            branchShopId))
+        .thenReturn(expectedItems);
 
     // Act
-    PageResponse<CategoryResult> response = getCategoryService.process(
-      validRequest, currentUserRoleName, currentUserShopId
-    );
+    PageResponse<CategoryResult> response =
+        getCategoryService.process(validRequest, currentUserRoleName, currentUserShopId);
 
     // Assert
     assertNotNull(response);
@@ -255,10 +313,17 @@ public class GetCategoryServiceImplTest {
 
     // Verify mapper calls
     verify(getCategoriesMapper, times(1))
-      .countCategoriesFiltered(search, currentUserRoleName, currentUserShopId, null);
+        .countCategoriesFiltered(search, currentUserRoleName, currentUserShopId, null);
 
     verify(getCategoriesMapper, times(1))
-      .getCategoriesFiltered(search, sortBy, sortDirection, size, offset,
-        currentUserRoleName, currentUserShopId, null);
+        .getCategoriesFiltered(
+            search,
+            sortBy,
+            sortDirection,
+            size,
+            offset,
+            currentUserRoleName,
+            currentUserShopId,
+            null);
   }
 }

@@ -22,19 +22,11 @@ public class CreateCategoryController {
   @PostMapping("category/create")
   @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
   public ResponseEntity<CreateCategoriesResponse> createCategories(
-    @AuthenticationPrincipal CustomUserDetail customUserDetail,
-    @RequestBody @Valid CreateCategoriesRequest request
-  ) {
+      @AuthenticationPrincipal CustomUserDetail customUserDetail,
+      @RequestBody @Valid CreateCategoriesRequest request) {
     createCategoriesService.process(
-      request,
-      customUserDetail.getRoleName(),
-      customUserDetail.getShopId()
-    );
-    return ResponseEntity.ok().body(
-      CreateCategoriesResponse.of(
-        ResponseCode.SUCCESS,
-        "Category created successfully"
-      )
-    );
+        request, customUserDetail.getRoleName(), customUserDetail.getShopId());
+    return ResponseEntity.ok()
+        .body(CreateCategoriesResponse.of(ResponseCode.SUCCESS, "Category created successfully"));
   }
 }

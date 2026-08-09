@@ -22,14 +22,10 @@ public class GetDrinksController {
   @PostMapping("drinks")
   @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'STAFF')")
   public PageResponse<DrinkResult> getDrinks(
-    @AuthenticationPrincipal CustomUserDetail customUserDetail,
-    @RequestBody @Valid SearchDrinksRequest request
-  ) {
+      @AuthenticationPrincipal CustomUserDetail customUserDetail,
+      @RequestBody @Valid SearchDrinksRequest request) {
 
     return getDrinksService.process(
-      request,
-      customUserDetail.getRoleName(),
-      customUserDetail.getShopId()
-    );
+        request, customUserDetail.getRoleName(), customUserDetail.getShopId());
   }
 }

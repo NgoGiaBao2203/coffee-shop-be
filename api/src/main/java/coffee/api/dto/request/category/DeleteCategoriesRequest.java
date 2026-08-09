@@ -1,8 +1,7 @@
 package coffee.api.dto.request.category;
 
-import lombok.Data;
-
 import java.util.UUID;
+import lombok.Data;
 
 @Data
 public class DeleteCategoriesRequest {

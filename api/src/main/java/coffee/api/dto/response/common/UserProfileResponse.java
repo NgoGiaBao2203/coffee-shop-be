@@ -1,7 +1,7 @@
 package coffee.api.dto.response.common;
 
-import coffee.api.dto.result.ProfileResult;
 import coffee.api.dto.response.base_response.BaseApiResponse;
+import coffee.api.dto.result.ProfileResult;
 import coffee.api.enums.ResponseCode;
 import coffee.api.utils.MdcUtil;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -14,20 +14,17 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@JsonPropertyOrder({ "code", "message", "errorDetails", "traceId" })
+@JsonPropertyOrder({"code", "message", "errorDetails", "traceId"})
 public class UserProfileResponse extends BaseApiResponse {
   private ProfileResult userProfile;
 
   public static UserProfileResponse of(
-    ResponseCode responseCode,
-    String message,
-    ProfileResult userProfile
-  ) {
+      ResponseCode responseCode, String message, ProfileResult userProfile) {
     return UserProfileResponse.builder()
-      .code(responseCode.getCode())
-      .message(message)
-      .traceId(MdcUtil.getTraceId())
-      .userProfile(userProfile)
-      .build();
+        .code(responseCode.getCode())
+        .message(message)
+        .traceId(MdcUtil.getTraceId())
+        .userProfile(userProfile)
+        .build();
   }
 }

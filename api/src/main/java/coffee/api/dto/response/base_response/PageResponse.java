@@ -2,12 +2,11 @@ package coffee.api.dto.response.base_response;
 
 import coffee.api.enums.ResponseCode;
 import coffee.api.utils.MdcUtil;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.util.List;
 
 @Data
 @Builder
@@ -20,16 +19,13 @@ public class PageResponse<T> {
   private List<T> items;
   private PaginationMeta pagination;
 
-  public static <T> PageResponse<T> of(
-    String message, List<T> items,
-    PaginationMeta pagination
-  ) {
+  public static <T> PageResponse<T> of(String message, List<T> items, PaginationMeta pagination) {
     return PageResponse.<T>builder()
-      .code(ResponseCode.SUCCESS.getCode())
-      .message(message)
-      .traceId(MdcUtil.getTraceId())
-      .items(items)
-      .pagination(pagination)
-      .build();
+        .code(ResponseCode.SUCCESS.getCode())
+        .message(message)
+        .traceId(MdcUtil.getTraceId())
+        .items(items)
+        .pagination(pagination)
+        .build();
   }
 }

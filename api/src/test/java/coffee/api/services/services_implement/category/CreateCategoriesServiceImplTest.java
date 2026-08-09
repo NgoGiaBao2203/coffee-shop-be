@@ -1,11 +1,15 @@
 package coffee.api.services.services_implement.category;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
 import coffee.api.dto.request.category.CreateCategoriesRequest;
 import coffee.api.enums.Roles;
 import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.exceptions.InvalidRequestException;
 import coffee.api.mapper.CommonMapper;
 import coffee.api.mapper.CreateCategoriesMapper;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,22 +17,14 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
 @ExtendWith(MockitoExtension.class)
 public class CreateCategoriesServiceImplTest {
 
-  @Mock
-  private CommonMapper commonMapper;
+  @Mock private CommonMapper commonMapper;
 
-  @Mock
-  private CreateCategoriesMapper createCategoriesMapper;
+  @Mock private CreateCategoriesMapper createCategoriesMapper;
 
-  @InjectMocks
-  private CreateCategoriesServiceImpl createCategoriesService;
+  @InjectMocks private CreateCategoriesServiceImpl createCategoriesService;
 
   private CreateCategoriesRequest validRequest;
   private UUID currentUserShopId;
@@ -53,12 +49,12 @@ public class CreateCategoriesServiceImplTest {
     when(commonMapper.checkShopExisted(validRequest.getShopId())).thenReturn(true);
 
     // Act & Assert
-    assertDoesNotThrow(() ->
-      createCategoriesService.process(validRequest, managerRole, currentUserShopId)
-    );
+    assertDoesNotThrow(
+        () -> createCategoriesService.process(validRequest, managerRole, currentUserShopId));
 
     verify(commonMapper, times(1)).checkShopExisted(validRequest.getShopId());
-    verify(createCategoriesMapper, times(1)).createCategories(validRequest, managerRole, currentUserShopId);
+    verify(createCategoriesMapper, times(1))
+        .createCategories(validRequest, managerRole, currentUserShopId);
   }
 
   @Test
@@ -70,12 +66,12 @@ public class CreateCategoriesServiceImplTest {
     when(commonMapper.checkShopExisted(differentShopId)).thenReturn(true);
 
     // Act & Assert
-    assertDoesNotThrow(() ->
-      createCategoriesService.process(validRequest, ownerRole, currentUserShopId)
-    );
+    assertDoesNotThrow(
+        () -> createCategoriesService.process(validRequest, ownerRole, currentUserShopId));
 
     verify(commonMapper, times(1)).checkShopExisted(differentShopId);
-    verify(createCategoriesMapper, times(1)).createCategories(validRequest, ownerRole, currentUserShopId);
+    verify(createCategoriesMapper, times(1))
+        .createCategories(validRequest, ownerRole, currentUserShopId);
   }
 
   @Test
@@ -85,9 +81,10 @@ public class CreateCategoriesServiceImplTest {
     validRequest.setShopId(differentShopId);
 
     // Act & Assert
-    InvalidRequestException exception = assertThrows(InvalidRequestException.class, () ->
-      createCategoriesService.process(validRequest, managerRole, currentUserShopId)
-    );
+    InvalidRequestException exception =
+        assertThrows(
+            InvalidRequestException.class,
+            () -> createCategoriesService.process(validRequest, managerRole, currentUserShopId));
 
     assertEquals("Shop Ids are not match profile", exception.getMessage());
 
@@ -101,9 +98,10 @@ public class CreateCategoriesServiceImplTest {
     when(commonMapper.checkShopExisted(validRequest.getShopId())).thenReturn(false);
 
     // Act & Assert
-    DataNotFoundException exception = assertThrows(DataNotFoundException.class, () ->
-      createCategoriesService.process(validRequest, managerRole, currentUserShopId)
-    );
+    DataNotFoundException exception =
+        assertThrows(
+            DataNotFoundException.class,
+            () -> createCategoriesService.process(validRequest, managerRole, currentUserShopId));
 
     assertEquals("Data not found", exception.getMessage());
 

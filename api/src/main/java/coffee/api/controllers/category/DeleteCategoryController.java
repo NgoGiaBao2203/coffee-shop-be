@@ -22,19 +22,11 @@ public class DeleteCategoryController {
   @DeleteMapping("category/delete")
   @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
   public ResponseEntity<DeleteCategoriesResponse> deleteCategories(
-    @AuthenticationPrincipal CustomUserDetail customUserDetail,
-    @RequestBody @Valid DeleteCategoriesRequest request
-  ) {
+      @AuthenticationPrincipal CustomUserDetail customUserDetail,
+      @RequestBody @Valid DeleteCategoriesRequest request) {
     deleteCategoriesService.process(
-      request,
-      customUserDetail.getRoleName(),
-      customUserDetail.getShopId()
-    );
-    return ResponseEntity.ok().body(
-      DeleteCategoriesResponse.of(
-        ResponseCode.SUCCESS,
-        "Category deleted successfully"
-      )
-    );
+        request, customUserDetail.getRoleName(), customUserDetail.getShopId());
+    return ResponseEntity.ok()
+        .body(DeleteCategoriesResponse.of(ResponseCode.SUCCESS, "Category deleted successfully"));
   }
 }

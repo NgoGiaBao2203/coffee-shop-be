@@ -2,23 +2,21 @@ package coffee.api.security;
 
 import coffee.api.mapper.CustomUserMapper;
 import coffee.api.model.UserProfile;
+import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-
-import java.util.List;
-import java.util.UUID;
-
+import org.springframework.stereotype.Service;
 
 @Slf4j
 @SuppressWarnings("ALL")
 @Service
 @RequiredArgsConstructor
-public class CustomUserDetailsServiceImpl implements ICustomUserDetailsService{
+public class CustomUserDetailsServiceImpl implements ICustomUserDetailsService {
   private final CustomUserMapper customUserMapper;
 
   @Override
@@ -29,16 +27,16 @@ public class CustomUserDetailsServiceImpl implements ICustomUserDetailsService{
       throw new UsernameNotFoundException("User not found with email: " + username);
     }
 
-    List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + user.getRoleName()));
+    List<GrantedAuthority> authorities =
+        List.of(new SimpleGrantedAuthority("ROLE_" + user.getRoleName()));
     return new CustomUserDetail(
-      user.getProfileId(),
-      user.getEmail(),
-      user.getPassword(),
-      user.getIsDeleted(),
-      user.getRoleName(),
-      user.getShopId(),
-      authorities
-    );
+        user.getProfileId(),
+        user.getEmail(),
+        user.getPassword(),
+        user.getIsDeleted(),
+        user.getRoleName(),
+        user.getShopId(),
+        authorities);
   }
 
   @Override
@@ -48,15 +46,15 @@ public class CustomUserDetailsServiceImpl implements ICustomUserDetailsService{
       throw new UsernameNotFoundException("User not found with id: " + userId);
     }
 
-    List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + user.getRoleName()));
+    List<GrantedAuthority> authorities =
+        List.of(new SimpleGrantedAuthority("ROLE_" + user.getRoleName()));
     return new CustomUserDetail(
-      user.getProfileId(),
-      user.getEmail(),
-      user.getPassword(),
-      user.getIsDeleted(),
-      user.getRoleName(),
-      user.getShopId(),
-      authorities
-    );
+        user.getProfileId(),
+        user.getEmail(),
+        user.getPassword(),
+        user.getIsDeleted(),
+        user.getRoleName(),
+        user.getShopId(),
+        authorities);
   }
 }

@@ -1,7 +1,13 @@
 package coffee.api.services.services_implement.dropdown;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
 import coffee.api.dto.result.RoleResult;
 import coffee.api.mapper.GetRoleMapper;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -9,21 +15,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
 @ExtendWith(MockitoExtension.class)
 public class RoleServiceImplTest {
 
-  @Mock
-  private GetRoleMapper getRoleMapper;
+  @Mock private GetRoleMapper getRoleMapper;
 
-  @InjectMocks
-  private RoleServiceImpl roleService;
+  @InjectMocks private RoleServiceImpl roleService;
 
   private RoleResult ownerRole;
   private RoleResult managerRole;

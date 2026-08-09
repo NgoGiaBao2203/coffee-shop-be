@@ -3,10 +3,9 @@ package coffee.api.services.services_implement.dropdown;
 import coffee.api.dto.result.ShopNameResult;
 import coffee.api.mapper.GetShopNameMapper;
 import coffee.api.services.services_interface.dropdown.IShopNameService;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor

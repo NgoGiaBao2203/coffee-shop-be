@@ -22,13 +22,9 @@ public class GetCategoryController {
   @PostMapping("categories")
   @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'STAFF')")
   public PageResponse<CategoryResult> getCategories(
-    @AuthenticationPrincipal CustomUserDetail customUserDetail,
-    @RequestBody @Valid SearchCategoriesRequest request
-  ) {
+      @AuthenticationPrincipal CustomUserDetail customUserDetail,
+      @RequestBody @Valid SearchCategoriesRequest request) {
     return getCategoryService.process(
-      request,
-      customUserDetail.getRoleName(),
-      customUserDetail.getShopId()
-    );
+        request, customUserDetail.getRoleName(), customUserDetail.getShopId());
   }
 }

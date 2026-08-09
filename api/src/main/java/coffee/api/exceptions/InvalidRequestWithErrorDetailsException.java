@@ -1,9 +1,8 @@
 package coffee.api.exceptions;
 
 import coffee.api.dto.response.base_response.ErrorDetail;
-import lombok.Getter;
-
 import java.util.List;
+import lombok.Getter;
 
 @Getter
 public class InvalidRequestWithErrorDetailsException extends RuntimeException {

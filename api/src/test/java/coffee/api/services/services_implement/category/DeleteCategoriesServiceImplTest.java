@@ -1,10 +1,14 @@
 package coffee.api.services.services_implement.category;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
 import coffee.api.dto.request.category.DeleteCategoriesRequest;
 import coffee.api.enums.Roles;
 import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.mapper.CommonMapper;
 import coffee.api.mapper.DeleteCategoryMapper;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,22 +16,14 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
 @ExtendWith(MockitoExtension.class)
 public class DeleteCategoriesServiceImplTest {
 
-  @Mock
-  private CommonMapper commonMapper;
+  @Mock private CommonMapper commonMapper;
 
-  @Mock
-  private DeleteCategoryMapper deleteCategoryMapper;
+  @Mock private DeleteCategoryMapper deleteCategoryMapper;
 
-  @InjectMocks
-  private DeleteCategoriesServiceImpl deleteCategoriesService;
+  @InjectMocks private DeleteCategoriesServiceImpl deleteCategoriesService;
 
   private DeleteCategoriesRequest validRequest;
   private UUID categoryId;
@@ -47,46 +43,45 @@ public class DeleteCategoriesServiceImplTest {
   @Test
   void process_Success_TC001() {
     // Arrange
-    when(commonMapper.checkCategoryExisted(
-      categoryId, currentUserRoleName, currentUserShopId
-    )).thenReturn(true);
+    when(commonMapper.checkCategoryExisted(categoryId, currentUserRoleName, currentUserShopId))
+        .thenReturn(true);
 
     // Using doNothing() for void mapper methods
-    doNothing().when(deleteCategoryMapper).deleteCategory(
-      categoryId, currentUserRoleName, currentUserShopId
-    );
+    doNothing()
+        .when(deleteCategoryMapper)
+        .deleteCategory(categoryId, currentUserRoleName, currentUserShopId);
 
     // Act
-    assertDoesNotThrow(() ->
-      deleteCategoriesService.process(validRequest, currentUserRoleName, currentUserShopId)
-    );
+    assertDoesNotThrow(
+        () ->
+            deleteCategoriesService.process(validRequest, currentUserRoleName, currentUserShopId));
 
     // Assert
     verify(commonMapper, times(1))
-      .checkCategoryExisted(categoryId, currentUserRoleName, currentUserShopId);
+        .checkCategoryExisted(categoryId, currentUserRoleName, currentUserShopId);
     verify(deleteCategoryMapper, times(1))
-      .deleteCategory(categoryId, currentUserRoleName, currentUserShopId);
+        .deleteCategory(categoryId, currentUserRoleName, currentUserShopId);
   }
 
   @Test
   void process_ThrowsDataNotFoundException_WhenCategoryDoesNotExist_TC002() {
     // Arrange
-    when(commonMapper.checkCategoryExisted(
-      categoryId, currentUserRoleName, currentUserShopId
-    )).thenReturn(false);
+    when(commonMapper.checkCategoryExisted(categoryId, currentUserRoleName, currentUserShopId))
+        .thenReturn(false);
 
     // Act & Assert
-    DataNotFoundException exception = assertThrows(
-      DataNotFoundException.class,
-      () -> deleteCategoriesService.process(validRequest, currentUserRoleName, currentUserShopId)
-    );
+    DataNotFoundException exception =
+        assertThrows(
+            DataNotFoundException.class,
+            () ->
+                deleteCategoriesService.process(
+                    validRequest, currentUserRoleName, currentUserShopId));
 
     assertEquals("Data not found", exception.getMessage());
 
     verify(commonMapper, times(1))
-      .checkCategoryExisted(categoryId, currentUserRoleName, currentUserShopId);
-    verify(deleteCategoryMapper, never())
-      .deleteCategory(any(), any(), any());
+        .checkCategoryExisted(categoryId, currentUserRoleName, currentUserShopId);
+    verify(deleteCategoryMapper, never()).deleteCategory(any(), any(), any());
   }
 
   @Test
@@ -94,23 +89,17 @@ public class DeleteCategoriesServiceImplTest {
     // Arrange
     String ownerRole = Roles.OWNER.getValue();
 
-    when(commonMapper.checkCategoryExisted(
-      categoryId, ownerRole, currentUserShopId
-    )).thenReturn(true);
+    when(commonMapper.checkCategoryExisted(categoryId, ownerRole, currentUserShopId))
+        .thenReturn(true);
 
-    doNothing().when(deleteCategoryMapper).deleteCategory(
-      categoryId, ownerRole, currentUserShopId
-    );
+    doNothing().when(deleteCategoryMapper).deleteCategory(categoryId, ownerRole, currentUserShopId);
 
     // Act
-    assertDoesNotThrow(() ->
-      deleteCategoriesService.process(validRequest, ownerRole, currentUserShopId)
-    );
+    assertDoesNotThrow(
+        () -> deleteCategoriesService.process(validRequest, ownerRole, currentUserShopId));
 
     // Assert
-    verify(commonMapper, times(1))
-      .checkCategoryExisted(categoryId, ownerRole, currentUserShopId);
-    verify(deleteCategoryMapper, times(1))
-      .deleteCategory(categoryId, ownerRole, currentUserShopId);
+    verify(commonMapper, times(1)).checkCategoryExisted(categoryId, ownerRole, currentUserShopId);
+    verify(deleteCategoryMapper, times(1)).deleteCategory(categoryId, ownerRole, currentUserShopId);
   }
 }

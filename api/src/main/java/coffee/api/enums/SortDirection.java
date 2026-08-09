@@ -4,7 +4,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum SortDirection {
-  ASC, DESC;
+  ASC,
+  DESC;
 
   @JsonCreator
   public static SortDirection from(String value) {

@@ -31,9 +31,9 @@ public enum ValidationMessage {
     public static final String SIZE_MAX = "EV005";
     public static final String SORT_BY_INVALID = "EV006";
     public static final String SPECIAL_CHARACTERS = "EV007";
+
     private Msg(String code) {}
 
-    private Msg() {
-    }
+    private Msg() {}
   }
 }

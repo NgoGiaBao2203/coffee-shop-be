@@ -4,45 +4,37 @@ import coffee.api.enums.ResponseCode;
 import coffee.api.utils.MdcUtil;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import lombok.ToString;
 import lombok.experimental.SuperBuilder;
-
-import java.util.List;
 
 @Data
 @SuperBuilder
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "code", "message", "errorDetails", "traceId" })
+@JsonPropertyOrder({"code", "message", "errorDetails", "traceId"})
 public class ErrorApiResponse extends BaseApiResponse {
   private List<ErrorDetail> errorDetails;
 
-  public static ErrorApiResponse of(
-    ResponseCode responseCode,
-    String message
-  ) {
+  public static ErrorApiResponse of(ResponseCode responseCode, String message) {
     return ErrorApiResponse.builder()
-      .code(responseCode.getCode())
-      .message(message)
-      .errorDetails(null)
-      .traceId(MdcUtil.getTraceId())
-      .build();
+        .code(responseCode.getCode())
+        .message(message)
+        .errorDetails(null)
+        .traceId(MdcUtil.getTraceId())
+        .build();
   }
 
   public static ErrorApiResponse of(
-    ResponseCode responseCode,
-    String message,
-    List<ErrorDetail> errorDetails
-  ) {
+      ResponseCode responseCode, String message, List<ErrorDetail> errorDetails) {
     return ErrorApiResponse.builder()
-      .code(responseCode.getCode())
-      .message(message)
-      .errorDetails(errorDetails)
-      .traceId(MdcUtil.getTraceId())
-      .build();
+        .code(responseCode.getCode())
+        .message(message)
+        .errorDetails(errorDetails)
+        .traceId(MdcUtil.getTraceId())
+        .build();
   }
 }

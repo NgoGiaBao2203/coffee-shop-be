@@ -7,6 +7,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.MDC;
@@ -16,9 +18,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.filter.OncePerRequestFilter;
 import tools.jackson.databind.ObjectMapper;
 
-import java.io.IOException;
-import java.util.UUID;
-
 @RequiredArgsConstructor
 public class UserIdHeaderAuthenticationFilter extends OncePerRequestFilter {
   private static final String USER_ID_HEADER = "X-USER-ID";
@@ -27,10 +26,10 @@ public class UserIdHeaderAuthenticationFilter extends OncePerRequestFilter {
 
   @Override
   protected void doFilterInternal(
-    HttpServletRequest request,
-    @NonNull HttpServletResponse response,
-    @NonNull FilterChain filterChain
-  ) throws ServletException, IOException {
+      HttpServletRequest request,
+      @NonNull HttpServletResponse response,
+      @NonNull FilterChain filterChain)
+      throws ServletException, IOException {
 
     String userIdHeader = request.getHeader(USER_ID_HEADER);
 
@@ -40,11 +39,7 @@ public class UserIdHeaderAuthenticationFilter extends OncePerRequestFilter {
         CustomUserDetail userDetail = customUserDetailsService.loadUserById(userId);
 
         UsernamePasswordAuthenticationToken authentication =
-          new UsernamePasswordAuthenticationToken(
-            userDetail,
-            null,
-            userDetail.getAuthorities()
-          );
+            new UsernamePasswordAuthenticationToken(userDetail, null, userDetail.getAuthorities());
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
@@ -52,12 +47,18 @@ public class UserIdHeaderAuthenticationFilter extends OncePerRequestFilter {
         MDC.put(MdcKey.USER_ID, userId.toString());
 
       } catch (NumberFormatException ex) {
-        writeError(response, HttpServletResponse.SC_BAD_REQUEST,
-          ResponseCode.BAD_REQUEST, "X-USER-ID header must be a valid UUID");
+        writeError(
+            response,
+            HttpServletResponse.SC_BAD_REQUEST,
+            ResponseCode.BAD_REQUEST,
+            "X-USER-ID header must be a valid UUID");
         return;
       } catch (UsernameNotFoundException ex) {
-        writeError(response, HttpServletResponse.SC_UNAUTHORIZED,
-          ResponseCode.UNAUTHORIZED, "User not found for the provided X-USER-ID");
+        writeError(
+            response,
+            HttpServletResponse.SC_UNAUTHORIZED,
+            ResponseCode.UNAUTHORIZED,
+            "User not found for the provided X-USER-ID");
         return;
       }
     }
@@ -66,9 +67,8 @@ public class UserIdHeaderAuthenticationFilter extends OncePerRequestFilter {
   }
 
   private void writeError(
-    HttpServletResponse response, int status,
-    ResponseCode code, String message
-  ) throws IOException {
+      HttpServletResponse response, int status, ResponseCode code, String message)
+      throws IOException {
     response.setStatus(status);
     response.setContentType("application/json;charset=UTF-8");
     ErrorApiResponse body = ErrorApiResponse.of(code, message);

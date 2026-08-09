@@ -20,14 +20,9 @@ public class DeleteStaffController {
   @DeleteMapping("staff/delete")
   @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
   public ResponseEntity<DeleteStaffResponse> deleteStaff(
-    @RequestBody @Valid DeleteStaffRequest request
-  ) {
+      @RequestBody @Valid DeleteStaffRequest request) {
     deleteStaffService.process(request);
-    return ResponseEntity.ok().body(
-      DeleteStaffResponse.of(
-        ResponseCode.SUCCESS,
-        "Staff deleted successfully"
-      )
-    );
+    return ResponseEntity.ok()
+        .body(DeleteStaffResponse.of(ResponseCode.SUCCESS, "Staff deleted successfully"));
   }
 }

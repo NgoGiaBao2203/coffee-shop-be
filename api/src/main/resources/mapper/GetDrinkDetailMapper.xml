@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="coffee.api.mapper.GetDrinkDetailMapper">
+
+  <resultMap id="DrinkDetailResultMap" type="coffee.api.dto.result.DrinkResult">
+    <id property="drinkId" column="drink_id" javaType="java.util.UUID"/>
+    <result property="drinkCategoryId" column="drink_category_id" javaType="java.util.UUID"/>
+    <result property="drinkName" column="drink_name"/>
+    <result property="imageUrl" column="image_url"/>
+    <result property="status" column="status"/>
+    <result property="isDeleted" column="is_deleted"/>
+
+    <collection property="variants" javaType="java.util.List" ofType="coffee.api.dto.result.DrinkResult$DrinkVariantResult">
+      <result property="size" column="size"/>
+      <result property="price" column="price"/>
+    </collection>
+  </resultMap>
+
+  <select id="getDrinkDetailById" resultMap="DrinkDetailResultMap">
+    SELECT
+    d.drink_id,
+    d.drink_category_id,
+    d.drink_name,
+    d.image_url,
+    d.status,
+    d.is_deleted,
+    dd.size,
+    dd.price
+    FROM drinks AS d
+    LEFT JOIN drink_details AS dd ON d.drink_id = dd.drink_id
+    WHERE d.drink_id = #{drinkId}
+    AND d.is_deleted = false
+    <if test="currentUserRoleName != 'OWNER'">
+      AND d.shop_id = #{currentUserShopId}
+    </if>
+  </select>
+
+</mapper>

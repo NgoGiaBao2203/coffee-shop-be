@@ -22,15 +22,11 @@ public class CreateStaffController {
   @PostMapping("staff/create")
   @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
   public ResponseEntity<CreateStaffResponse> editStaff(
-    @AuthenticationPrincipal CustomUserDetail customUserDetail,
-    @RequestBody @Valid CreateStaffRequest request
-  ) {
-    createStaffService.process(request, customUserDetail.getUserId(), customUserDetail.getRoleName());
-    return ResponseEntity.ok().body(
-      CreateStaffResponse.of(
-        ResponseCode.SUCCESS,
-        "Staff created successfully"
-      )
-    );
+      @AuthenticationPrincipal CustomUserDetail customUserDetail,
+      @RequestBody @Valid CreateStaffRequest request) {
+    createStaffService.process(
+        request, customUserDetail.getUserId(), customUserDetail.getRoleName());
+    return ResponseEntity.ok()
+        .body(CreateStaffResponse.of(ResponseCode.SUCCESS, "Staff created successfully"));
   }
 }

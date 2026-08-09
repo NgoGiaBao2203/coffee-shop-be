@@ -1,9 +1,8 @@
 package coffee.api.model;
 
-import lombok.Data;
-
 import java.time.LocalDateTime;
 import java.util.UUID;
+import lombok.Data;
 
 @Data
 public class UserProfile {
