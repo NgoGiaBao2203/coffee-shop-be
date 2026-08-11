@@ -2,9 +2,10 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="coffee.api.mapper.GetDrinksMapper">
 
-  <!-- Result map to populate basic drink details without variants -->
+  <!-- Result map to map SQL columns to DrinkResult DTO fields -->
   <resultMap id="DrinkResultMap" type="coffee.api.dto.result.DrinkResult">
     <id property="drinkId" column="drink_id" javaType="java.util.UUID"/>
+    <result property="shopId" column="shop_id" javaType="java.util.UUID"/>
     <result property="drinkCategoryId" column="drink_category_id" javaType="java.util.UUID"/>
     <result property="drinkName" column="drink_name"/>
     <result property="imageUrl" column="image_url"/>
@@ -17,22 +18,28 @@
     <where>
       d.is_deleted = false AND dc.is_deleted = false
 
-      <!-- Restrict access by shopId if the current user is not an OWNER -->
-      <if test="currentUserRoleName != 'OWNER'">
-        AND d.shop_id = #{currentUserShopId}
-      </if>
+ <!-- Restrict access by shopId if the current user is not an OWNER -->
+      <choose>
+        <when test="currentUserRoleName != 'OWNER'">
+          AND d.shop_id = #{currentUserShopId}
+        </when>
+        <when test="branchShopId != null">
+          AND d.shop_id = #{branchShopId}
+        </when>
+      </choose>
 
-      <!-- Case-insensitive search by drink name or category name -->
+      <!-- Case-insensitive search matching drink name or category name -->
       <if test="search != null and search != ''">
         AND (d.drink_name ILIKE '%' || #{search} || '%' OR dc.category_name ILIKE '%' || #{search} || '%')
       </if>
     </where>
   </sql>
 
-  <!-- Fetch paginated list of basic drink items for catalog display (1 record per drink) -->
+  <!-- Query paginated list of drink items -->
   <select id="getDrinksFiltered" resultMap="DrinkResultMap">
     SELECT
     d.drink_id,
+    d.shop_id,
     d.drink_category_id,
     d.drink_name,
     d.image_url,

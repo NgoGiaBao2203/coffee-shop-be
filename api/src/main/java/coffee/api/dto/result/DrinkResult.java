@@ -8,6 +8,7 @@ import lombok.Data;
 @Data
 public class DrinkResult {
   private UUID drinkId;
+  private UUID shopId;
   private UUID drinkCategoryId;
   private String drinkName;
   private String imageUrl;
