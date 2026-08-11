@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="coffee.api.mapper.GetRevenueMapper">
+
+  <resultMap id="RevenueResultMap" type="coffee.api.dto.result.RevenueResult">
+    <result property="invoiceId" column="invoice_id"/>
+    <result property="shopId" column="shop_id"/>
+    <result property="shopName" column="shop_name"/>
+    <result property="fullName" column="full_name"/>
+    <result property="drinkName" column="drink_name"/>
+    <result property="createdAt" column="created_at"/>
+    <result property="totalAmount" column="total_amount"/>
+    <result property="tableNumber" column="table_number"/>
+    <result property="size" column="size"/>
+    <result property="quantity" column="quantity"/>
+    <result property="price" column="price"/>
+    <result property="note" column="note"/>
+  </resultMap>
+
+  <!-- Base SQL query to select detailed revenue items -->
+  <sql id="selectRevenueSql">
+    SELECT
+    i.invoice_id,
+    s.shop_id,
+    s.shop_name,
+    p.full_name,
+    d.drink_name,
+    i.created_at,
+    i.total_amount,
+    i.table_number,
+    dd.size,
+    id.quantity,
+    id.unit_price AS price,
+    id.note
+    FROM invoices AS i
+    JOIN invoice_details AS id ON i.invoice_id = id.invoice_id
+    JOIN drink_details AS dd ON id.drink_detail_id = dd.drink_detail_id
+    JOIN drinks AS d ON dd.drink_id = d.drink_id
+    JOIN shops AS s ON i.shop_id = s.shop_id
+    JOIN profiles AS p ON i.profile_id = p.profile_id
+  </sql>
+
+  <!-- Common dynamic WHERE filtering conditions -->
+  <sql id="filterConditions">
+    <where>
+      i.is_deleted = false AND d.is_deleted = false
+
+      <!-- Filter by user shop if non-OWNER role -->
+      <if test="currentUserRoleName != 'OWNER'">
+        AND i.shop_id = #{currentUserShopId}
+      </if>
+
+      <!-- Filter by specific shop if current user is OWNER -->
+      <if test="currentUserRoleName == 'OWNER' and shopId != null">
+        AND i.shop_id = #{shopId}
+      </if>
+
+      <!-- Filter by specific invoice ID -->
+      <if test="invoiceId != null and invoiceId != ''">
+        AND i.invoice_id = #{invoiceId}::uuid
+      </if>
+
+      <!-- Date range filtering -->
+      <if test="startDateTime != null">
+        AND i.created_at &gt;= #{startDateTime}
+      </if>
+      <if test="endDateTime != null">
+        AND i.created_at &lt;= #{endDateTime}
+      </if>
+
+      <!-- Search keyword filtering across multiple fields -->
+      <if test="search != null and search != ''">
+        AND (
+        d.drink_name ILIKE '%' || #{search} || '%'
+        OR p.full_name ILIKE '%' || #{search} || '%'
+        OR s.shop_name ILIKE '%' || #{search} || '%'
+        OR CAST(i.table_number AS VARCHAR) ILIKE '%' || #{search} || '%'
+        OR CAST(i.invoice_id AS VARCHAR) ILIKE '%' || #{search} || '%'
+        )
+      </if>
+    </where>
+  </sql>
+
+  <!-- Fetch paginated revenue list with dynamic sorting -->
+  <select id="getRevenueFiltered" resultMap="RevenueResultMap">
+    <include refid="selectRevenueSql"/>
+    <include refid="filterConditions"/>
+    <if test="sortBy != null and sortBy != ''">
+      ORDER BY
+      <choose>
+        <when test="sortBy == 'invoiceId'">i.invoice_id</when>
+        <when test="sortBy == 'shopName'">s.shop_name</when>
+        <when test="sortBy == 'fullName'">p.full_name</when>
+        <when test="sortBy == 'drinkName'">d.drink_name</when>
+        <when test="sortBy == 'createdAt'">i.created_at</when>
+        <when test="sortBy == 'totalAmount'">i.total_amount</when>
+        <when test="sortBy == 'tableNumber'">i.table_number</when>
+        <when test="sortBy == 'quantity'">id.quantity</when>
+        <when test="sortBy == 'price'">id.unit_price</when>
+        <otherwise>i.created_at</otherwise>
+      </choose>
+      ${sortDirection}
+    </if>
+    LIMIT #{size} OFFSET #{offset}
+  </select>
+
+  <!-- Count total matching revenue records for pagination -->
+  <select id="countRevenueFiltered" resultType="long">
+    SELECT COUNT(*)
+    FROM invoices AS i
+    JOIN invoice_details AS id ON i.invoice_id = id.invoice_id
+    JOIN drink_details AS dd ON id.drink_detail_id = dd.drink_detail_id
+    JOIN drinks AS d ON dd.drink_id = d.drink_id
+    JOIN shops AS s ON i.shop_id = s.shop_id
+    JOIN profiles AS p ON i.profile_id = p.profile_id
+    <include refid="filterConditions"/>
+  </select>
+
+</mapper>
