@@ -23,7 +23,10 @@ public class GetDrinkServiceImpl implements IGetDrinkService {
       SearchDrinksRequest request, String currentUserRoleName, UUID currentUserShopId) {
     long totalElements =
         getDrinksMapper.countDrinksFiltered(
-            request.trimmedSearch(), currentUserShopId, currentUserRoleName);
+            request.trimmedSearch(),
+            currentUserRoleName,
+            currentUserShopId,
+            request.getBranchShopId());
 
     List<DrinkResult> drinks =
         getDrinksMapper.getDrinksFiltered(
@@ -32,8 +35,9 @@ public class GetDrinkServiceImpl implements IGetDrinkService {
             request.getSortDirection().toString(),
             request.getSize(),
             request.calcOffset(),
+            currentUserRoleName,
             currentUserShopId,
-            currentUserRoleName);
+            request.getBranchShopId());
 
     if (drinks == null) {
       drinks = Collections.emptyList();

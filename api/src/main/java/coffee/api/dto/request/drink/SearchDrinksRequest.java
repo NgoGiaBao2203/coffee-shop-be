@@ -11,6 +11,8 @@ import lombok.Data;
 @Data
 public class SearchDrinksRequest {
 
+  private UUID branchShopId;
+
   @Min(value = 1, message = ValidationMessage.Msg.PAGE_MIN)
   private int page = 1;
 
@@ -19,11 +21,10 @@ public class SearchDrinksRequest {
   private int size = 10;
 
   private String search;
-  private UUID shopId;
 
   @Pattern(
       regexp =
-          "^(drinkId|drinkCategoryId|drinkName|size|price|status|createdAt|updatedAt|isDeleted)$",
+          "^(drinkId|shopId|drinkCategoryId|drinkName|size|price|status|createdAt|updatedAt|isDeleted)$",
       message = ValidationMessage.Msg.SORT_BY_INVALID)
   private String sortBy = "drinkId";
 
@@ -40,9 +41,5 @@ public class SearchDrinksRequest {
   public String trimmedSearch() {
     if (search == null || search.isBlank()) return null;
     return search.trim();
-  }
-
-  public String directionValue() {
-    return sortDirection != null ? sortDirection.name() : SortDirection.ASC.name();
   }
 }
