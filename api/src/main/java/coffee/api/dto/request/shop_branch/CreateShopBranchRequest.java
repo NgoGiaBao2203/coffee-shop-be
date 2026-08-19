@@ -4,14 +4,10 @@ import coffee.api.enums.ValidationMessage;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import java.util.UUID;
 import lombok.Data;
 
 @Data
 public class CreateShopBranchRequest {
-
-  @NotNull(message = ValidationMessage.Msg.FIELD_REQUIRED)
-  private UUID shopId;
 
   @NotNull(message = ValidationMessage.Msg.FIELD_REQUIRED)
   private String shopName;

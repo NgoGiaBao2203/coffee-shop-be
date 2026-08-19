@@ -38,7 +38,8 @@ public class CreateShopBranchServiceImpl implements ICreateShopBranchService {
       }
     }
 
-    UUID newShopId = request.getShopId() != null ? request.getShopId() : UUID.randomUUID();
+    // Auto-generate UUID and default isDeleted to false
+    UUID newShopId = UUID.randomUUID();
     Boolean isDeleted = Boolean.TRUE.equals(request.getIsDeleted());
 
     createShopBranchMapper.createShopBranch(

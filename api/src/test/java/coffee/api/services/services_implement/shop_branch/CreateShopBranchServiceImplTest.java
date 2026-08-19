@@ -25,17 +25,14 @@ public class CreateShopBranchServiceImplTest {
 
   private CreateShopBranchRequest validRequest;
   private UUID currentUserId;
-  private UUID requestShopId;
   private String currentUserRoleName;
 
   @BeforeEach
   void setUp() {
     currentUserId = UUID.fromString("11111111-1111-1111-1111-111111111111");
-    requestShopId = UUID.fromString("22222222-2222-2222-2222-222222222222");
     currentUserRoleName = "OWNER";
 
     validRequest = new CreateShopBranchRequest();
-    validRequest.setShopId(requestShopId);
     validRequest.setShopName("Coffee Shop - Chi nhánh 3");
     validRequest.setAddress("789 Đường 30/4, Quận Ninh Kiều, Cần Thơ");
     validRequest.setPhoneNumber("02923999111");
@@ -62,7 +59,7 @@ public class CreateShopBranchServiceImplTest {
     verify(createShopBranchMapper, times(1)).checkShopExistedByPhone(validRequest.getPhoneNumber());
     verify(createShopBranchMapper, times(1))
         .createShopBranch(
-            eq(requestShopId),
+            any(UUID.class),
             eq(validRequest.getShopName()),
             eq(validRequest.getAddress()),
             eq(validRequest.getPhoneNumber()),
@@ -70,9 +67,8 @@ public class CreateShopBranchServiceImplTest {
   }
 
   @Test
-  void process_Success_WhenShopIdAndIsDeletedAreNull_TC002() {
+  void process_Success_WhenIsDeletedIsNull_TC002() {
     // Arrange
-    validRequest.setShopId(null);
     validRequest.setIsDeleted(null);
 
     when(createShopBranchMapper.checkShopExistedByName(validRequest.getShopName()))
@@ -116,7 +112,7 @@ public class CreateShopBranchServiceImplTest {
     verify(createShopBranchMapper, never()).checkShopExistedByPhone(anyString());
     verify(createShopBranchMapper, times(1))
         .createShopBranch(
-            eq(requestShopId),
+            any(UUID.class),
             eq(validRequest.getShopName()),
             eq(validRequest.getAddress()),
             isNull(),
@@ -234,7 +230,7 @@ public class CreateShopBranchServiceImplTest {
     verify(createShopBranchMapper, never()).checkShopExistedByPhone(anyString());
     verify(createShopBranchMapper, times(1))
         .createShopBranch(
-            eq(requestShopId),
+            any(UUID.class),
             eq(validRequest.getShopName()),
             eq(validRequest.getAddress()),
             eq("   "),
@@ -242,9 +238,8 @@ public class CreateShopBranchServiceImplTest {
   }
 
   @Test
-  void process_Success_WhenShopIdIsNotNull_AndIsDeletedIsTrue_TC09() {
-    // Arrange:
-    validRequest.setShopId(requestShopId);
+  void process_Success_WhenIsDeletedIsTrue_TC009() {
+    // Arrange
     validRequest.setIsDeleted(true);
 
     when(createShopBranchMapper.checkShopExistedByName(validRequest.getShopName()))
@@ -261,7 +256,7 @@ public class CreateShopBranchServiceImplTest {
     // Assert
     verify(createShopBranchMapper, times(1))
         .createShopBranch(
-            eq(requestShopId),
+            any(UUID.class),
             eq(validRequest.getShopName()),
             eq(validRequest.getAddress()),
             eq(validRequest.getPhoneNumber()),
