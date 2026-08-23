@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="coffee.api.mapper.UpdateInvoiceMapper">
+
+  <update id="updateInvoice">
+    <!-- Update invoices table with role checking and status constraint -->
+    UPDATE invoices
+    <set>
+      table_number = #{tableNumber},
+      total_amount = #{totalAmount},
+      update_at = NOW()
+    </set>
+    WHERE invoice_id = #{invoiceId}
+    AND is_deleted = FALSE
+    AND status = 0
+
+    <choose>
+      <when test="currentUserRoleName == 'OWNER'">
+        <!-- Full access for OWNER across all shops -->
+      </when>
+      <when test="currentUserRoleName == 'MANAGER' or currentUserRoleName == 'STAFF'">
+        AND shop_id = #{currentUserShopId}
+      </when>
+      <otherwise>
+        AND 1 = 0
+      </otherwise>
+    </choose>
+  </update>
+
+  <delete id="deleteInvoiceDetails">
+    DELETE FROM invoice_details
+    WHERE invoice_id = #{invoiceId}
+  </delete>
+
+  <insert id="batchInsertInvoiceDetails">
+    INSERT INTO invoice_details (
+    invoice_detail_id,
+    invoice_id,
+    drink_detail_id,
+    quantity,
+    unit_price,
+    note
+    ) VALUES
+    <foreach collection="items" item="item" separator=",">
+      (
+      gen_random_uuid(),
+      #{invoiceId},
+      #{item.drinkDetailId},
+      #{item.quantity},
+      #{item.unitPrice},
+      #{item.note}
+      )
+    </foreach>
+  </insert>
+
+</mapper>

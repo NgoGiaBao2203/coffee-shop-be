@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="coffee.api.mapper.CancelInvoiceMapper">
+
+  <select id="findInvoiceById" resultType="coffee.api.dto.result.InvoiceResult">
+    SELECT
+    i.invoice_id AS invoiceId,
+    i.shop_id AS shopId,
+    i.profile_id AS profileId,
+    i.table_number AS tableNumber,
+    i.total_amount AS totalAmount,
+    i.status::text AS status,
+    i.is_deleted AS isDeleted,
+    i.created_at AS createdAt,
+    i.update_at AS updateAt
+    FROM invoices i
+    WHERE i.invoice_id = #{invoiceId}
+    AND i.is_deleted = FALSE
+  </select>
+
+  <update id="cancelInvoice">
+    UPDATE invoices
+    SET
+    status = 2,
+    update_at = NOW()
+    WHERE invoice_id = #{invoiceId}
+    AND is_deleted = FALSE
+    AND status = 0
+
+    <choose>
+      <when test="currentUserRoleName == 'OWNER'">
+        <!-- OWNER has permission across all branches -->
+      </when>
+      <when test="currentUserRoleName == 'MANAGER' or currentUserRoleName == 'STAFF'">
+        AND shop_id = #{currentUserShopId}
+      </when>
+      <otherwise>
+        AND 1 = 0
+      </otherwise>
+    </choose>
+  </update>
+
+</mapper>
