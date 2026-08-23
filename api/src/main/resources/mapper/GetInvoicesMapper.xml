@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="coffee.api.mapper.GetInvoiceMapper">
+
+  <!-- Result Map matching InvoiceResult and nested items -->
+  <resultMap id="InvoiceResultMap" type="coffee.api.dto.result.InvoiceResult">
+    <id property="invoiceId" column="invoice_id" javaType="java.util.UUID"/>
+    <result property="shopId" column="shop_id" javaType="java.util.UUID"/>
+    <result property="shopName" column="shop_name"/>
+    <result property="staffName" column="staff_name"/>
+    <result property="tableNumber" column="table_number"/>
+    <result property="totalAmount" column="total_amount"/>
+    <result property="status" column="status"/>
+    <result property="createdAt" column="created_at"/>
+    <result property="updateAt" column="update_at"/>
+    <result property="isDeleted" column="is_deleted"/>
+
+    <!-- Nested collection for invoice details -->
+    <collection property="items" ofType="coffee.api.dto.result.InvoiceResult$InvoiceItemResult">
+      <id property="invoiceDetailId" column="invoice_detail_id" javaType="java.util.UUID"/>
+      <result property="drinkId" column="drink_id" javaType="java.util.UUID"/>
+      <result property="drinkName" column="drink_name"/>
+      <result property="size" column="size"/>
+      <result property="quantity" column="quantity"/>
+      <result property="unitPrice" column="unit_price"/>
+      <result property="itemTotal" column="item_total"/>
+      <result property="note" column="note"/>
+    </collection>
+  </resultMap>
+
+  <!-- Reusable Filter Condition Fragment -->
+  <sql id="invoiceFilterCondition">
+    i.is_deleted = FALSE
+    AND s.is_deleted = FALSE
+
+    <!-- Scoping: MANAGER / STAFF only see invoices from their assigned shop -->
+    <if test="currentUserRoleName != 'OWNER'">
+      AND i.shop_id = #{currentUserShopId}
+    </if>
+
+    <!-- Filter by shopId -->
+    <if test="shopId != null">
+      AND i.shop_id = #{shopId}
+    </if>
+
+    <!-- Filter by status -->
+    <if test="status != null">
+      AND i.status = #{status}
+    </if>
+
+    <!-- Text Search Condition -->
+    <if test="search != null and search != ''">
+      AND (
+      i.invoice_id::text ILIKE CONCAT('%', #{search}, '%')
+      OR s.shop_name ILIKE CONCAT('%', #{search}, '%')
+      OR p.full_name ILIKE CONCAT('%', #{search}, '%')
+      OR i.table_number::text ILIKE CONCAT('%', #{search}, '%')
+      )
+    </if>
+  </sql>
+
+  <!-- Method: countInvoicesFiltered -->
+  <select id="countInvoicesFiltered" resultType="long">
+    SELECT COUNT(1)
+    FROM invoices i
+    JOIN shops s ON i.shop_id = s.shop_id
+    LEFT JOIN profiles p ON i.profile_id = p.profile_id
+    <where>
+      <include refid="invoiceFilterCondition"/>
+    </where>
+  </select>
+
+  <!-- Method: getInvoicesFiltered -->
+  <select id="getInvoicesFiltered" resultMap="InvoiceResultMap">
+    WITH paginated_invoices AS (
+    SELECT
+    i.invoice_id,
+    i.shop_id,
+    s.shop_name,
+    p.full_name AS staff_name,
+    i.table_number,
+    i.total_amount,
+    i.status::text AS status,
+    i.created_at,
+    i.update_at,
+    i.is_deleted
+    FROM invoices i
+    JOIN shops s ON i.shop_id = s.shop_id
+    LEFT JOIN profiles p ON i.profile_id = p.profile_id
+    <where>
+      <include refid="invoiceFilterCondition"/>
+    </where>
+
+    ORDER BY
+    <choose>
+      <when test="sortBy == 'invoiceId'">i.invoice_id</when>
+      <when test="sortBy == 'shopName'">s.shop_name</when>
+      <when test="sortBy == 'staffName'">p.full_name</when>
+      <when test="sortBy == 'tableNumber'">i.table_number</when>
+      <when test="sortBy == 'totalAmount'">i.total_amount</when>
+      <when test="sortBy == 'status'">i.status</when>
+      <when test="sortBy == 'updateAt'">i.update_at</when>
+      <when test="sortBy == 'isDeleted'">i.is_deleted</when>
+      <otherwise>i.created_at</otherwise>
+    </choose>
+    <choose>
+      <when test="sortDirection != null and sortDirection.toUpperCase() == 'ASC'">ASC</when>
+      <otherwise>DESC</otherwise>
+    </choose>
+
+    LIMIT #{size} OFFSET #{offset}
+    )
+    SELECT
+    pi.invoice_id,
+    pi.shop_id,
+    pi.shop_name,
+    pi.staff_name,
+    pi.table_number,
+    pi.total_amount,
+    pi.status,
+    pi.created_at,
+    pi.update_at,
+    pi.is_deleted,
+    id.invoice_detail_id,
+    dd.drink_id,
+    d.drink_name,
+    dd.size,
+    id.quantity,
+    id.unit_price,
+    (id.unit_price * id.quantity) AS item_total,
+    id.note
+    FROM paginated_invoices pi
+    LEFT JOIN invoice_details id ON pi.invoice_id = id.invoice_id
+    LEFT JOIN drink_details dd ON id.drink_detail_id = dd.drink_detail_id
+    LEFT JOIN drinks d ON dd.drink_id = d.drink_id
+    ORDER BY
+    <choose>
+      <when test="sortBy == 'invoiceId'">pi.invoice_id</when>
+      <when test="sortBy == 'shopName'">pi.shop_name</when>
+      <when test="sortBy == 'staffName'">pi.staff_name</when>
+      <when test="sortBy == 'tableNumber'">pi.table_number</when>
+      <when test="sortBy == 'totalAmount'">pi.total_amount</when>
+      <when test="sortBy == 'status'">pi.status</when>
+      <when test="sortBy == 'updateAt'">pi.update_at</when>
+      <when test="sortBy == 'isDeleted'">pi.is_deleted</when>
+      <otherwise>pi.created_at</otherwise>
+    </choose>
+    <choose>
+      <when test="sortDirection != null and sortDirection.toUpperCase() == 'ASC'">ASC</when>
+      <otherwise>DESC</otherwise>
+    </choose>,
+    id.invoice_detail_id ASC
+  </select>
+
+</mapper>
