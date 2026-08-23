@@ -25,14 +25,9 @@ public class EditShopBranchServiceImplTest {
   @InjectMocks private EditShopBranchServiceImpl editShopBranchService;
 
   private EditShopBranchRequest validRequest;
-  private UUID currentUserId;
-  private String currentUserRoleName;
 
   @BeforeEach
   void setUp() {
-    currentUserId = UUID.fromString("11111111-1111-1111-1111-111111111111");
-    currentUserRoleName = "OWNER";
-
     validRequest = new EditShopBranchRequest();
     validRequest.setShopId(UUID.fromString("22222222-2222-2222-2222-222222222222"));
     validRequest.setShopName("Coffee Shop - Chi nhánh 1");
@@ -60,8 +55,7 @@ public class EditShopBranchServiceImplTest {
         .thenReturn(false);
 
     // Act
-    assertDoesNotThrow(
-        () -> editShopBranchService.process(validRequest, currentUserRoleName, currentUserId));
+    assertDoesNotThrow(() -> editShopBranchService.process(validRequest));
 
     // Assert
     verify(updateShopBranchMapper, times(1)).checkShopExistedById(validRequest.getShopId());
@@ -96,8 +90,7 @@ public class EditShopBranchServiceImplTest {
         .thenReturn(false);
 
     // Act
-    assertDoesNotThrow(
-        () -> editShopBranchService.process(validRequest, currentUserRoleName, currentUserId));
+    assertDoesNotThrow(() -> editShopBranchService.process(validRequest));
 
     // Assert
     verify(updateShopBranchMapper, times(1)).checkShopExistedById(validRequest.getShopId());
@@ -131,8 +124,7 @@ public class EditShopBranchServiceImplTest {
         .thenReturn(false);
 
     // Act
-    assertDoesNotThrow(
-        () -> editShopBranchService.process(validRequest, currentUserRoleName, currentUserId));
+    assertDoesNotThrow(() -> editShopBranchService.process(validRequest));
 
     // Assert
     verify(updateShopBranchMapper, times(1)).checkShopExistedById(validRequest.getShopId());
@@ -164,8 +156,7 @@ public class EditShopBranchServiceImplTest {
         .thenReturn(false);
 
     // Act
-    assertDoesNotThrow(
-        () -> editShopBranchService.process(validRequest, currentUserRoleName, currentUserId));
+    assertDoesNotThrow(() -> editShopBranchService.process(validRequest));
 
     // Assert
     verify(updateShopBranchMapper, times(1))
@@ -189,8 +180,7 @@ public class EditShopBranchServiceImplTest {
     // Act & Assert
     DataNotFoundException exception =
         assertThrows(
-            DataNotFoundException.class,
-            () -> editShopBranchService.process(validRequest, currentUserRoleName, currentUserId));
+            DataNotFoundException.class, () -> editShopBranchService.process(validRequest));
 
     assertEquals("Data not found", exception.getMessage());
     assertEquals(validRequest.getShopId(), exception.getId());
@@ -210,9 +200,7 @@ public class EditShopBranchServiceImplTest {
 
     // Act & Assert
     UserExistException exception =
-        assertThrows(
-            UserExistException.class,
-            () -> editShopBranchService.process(validRequest, currentUserRoleName, currentUserId));
+        assertThrows(UserExistException.class, () -> editShopBranchService.process(validRequest));
 
     assertEquals("Shop name is existed", exception.getMessage());
     verify(updateShopBranchMapper, times(1)).checkShopExistedById(validRequest.getShopId());
@@ -238,9 +226,7 @@ public class EditShopBranchServiceImplTest {
 
     // Act & Assert
     UserExistException exception =
-        assertThrows(
-            UserExistException.class,
-            () -> editShopBranchService.process(validRequest, currentUserRoleName, currentUserId));
+        assertThrows(UserExistException.class, () -> editShopBranchService.process(validRequest));
 
     assertEquals("Address is existed", exception.getMessage());
     verify(updateShopBranchMapper, times(1)).checkShopExistedById(validRequest.getShopId());
@@ -270,9 +256,7 @@ public class EditShopBranchServiceImplTest {
 
     // Act & Assert
     UserExistException exception =
-        assertThrows(
-            UserExistException.class,
-            () -> editShopBranchService.process(validRequest, currentUserRoleName, currentUserId));
+        assertThrows(UserExistException.class, () -> editShopBranchService.process(validRequest));
 
     assertEquals("Phone number is existed", exception.getMessage());
     verify(updateShopBranchMapper, times(1)).checkShopExistedById(validRequest.getShopId());
@@ -307,9 +291,7 @@ public class EditShopBranchServiceImplTest {
 
     // Act & Assert
     DataAccessException exception =
-        assertThrows(
-            DataAccessException.class,
-            () -> editShopBranchService.process(validRequest, currentUserRoleName, currentUserId));
+        assertThrows(DataAccessException.class, () -> editShopBranchService.process(validRequest));
 
     assertEquals("Database update error", exception.getMessage());
     verify(updateShopBranchMapper, times(1)).updateShopBranch(any(), any(), any(), any(), any());
@@ -323,9 +305,7 @@ public class EditShopBranchServiceImplTest {
 
     // Act & Assert
     RuntimeException exception =
-        assertThrows(
-            RuntimeException.class,
-            () -> editShopBranchService.process(validRequest, currentUserRoleName, currentUserId));
+        assertThrows(RuntimeException.class, () -> editShopBranchService.process(validRequest));
 
     assertEquals("Database connection timeout", exception.getMessage());
     verify(updateShopBranchMapper, never()).updateShopBranch(any(), any(), any(), any(), any());

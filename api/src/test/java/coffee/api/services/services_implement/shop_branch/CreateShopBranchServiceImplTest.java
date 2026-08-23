@@ -24,14 +24,9 @@ public class CreateShopBranchServiceImplTest {
   @InjectMocks private CreateShopBranchServiceImpl createShopBranchService;
 
   private CreateShopBranchRequest validRequest;
-  private UUID currentUserId;
-  private String currentUserRoleName;
 
   @BeforeEach
   void setUp() {
-    currentUserId = UUID.fromString("11111111-1111-1111-1111-111111111111");
-    currentUserRoleName = "OWNER";
-
     validRequest = new CreateShopBranchRequest();
     validRequest.setShopName("Coffee Shop - Chi nhánh 3");
     validRequest.setAddress("789 Đường 30/4, Quận Ninh Kiều, Cần Thơ");
@@ -50,8 +45,7 @@ public class CreateShopBranchServiceImplTest {
         .thenReturn(false);
 
     // Act
-    assertDoesNotThrow(
-        () -> createShopBranchService.process(validRequest, currentUserRoleName, currentUserId));
+    assertDoesNotThrow(() -> createShopBranchService.process(validRequest));
 
     // Assert
     verify(createShopBranchMapper, times(1)).checkShopExistedByName(validRequest.getShopName());
@@ -79,8 +73,7 @@ public class CreateShopBranchServiceImplTest {
         .thenReturn(false);
 
     // Act
-    assertDoesNotThrow(
-        () -> createShopBranchService.process(validRequest, currentUserRoleName, currentUserId));
+    assertDoesNotThrow(() -> createShopBranchService.process(validRequest));
 
     // Assert
     verify(createShopBranchMapper, times(1))
@@ -103,8 +96,7 @@ public class CreateShopBranchServiceImplTest {
         .thenReturn(false);
 
     // Act
-    assertDoesNotThrow(
-        () -> createShopBranchService.process(validRequest, currentUserRoleName, currentUserId));
+    assertDoesNotThrow(() -> createShopBranchService.process(validRequest));
 
     // Assert
     verify(createShopBranchMapper, times(1)).checkShopExistedByName(validRequest.getShopName());
@@ -127,10 +119,7 @@ public class CreateShopBranchServiceImplTest {
 
     // Act & Assert
     UserExistException exception =
-        assertThrows(
-            UserExistException.class,
-            () ->
-                createShopBranchService.process(validRequest, currentUserRoleName, currentUserId));
+        assertThrows(UserExistException.class, () -> createShopBranchService.process(validRequest));
 
     assertEquals("Shop name is existed", exception.getMessage());
     verify(createShopBranchMapper, times(1)).checkShopExistedByName(validRequest.getShopName());
@@ -149,10 +138,7 @@ public class CreateShopBranchServiceImplTest {
 
     // Act & Assert
     UserExistException exception =
-        assertThrows(
-            UserExistException.class,
-            () ->
-                createShopBranchService.process(validRequest, currentUserRoleName, currentUserId));
+        assertThrows(UserExistException.class, () -> createShopBranchService.process(validRequest));
 
     assertEquals("Address is existed", exception.getMessage());
     verify(createShopBranchMapper, times(1)).checkShopExistedByName(validRequest.getShopName());
@@ -173,10 +159,7 @@ public class CreateShopBranchServiceImplTest {
 
     // Act & Assert
     UserExistException exception =
-        assertThrows(
-            UserExistException.class,
-            () ->
-                createShopBranchService.process(validRequest, currentUserRoleName, currentUserId));
+        assertThrows(UserExistException.class, () -> createShopBranchService.process(validRequest));
 
     assertEquals("Phone number is existed", exception.getMessage());
     verify(createShopBranchMapper, times(1)).checkShopExistedByName(validRequest.getShopName());
@@ -202,9 +185,7 @@ public class CreateShopBranchServiceImplTest {
     // Act & Assert
     DataAccessException exception =
         assertThrows(
-            DataAccessException.class,
-            () ->
-                createShopBranchService.process(validRequest, currentUserRoleName, currentUserId));
+            DataAccessException.class, () -> createShopBranchService.process(validRequest));
 
     assertEquals("Database insertion error", exception.getMessage());
     verify(createShopBranchMapper, times(1)).createShopBranch(any(), any(), any(), any(), any());
@@ -221,8 +202,7 @@ public class CreateShopBranchServiceImplTest {
         .thenReturn(false);
 
     // Act
-    assertDoesNotThrow(
-        () -> createShopBranchService.process(validRequest, currentUserRoleName, currentUserId));
+    assertDoesNotThrow(() -> createShopBranchService.process(validRequest));
 
     // Assert
     verify(createShopBranchMapper, times(1)).checkShopExistedByName(validRequest.getShopName());
@@ -250,8 +230,7 @@ public class CreateShopBranchServiceImplTest {
         .thenReturn(false);
 
     // Act
-    assertDoesNotThrow(
-        () -> createShopBranchService.process(validRequest, currentUserRoleName, currentUserId));
+    assertDoesNotThrow(() -> createShopBranchService.process(validRequest));
 
     // Assert
     verify(createShopBranchMapper, times(1))

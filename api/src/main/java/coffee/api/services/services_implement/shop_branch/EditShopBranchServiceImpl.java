@@ -5,7 +5,6 @@ import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.exceptions.UserExistException;
 import coffee.api.mapper.UpdateShopBranchMapper;
 import coffee.api.services.services_interface.shop_branch.IEditShopBranchService;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,8 +15,7 @@ public class EditShopBranchServiceImpl implements IEditShopBranchService {
   private final UpdateShopBranchMapper updateShopBranchMapper;
 
   @Override
-  public void process(
-      EditShopBranchRequest request, String currentUserRoleName, UUID currentUserId) {
+  public void process(EditShopBranchRequest request) {
 
     Boolean isShopExisted = updateShopBranchMapper.checkShopExistedById(request.getShopId());
     if (!Boolean.TRUE.equals(isShopExisted)) {

@@ -26,8 +26,7 @@ public class EditShopBranchController {
       @AuthenticationPrincipal CustomUserDetail customUserDetail,
       @RequestBody @Valid EditShopBranchRequest request) {
 
-    editShopBranchService.process(
-        request, customUserDetail.getRoleName(), customUserDetail.getShopId());
+    editShopBranchService.process(request);
 
     return ResponseEntity.ok()
         .body(EditShopBranchResponse.of(ResponseCode.SUCCESS, "Shop branch updated successfully"));

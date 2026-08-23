@@ -25,9 +25,7 @@ public class CreateShopBranchController {
   public ResponseEntity<CreateShopBranchResponse> createShopBranch(
       @AuthenticationPrincipal CustomUserDetail customUserDetail,
       @RequestBody @Valid CreateShopBranchRequest request) {
-    createShopBranchService.process(
-        request, customUserDetail.getRoleName(), customUserDetail.getShopId());
-
+    createShopBranchService.process(request);
     return ResponseEntity.ok()
         .body(
             CreateShopBranchResponse.of(ResponseCode.SUCCESS, "shop branch created successfully"));

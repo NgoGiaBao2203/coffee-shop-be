@@ -15,8 +15,7 @@ public class CreateShopBranchServiceImpl implements ICreateShopBranchService {
   private final CreateShopBranchMapper createShopBranchMapper;
 
   @Override
-  public void process(
-      CreateShopBranchRequest request, String currentUserRoleName, UUID currentUserId) {
+  public void process(CreateShopBranchRequest request) {
 
     Boolean isShopExisted =
         createShopBranchMapper.checkShopExistedByName(request.getShopName().trim());
