@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="coffee.api.mapper.DeleteShopBranchMapper">
+
+  <!-- Check branch existence -->
+  <select id="checkShopExistedById" resultType="java.lang.Boolean">
+    SELECT EXISTS (
+    SELECT 1
+    FROM shops
+    WHERE shop_id = #{shopId}
+    AND is_deleted = FALSE
+    )
+  </select>
+
+  <!-- Count unpaid/processing invoices (status = 0: PENDING / UNPAID) -->
+  <select id="countActiveInvoicesByShopId" resultType="int">
+    SELECT COUNT(1)
+    FROM invoices
+    WHERE shop_id = #{shopId}
+    AND status = 0
+    AND is_deleted = FALSE
+  </select>
+
+  <!-- Soft delete shop branch -->
+  <update id="softDeleteShopBranch">
+    UPDATE shops
+    SET
+    is_deleted = TRUE,
+    updated_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh'
+    WHERE shop_id = #{shopId}
+    AND is_deleted = FALSE
+  </update>
+
+  <!-- Soft delete all categories under this shop -->
+  <update id="softDeleteCategoriesByShopId">
+    UPDATE drink_categories
+    SET is_deleted = TRUE
+    WHERE shop_id = #{shopId}
+    AND is_deleted = FALSE
+  </update>
+
+  <!-- Soft delete all drinks under this shop -->
+  <update id="softDeleteDrinksByShopId">
+    UPDATE drinks
+    SET is_deleted = TRUE
+    WHERE shop_id = #{shopId}
+    AND is_deleted = FALSE
+  </update>
+
+</mapper>
