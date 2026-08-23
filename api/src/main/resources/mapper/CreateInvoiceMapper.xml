@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="coffee.api.mapper.CreateInvoiceMapper">
+
+  <!-- Insert parent invoice -->
+  <insert id="insertInvoice">
+    INSERT INTO invoices (
+    invoice_id,
+    shop_id,
+    profile_id,
+    table_number,
+    total_amount,
+    status,
+    created_at,
+    is_deleted
+    ) VALUES (
+    #{invoiceId},
+    #{shopId},
+    #{profileId},
+    #{tableNumber},
+    #{totalAmount},
+    #{status},
+    NOW(),
+    FALSE
+    )
+  </insert>
+
+  <!-- Batch insert invoice items -->
+  <insert id="insertInvoiceDetails">
+    INSERT INTO invoice_details (
+    invoice_detail_id,
+    invoice_id,
+    drink_detail_id,
+    quantity,
+    unit_price,
+    note
+    ) VALUES
+    <foreach collection="items" item="item" separator=",">
+      (
+      gen_random_uuid(),
+      #{invoiceId},
+      #{item.drinkDetailId},
+      #{item.quantity},
+      #{item.unitPrice},
+      #{item.note}
+      )
+    </foreach>
+  </insert>
+
+</mapper>
