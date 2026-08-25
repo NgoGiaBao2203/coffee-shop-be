@@ -27,7 +27,10 @@ public class PayInvoiceController {
       @RequestBody @Valid PayInvoiceRequest request) {
 
     payInvoiceService.process(
-        request, customUserDetail.getRoleName(), customUserDetail.getShopId());
+        request,
+        customUserDetail.getRoleName(),
+        customUserDetail.getShopId(),
+        customUserDetail.getUserId());
 
     return ResponseEntity.ok()
         .body(PayInvoiceResponse.of(ResponseCode.SUCCESS, "Invoice paid successfully"));

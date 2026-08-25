@@ -23,7 +23,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataAccessException;
 
 @ExtendWith(MockitoExtension.class)
-public class PayInvoiceServiceImplTest {
+class PayInvoiceServiceImplTest {
 
   @Mock private PayInvoiceMapper payInvoiceMapper;
 
@@ -33,11 +33,13 @@ public class PayInvoiceServiceImplTest {
   private InvoiceResult existingInvoice;
   private UUID invoiceId;
   private UUID currentShopId;
+  private UUID currentProfileId;
 
   @BeforeEach
   void setUp() {
     invoiceId = UUID.fromString("e1000000-0000-0000-0000-000000000001");
     currentShopId = UUID.fromString("b1000000-0000-0000-0000-000000000001");
+    currentProfileId = UUID.fromString("a1000000-0000-0000-0000-000000000001");
 
     validRequest = new PayInvoiceRequest();
     validRequest.setInvoiceId(invoiceId);
@@ -51,20 +53,21 @@ public class PayInvoiceServiceImplTest {
   @Test
   void process_Success_AsOwner_TC001() {
     when(payInvoiceMapper.findInvoiceById(invoiceId)).thenReturn(existingInvoice);
-    when(payInvoiceMapper.payInvoice(eq(invoiceId), eq("OWNER"), eq(null))).thenReturn(1);
+    when(payInvoiceMapper.payInvoice(eq(invoiceId), eq("OWNER"), eq(currentShopId))).thenReturn(1);
 
-    payInvoiceService.process(validRequest, "OWNER", null);
+    payInvoiceService.process(validRequest, "OWNER", currentShopId, currentProfileId);
 
     verify(payInvoiceMapper, times(1)).findInvoiceById(invoiceId);
-    verify(payInvoiceMapper, times(1)).payInvoice(eq(invoiceId), eq("OWNER"), eq(null));
+    verify(payInvoiceMapper, times(1)).payInvoice(eq(invoiceId), eq("OWNER"), eq(currentShopId));
   }
 
   @Test
   void process_Success_AsStaff_TC002() {
     when(payInvoiceMapper.findInvoiceById(invoiceId)).thenReturn(existingInvoice);
+    when(payInvoiceMapper.isInvoiceCreatedBy(invoiceId, currentProfileId)).thenReturn(true);
     when(payInvoiceMapper.payInvoice(eq(invoiceId), eq("STAFF"), eq(currentShopId))).thenReturn(1);
 
-    payInvoiceService.process(validRequest, "STAFF", currentShopId);
+    payInvoiceService.process(validRequest, "STAFF", currentShopId, currentProfileId);
 
     verify(payInvoiceMapper, times(1)).findInvoiceById(invoiceId);
     verify(payInvoiceMapper, times(1)).payInvoice(eq(invoiceId), eq("STAFF"), eq(currentShopId));
@@ -77,67 +80,129 @@ public class PayInvoiceServiceImplTest {
     DataNotFoundException exception =
         assertThrows(
             DataNotFoundException.class,
-            () -> payInvoiceService.process(validRequest, "OWNER", null));
+            () ->
+                payInvoiceService.process(validRequest, "OWNER", currentShopId, currentProfileId));
 
     assertEquals("Invoice not found", exception.getMessage());
   }
 
   @Test
-  void process_ThrowsInvalidRequestException_WhenStaffShopDiffers_TC004() {
+  void process_ThrowsInvalidRequestException_WhenRoleIsInvalid_TC004() {
+    when(payInvoiceMapper.findInvoiceById(invoiceId)).thenReturn(existingInvoice);
+
+    InvalidRequestException exception =
+        assertThrows(
+            InvalidRequestException.class,
+            () -> payInvoiceService.process(validRequest, "CASHIER", currentShopId, null));
+
+    assertEquals("You do not have permission to pay this invoice", exception.getMessage());
+  }
+
+  @Test
+  void process_ThrowsInvalidRequestException_WhenStaffUserIdIsNull_TC005() {
+    when(payInvoiceMapper.findInvoiceById(invoiceId)).thenReturn(existingInvoice);
+
+    InvalidRequestException exception =
+        assertThrows(
+            InvalidRequestException.class,
+            () -> payInvoiceService.process(validRequest, "STAFF", currentShopId, null));
+
+    assertEquals("You do not have permission to pay this invoice", exception.getMessage());
+  }
+
+  @Test
+  void process_Success_AsManagerWithoutCreatorOwnership_TC004() {
+    when(payInvoiceMapper.findInvoiceById(invoiceId)).thenReturn(existingInvoice);
+    when(payInvoiceMapper.payInvoice(eq(invoiceId), eq("MANAGER"), eq(currentShopId)))
+        .thenReturn(1);
+
+    payInvoiceService.process(validRequest, "MANAGER", currentShopId, null);
+    verify(payInvoiceMapper).payInvoice(eq(invoiceId), eq("MANAGER"), eq(currentShopId));
+  }
+
+  @Test
+  void process_ThrowsInvalidRequestException_WhenUserIsNotInvoiceCreator_TC005() {
+    UUID otherProfileId = UUID.randomUUID();
+    when(payInvoiceMapper.findInvoiceById(invoiceId)).thenReturn(existingInvoice);
+    when(payInvoiceMapper.isInvoiceCreatedBy(invoiceId, otherProfileId)).thenReturn(false);
+
+    InvalidRequestException exception =
+        assertThrows(
+            InvalidRequestException.class,
+            () -> payInvoiceService.process(validRequest, "STAFF", currentShopId, otherProfileId));
+
+    assertEquals("You do not have permission to pay this invoice", exception.getMessage());
+  }
+
+  @Test
+  void process_ThrowsInvalidRequestException_WhenStaffShopDiffers_TC006() {
     UUID otherShopId = UUID.randomUUID();
     when(payInvoiceMapper.findInvoiceById(invoiceId)).thenReturn(existingInvoice);
 
     InvalidRequestException exception =
         assertThrows(
             InvalidRequestException.class,
-            () -> payInvoiceService.process(validRequest, "STAFF", otherShopId));
+            () -> payInvoiceService.process(validRequest, "STAFF", otherShopId, currentProfileId));
 
     assertEquals(
         "You do not have permission to pay invoice of another shop", exception.getMessage());
   }
 
   @Test
-  void process_ThrowsInvalidRequestException_WhenStaffShopIsNull_TC005() {
+  void process_ThrowsInvalidRequestException_WhenStaffShopIsNull_TC007() {
     when(payInvoiceMapper.findInvoiceById(invoiceId)).thenReturn(existingInvoice);
 
     InvalidRequestException exception =
         assertThrows(
             InvalidRequestException.class,
-            () -> payInvoiceService.process(validRequest, "STAFF", null));
+            () -> payInvoiceService.process(validRequest, "STAFF", null, currentProfileId));
 
     assertEquals(
         "You do not have permission to pay invoice of another shop", exception.getMessage());
   }
 
   @Test
-  void process_ThrowsInvalidRequestException_WhenInvoiceAlreadyCompletedOrCancelled_TC006() {
+  void process_Success_AsOwnerForAnotherShop_TC008() {
+    UUID otherShopId = UUID.randomUUID();
+    when(payInvoiceMapper.findInvoiceById(invoiceId)).thenReturn(existingInvoice);
+    when(payInvoiceMapper.payInvoice(eq(invoiceId), eq("OWNER"), eq(otherShopId))).thenReturn(1);
+
+    payInvoiceService.process(validRequest, "OWNER", otherShopId, null);
+
+    verify(payInvoiceMapper).payInvoice(eq(invoiceId), eq("OWNER"), eq(otherShopId));
+  }
+
+  @Test
+  void process_ThrowsInvalidRequestException_WhenInvoiceAlreadyCompletedOrCancelled_TC009() {
     existingInvoice.setStatus("1");
     when(payInvoiceMapper.findInvoiceById(invoiceId)).thenReturn(existingInvoice);
 
     InvalidRequestException exception =
         assertThrows(
             InvalidRequestException.class,
-            () -> payInvoiceService.process(validRequest, "OWNER", null));
+            () ->
+                payInvoiceService.process(validRequest, "OWNER", currentShopId, currentProfileId));
 
     assertEquals(
         "Can not pay an invoice that is already completed or cancelled", exception.getMessage());
   }
 
   @Test
-  void process_ThrowsDataNotFoundException_WhenRowsAffectedIsZero_TC007() {
+  void process_ThrowsDataNotFoundException_WhenRowsAffectedIsZero_TC009() {
     when(payInvoiceMapper.findInvoiceById(invoiceId)).thenReturn(existingInvoice);
     when(payInvoiceMapper.payInvoice(any(), any(), any())).thenReturn(0);
 
     DataNotFoundException exception =
         assertThrows(
             DataNotFoundException.class,
-            () -> payInvoiceService.process(validRequest, "OWNER", null));
+            () ->
+                payInvoiceService.process(validRequest, "OWNER", currentShopId, currentProfileId));
 
     assertEquals("Invoice cannot be paid", exception.getMessage());
   }
 
   @Test
-  void process_ThrowsDataAccessException_WhenDatabaseFails_TC008() {
+  void process_ThrowsDataAccessException_WhenDatabaseFails_TC010() {
     when(payInvoiceMapper.findInvoiceById(invoiceId)).thenReturn(existingInvoice);
     when(payInvoiceMapper.payInvoice(any(), any(), any()))
         .thenThrow(new DataAccessException("DB failure") {});
@@ -145,7 +210,8 @@ public class PayInvoiceServiceImplTest {
     DataAccessException exception =
         assertThrows(
             DataAccessException.class,
-            () -> payInvoiceService.process(validRequest, "OWNER", null));
+            () ->
+                payInvoiceService.process(validRequest, "OWNER", currentShopId, currentProfileId));
 
     assertEquals("DB failure", exception.getMessage());
   }

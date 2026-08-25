@@ -21,29 +21,45 @@ public class CancelInvoiceServiceImpl implements ICancelInvoiceService {
   @Override
   @Transactional
   public void process(
-      CancelInvoiceRequest request, String currentUserRoleName, UUID currentUserShopId) {
+      CancelInvoiceRequest request,
+      String currentUserRoleName,
+      UUID currentUserShopId,
+      UUID currentUserId) {
 
-    // Check if invoice exists
+    // 1. Check invoice exists
     InvoiceResult existingInvoice = cancelInvoiceMapper.findInvoiceById(request.getInvoiceId());
     if (existingInvoice == null) {
       throw new DataNotFoundException("Invoice not found", request.getInvoiceId());
     }
 
-    // Check shop permission for STAFF & MANAGER
-    if (!Roles.OWNER.name().equalsIgnoreCase(currentUserRoleName)) {
-      if (currentUserShopId == null || !currentUserShopId.equals(existingInvoice.getShopId())) {
-        throw new InvalidRequestException(
-            "You do not have permission to cancel invoice of another shop");
-      }
+    // 2. Only OWNER, MANAGER, STAFF can cancel
+    if (!Roles.OWNER.name().equalsIgnoreCase(currentUserRoleName)
+        && !Roles.MANAGER.name().equalsIgnoreCase(currentUserRoleName)
+        && !Roles.STAFF.name().equalsIgnoreCase(currentUserRoleName)) {
+      throw new InvalidRequestException("You do not have permission to cancel this invoice");
     }
 
-    // Only allow cancelling serving invoices (status == 0)
+    // 3. Non-owner can only cancel invoices from their own shop
+    if (!Roles.OWNER.name().equalsIgnoreCase(currentUserRoleName)
+        && (currentUserShopId == null || !currentUserShopId.equals(existingInvoice.getShopId()))) {
+      throw new InvalidRequestException(
+          "You do not have permission to cancel invoice of another shop");
+    }
+
+    // 4. Staff can only cancel invoices that they created
+    if (Roles.STAFF.name().equalsIgnoreCase(currentUserRoleName)
+        && (currentUserId == null
+            || !cancelInvoiceMapper.isInvoiceCreatedBy(request.getInvoiceId(), currentUserId))) {
+      throw new InvalidRequestException("You do not have permission to cancel this invoice");
+    }
+
+    // 5. Only allow cancelling serving invoices (status == 0)
     if (!"0".equals(existingInvoice.getStatus())) {
       throw new InvalidRequestException(
           "Cannot cancel an invoice that is already completed or cancelled");
     }
 
-    // Update status to 2 (Cancelled)
+    // 6. Update status to canceled (status == 2)
     int rowsAffected =
         cancelInvoiceMapper.cancelInvoice(
             request.getInvoiceId(), currentUserRoleName, currentUserShopId);

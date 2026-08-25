@@ -27,7 +27,10 @@ public class CancelInvoiceController {
       @RequestBody @Valid CancelInvoiceRequest request) {
 
     cancelInvoiceService.process(
-        request, customUserDetail.getRoleName(), customUserDetail.getShopId());
+        request,
+        customUserDetail.getRoleName(),
+        customUserDetail.getShopId(),
+        customUserDetail.getUserId());
 
     return ResponseEntity.ok()
         .body(CancelInvoiceResponse.of(ResponseCode.SUCCESS, "Invoice cancelled successfully"));

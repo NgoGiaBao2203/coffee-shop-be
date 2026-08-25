@@ -21,29 +21,45 @@ public class PayInvoiceServiceImpl implements IPayInvoiceService {
   @Override
   @Transactional
   public void process(
-      PayInvoiceRequest request, String currentUserRoleName, UUID currentUserShopId) {
+      PayInvoiceRequest request,
+      String currentUserRoleName,
+      UUID currentUserShopId,
+      UUID currentUserId) {
 
-    // Check if invoice exists
+    // 1. Check invoice exists
     InvoiceResult existingInvoice = payInvoiceMapper.findInvoiceById(request.getInvoiceId());
     if (existingInvoice == null) {
       throw new DataNotFoundException("Invoice not found", request.getInvoiceId());
     }
 
-    // Check shop permission for STAFF & MANAGER
-    if (!Roles.OWNER.name().equalsIgnoreCase(currentUserRoleName)) {
-      if (currentUserShopId == null || !currentUserShopId.equals(existingInvoice.getShopId())) {
-        throw new InvalidRequestException(
-            "You do not have permission to pay invoice of another shop");
-      }
+    // 2. Only OWNER, MANAGER, STAFF can pay
+    if (!Roles.OWNER.name().equalsIgnoreCase(currentUserRoleName)
+        && !Roles.MANAGER.name().equalsIgnoreCase(currentUserRoleName)
+        && !Roles.STAFF.name().equalsIgnoreCase(currentUserRoleName)) {
+      throw new InvalidRequestException("You do not have permission to pay this invoice");
     }
 
-    // Validate invoice state: only allow paying serving orders (status == 0)
+    // 3. Non-owner can only pay invoices from their own shop
+    if (!Roles.OWNER.name().equalsIgnoreCase(currentUserRoleName)
+        && (currentUserShopId == null || !currentUserShopId.equals(existingInvoice.getShopId()))) {
+      throw new InvalidRequestException(
+          "You do not have permission to pay invoice of another shop");
+    }
+
+    // 4. Staff can only pay invoices that they created
+    if (Roles.STAFF.name().equalsIgnoreCase(currentUserRoleName)
+        && (currentUserId == null
+            || !payInvoiceMapper.isInvoiceCreatedBy(request.getInvoiceId(), currentUserId))) {
+      throw new InvalidRequestException("You do not have permission to pay this invoice");
+    }
+
+    // 5. Only allow paying serving invoices (status == 0)
     if (!"0".equals(existingInvoice.getStatus())) {
       throw new InvalidRequestException(
           "Can not pay an invoice that is already completed or cancelled");
     }
 
-    // Update status to 1
+    // 6. Update status to paid (status == 1)
     int rowsAffected =
         payInvoiceMapper.payInvoice(request.getInvoiceId(), currentUserRoleName, currentUserShopId);
 

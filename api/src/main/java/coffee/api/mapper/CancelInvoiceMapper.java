@@ -10,6 +10,9 @@ public interface CancelInvoiceMapper {
 
   InvoiceResult findInvoiceById(@Param("invoiceId") UUID invoiceId);
 
+  boolean isInvoiceCreatedBy(
+      @Param("invoiceId") UUID invoiceId, @Param("profileId") UUID profileId);
+
   int cancelInvoice(
       @Param("invoiceId") UUID invoiceId,
       @Param("currentUserRoleName") String currentUserRoleName,

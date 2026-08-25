@@ -5,5 +5,9 @@ import java.util.UUID;
 
 public interface IEditInvoiceService {
 
-  void process(EditInvoiceRequest request, String currentUserRoleName, UUID currentUserShopId);
+  void process(
+      EditInvoiceRequest request,
+      String currentUserRoleName,
+      UUID currentUserShopId,
+      UUID currentUserId);
 }

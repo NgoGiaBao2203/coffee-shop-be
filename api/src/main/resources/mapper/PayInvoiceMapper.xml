@@ -9,7 +9,6 @@
     SELECT
     i.invoice_id AS invoiceId,
     i.shop_id AS shopId,
-    i.profile_id AS profileId,
     i.table_number AS tableNumber,
     i.total_amount AS totalAmount,
     i.status::text AS status,
@@ -19,6 +18,16 @@
     FROM invoices i
     WHERE i.invoice_id = #{invoiceId}
     AND i.is_deleted = FALSE
+  </select>
+
+  <select id="isInvoiceCreatedBy" resultType="boolean">
+    SELECT EXISTS (
+      SELECT 1
+      FROM invoices
+      WHERE invoice_id = #{invoiceId}
+      AND profile_id = #{profileId}
+      AND is_deleted = FALSE
+    )
   </select>
 
   <update id="payInvoice">
@@ -32,7 +41,7 @@
 
     <choose>
       <when test="currentUserRoleName == 'OWNER'">
-        <!-- OWNER has permission across all branches -->
+        <!-- OWNER can pay invoices in every shop. -->
       </when>
       <when test="currentUserRoleName == 'MANAGER' or currentUserRoleName == 'STAFF'">
         AND shop_id = #{currentUserShopId}

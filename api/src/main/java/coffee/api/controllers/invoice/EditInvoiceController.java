@@ -27,7 +27,10 @@ public class EditInvoiceController {
       @RequestBody @Valid EditInvoiceRequest request) {
 
     editInvoiceService.process(
-        request, customUserDetail.getRoleName(), customUserDetail.getShopId());
+        request,
+        customUserDetail.getRoleName(),
+        customUserDetail.getShopId(),
+        customUserDetail.getUserId());
 
     return ResponseEntity.ok()
         .body(EditInvoiceResponse.of(ResponseCode.SUCCESS, "Invoice updated successfully"));

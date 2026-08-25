@@ -5,6 +5,31 @@
 
 <mapper namespace="coffee.api.mapper.UpdateInvoiceMapper">
 
+  <select id="findInvoiceById" resultType="coffee.api.dto.result.InvoiceResult">
+    SELECT
+    i.invoice_id AS invoiceId,
+    i.shop_id AS shopId,
+    i.table_number AS tableNumber,
+    i.total_amount AS totalAmount,
+    i.status::text AS status,
+    i.is_deleted AS isDeleted,
+    i.created_at AS createdAt,
+    i.update_at AS updateAt
+    FROM invoices i
+    WHERE i.invoice_id = #{invoiceId}
+    AND i.is_deleted = FALSE
+  </select>
+
+  <select id="isInvoiceCreatedBy" resultType="boolean">
+    SELECT EXISTS (
+      SELECT 1
+      FROM invoices
+      WHERE invoice_id = #{invoiceId}
+      AND profile_id = #{profileId}
+      AND is_deleted = FALSE
+    )
+  </select>
+
   <update id="updateInvoice">
     <!-- Update invoices table with role checking and status constraint -->
     UPDATE invoices
@@ -19,7 +44,7 @@
 
     <choose>
       <when test="currentUserRoleName == 'OWNER'">
-        <!-- Full access for OWNER across all shops -->
+        <!-- OWNER can update invoices in every shop. -->
       </when>
       <when test="currentUserRoleName == 'MANAGER' or currentUserRoleName == 'STAFF'">
         AND shop_id = #{currentUserShopId}
