@@ -5,5 +5,9 @@ import java.util.UUID;
 
 public interface ICancelInvoiceService {
 
-  void process(CancelInvoiceRequest request, String currentUserRoleName, UUID currentUserShopId);
+  void process(
+      CancelInvoiceRequest request,
+      String currentUserRoleName,
+      UUID currentUserShopId,
+      UUID currentUserId);
 }
