@@ -3,19 +3,25 @@ package coffee.api.services.services_implement.drink;
 import coffee.api.dto.request.drink.CreateDrinksRequest;
 import coffee.api.exceptions.UserExistException;
 import coffee.api.mapper.CreateDrinkMapper;
+import coffee.api.services.services_interface.common.IFileStorageService;
 import coffee.api.services.services_interface.drink.ICreateDrinkService;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
 public class CreateDrinkServiceImpl implements ICreateDrinkService {
 
   private final CreateDrinkMapper createDrinksMapper;
+  private final IFileStorageService fileStorageService;
 
   @Override
-  public void process(CreateDrinksRequest request, UUID currentShopID, String roleName) {
+  @Transactional
+  public void process(
+      CreateDrinksRequest request, MultipartFile imageFile, UUID currentShopID, String roleName) {
 
     UUID targetShopId = validateShopId(roleName, request.getShopId(), currentShopID);
 
@@ -34,12 +40,18 @@ public class CreateDrinkServiceImpl implements ICreateDrinkService {
       throw new RuntimeException("Price must be greater than 0");
     }
 
+    // Save image to disk if uploaded
+    String storedImageUrl = request.getImageUrl();
+    if (imageFile != null && !imageFile.isEmpty()) {
+      storedImageUrl = fileStorageService.storeDrinkImage(imageFile);
+    }
+
     createDrinksMapper.createDrink(
         request.getDrinkCategoryId(),
         request.getDrinkDetailId(),
         targetShopId,
         request.getDrinkName(),
-        request.getImageUrl(),
+        storedImageUrl,
         request.getStatus(),
         request.getIsDeleted(),
         size,

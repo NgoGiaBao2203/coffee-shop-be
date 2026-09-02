@@ -2,7 +2,9 @@ package coffee.api.services.services_interface.drink;
 
 import coffee.api.dto.request.drink.CreateDrinksRequest;
 import java.util.UUID;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface ICreateDrinkService {
-  void process(CreateDrinksRequest request, UUID currentShopID, String roleName);
+  void process(
+      CreateDrinksRequest request, MultipartFile imageFile, UUID currentShopID, String roleName);
 }

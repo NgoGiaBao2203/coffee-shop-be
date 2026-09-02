@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="coffee.api.mapper.GetTablesMapper">
+
+  <!-- Reusable Result Map -->
+  <resultMap id="TableResultMap" type="coffee.api.dto.result.TableResult">
+    <id property="tableId" column="table_id"/>
+    <result property="tableNumber" column="table_number"/>
+    <result property="description" column="description"/>
+    <result property="status" column="status"/>
+  </resultMap>
+
+  <!-- Reusable SQL Fragment for filtering -->
+  <sql id="tablesFilterCondition">
+    <!-- Exclude soft-deleted tables -->
+    st.is_deleted = false
+
+    <!-- Role-based shop constraint -->
+    <choose>
+      <!-- OWNER: Can view all tables from all shops -->
+      <when test="currentUserRoleName == 'OWNER'">
+        <!-- No shop restriction for OWNER -->
+      </when>
+
+      <!-- MANAGER/STAFF: Only tables from shops where user has access -->
+      <otherwise>
+        AND st.shop_id IN (
+          SELECT ps.shop_id
+          FROM profile_shops ps
+          WHERE ps.profile_id = #{currentUserId}
+        )
+      </otherwise>
+    </choose>
+
+    <!-- Status filter -->
+    <if test="status != null">
+      AND st.status = #{status}
+    </if>
+
+    <!-- Text Search Constraints -->
+    <if test="search != null and search != ''">
+      AND (
+        CAST(st.table_number AS VARCHAR) ILIKE CONCAT('%', #{search}, '%')
+        OR st.description ILIKE CONCAT('%', #{search}, '%')
+      )
+    </if>
+  </sql>
+
+  <!-- 1. Fetch filtered and paginated tables -->
+  <select id="getTablesFiltered" resultMap="TableResultMap">
+    SELECT
+      st.table_id,
+      st.table_number,
+      st.description,
+      st.status
+    FROM shop_tables st
+    <where>
+      <include refid="tablesFilterCondition"/>
+    </where>
+
+    ORDER BY
+    <choose>
+      <when test="sortBy == 'tableId'">st.table_id</when>
+      <when test="sortBy == 'tableNumber'">st.table_number</when>
+      <when test="sortBy == 'status'">st.status</when>
+      <when test="sortBy == 'createdAt'">st.created_at</when>
+      <when test="sortBy == 'updatedAt'">st.updated_at</when>
+      <otherwise>st.table_number</otherwise>
+    </choose>
+    <choose>
+      <when test="sortDirection != null and sortDirection.toUpperCase() == 'DESC'">DESC</when>
+      <otherwise>ASC</otherwise>
+    </choose>
+
+    LIMIT #{size} OFFSET #{offset}
+  </select>
+
+  <!-- 2. Count total matches -->
+  <select id="countTablesFiltered" resultType="long">
+    SELECT COUNT(*)
+    FROM shop_tables st
+    <where>
+      <include refid="tablesFilterCondition"/>
+    </where>
+  </select>
+
+</mapper>
