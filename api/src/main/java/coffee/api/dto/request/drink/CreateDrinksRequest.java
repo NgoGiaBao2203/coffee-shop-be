@@ -14,7 +14,6 @@ public class CreateDrinksRequest {
   @NotNull(message = ValidationMessage.Msg.FIELD_REQUIRED)
   private String drinkName;
 
-  @NotNull(message = ValidationMessage.Msg.FIELD_REQUIRED)
   private String imageUrl;
 
   @NotNull(message = ValidationMessage.Msg.FIELD_REQUIRED)
@@ -32,6 +31,5 @@ public class CreateDrinksRequest {
   @NotNull(message = ValidationMessage.Msg.FIELD_REQUIRED)
   private UUID drinkCategoryId;
 
-  @NotNull(message = ValidationMessage.Msg.FIELD_REQUIRED)
   private UUID drinkDetailId;
 }

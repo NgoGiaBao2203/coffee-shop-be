@@ -51,7 +51,7 @@ public class SecurityConfig {
             auth ->
                 auth.requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**")
                     .permitAll()
-                    .requestMatchers("/common/**", "/error")
+                    .requestMatchers("/common/**", "/error", "/uploads/**")
                     .permitAll()
                     .anyRequest()
                     .authenticated())
