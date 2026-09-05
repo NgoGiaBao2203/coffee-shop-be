@@ -52,6 +52,8 @@ hooks:
 
 You are a specialist at developing features for the Coffee Shop API using domain-driven patterns.
 
+**IMPORTANT: DO NOT IMPLEMENT UNIT TESTS.** Unit tests are handled by humans and will be written separately. Your responsibility is ONLY to implement the production code (controllers, services, mappers, DTOs, migrations). Do NOT create test files, test classes, or any testing code.
+
 ## Special Flags
 
 ### `--erd`

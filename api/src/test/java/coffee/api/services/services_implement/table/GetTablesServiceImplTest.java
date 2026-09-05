@@ -1,6 +1,8 @@
 package coffee.api.services.services_implement.table;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
 
 import coffee.api.dto.request.table.SearchTablesRequest;
@@ -387,5 +389,53 @@ public class GetTablesServiceImplTest {
     result.setDescription(description);
     result.setStatus(status);
     return result;
+  }
+
+  @Test
+  void process_ReturnsUnknownStatus_WhenTableStatusIsNull_TC008() {
+    // Arrange
+    TableResult tableWithNullStatus = new TableResult();
+    tableWithNullStatus.setTableId(UUID.randomUUID());
+    tableWithNullStatus.setTableNumber(1);
+    tableWithNullStatus.setDescription("Table with null status");
+    tableWithNullStatus.setStatus(null);
+
+    when(getTablesMapper.countTablesFiltered(any(), any(), any(), any())).thenReturn(1L);
+    when(getTablesMapper.getTablesFiltered(
+            any(), any(), any(), any(), anyInt(), anyInt(), any(), any()))
+        .thenReturn(Collections.singletonList(tableWithNullStatus));
+
+    // Act
+    PageResponse<TableResult> response =
+        getTablesService.process(validRequest, currentUserRoleName, currentUserId);
+
+    // Assert
+    assertNotNull(response);
+    assertEquals(1, response.getItems().size());
+    assertEquals("Unknown", response.getItems().get(0).getStatusName());
+  }
+
+  @Test
+  void process_ReturnsUnknownStatus_WhenTableStatusIsUnrecognized_TC009() {
+    // Arrange
+    TableResult tableWithInvalidStatus = new TableResult();
+    tableWithInvalidStatus.setTableId(UUID.randomUUID());
+    tableWithInvalidStatus.setTableNumber(2);
+    tableWithInvalidStatus.setDescription("Table with invalid status");
+    tableWithInvalidStatus.setStatus(99); // Triggers switch default
+
+    when(getTablesMapper.countTablesFiltered(any(), any(), any(), any())).thenReturn(1L);
+    when(getTablesMapper.getTablesFiltered(
+            any(), any(), any(), any(), anyInt(), anyInt(), any(), any()))
+        .thenReturn(Collections.singletonList(tableWithInvalidStatus));
+
+    // Act
+    PageResponse<TableResult> response =
+        getTablesService.process(validRequest, currentUserRoleName, currentUserId);
+
+    // Assert
+    assertNotNull(response);
+    assertEquals(1, response.getItems().size());
+    assertEquals("Unknown", response.getItems().get(0).getStatusName());
   }
 }

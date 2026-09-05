@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="coffee.api.mapper.CreateTablesMapper">
+
+  <select id="checkTableNumberExisted" resultType="java.lang.Boolean">
+    SELECT EXISTS (
+    SELECT 1
+    FROM shop_tables
+    WHERE table_number = #{tableNumber}
+    AND shop_id = #{shopId}
+    AND is_deleted = FALSE
+    )
+  </select>
+
+  <insert id="createTable">
+    INSERT INTO shop_tables (
+    table_id,
+    table_number,
+    description,
+    status,
+    shop_id,
+    is_deleted
+    ) VALUES (
+    gen_random_uuid(),
+    #{tableNumber},
+    #{description},
+    #{status},
+    #{shopId},
+    false
+    )
+  </insert>
+
+</mapper>

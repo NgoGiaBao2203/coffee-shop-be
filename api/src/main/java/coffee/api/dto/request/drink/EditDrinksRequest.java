@@ -15,7 +15,7 @@ public class EditDrinksRequest {
   @NotBlank(message = ValidationMessage.Msg.FIELD_REQUIRED)
   private String drinkName;
 
-  @NotBlank(message = ValidationMessage.Msg.FIELD_REQUIRED)
+  // Image URL is optional - if not provided, old image is kept
   private String imageUrl;
 
   @NotNull(message = ValidationMessage.Msg.FIELD_REQUIRED)
