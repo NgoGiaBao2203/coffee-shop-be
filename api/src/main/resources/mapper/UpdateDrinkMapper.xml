@@ -5,6 +5,25 @@
 
 <mapper namespace="coffee.api.mapper.UpdateDrinkMapper">
 
+  <select id="getDrinkImageUrl" resultType="java.lang.String">
+    SELECT image_url
+    FROM drinks
+    WHERE drink_id = #{drinkId}
+    AND is_deleted = FALSE
+
+    <choose>
+      <when test="currentUserRoleName == 'OWNER'">
+        <!-- Full access -->
+      </when>
+      <when test="currentUserRoleName == 'MANAGER'">
+        AND shop_id = #{currentUserShopId}
+      </when>
+      <otherwise>
+        AND 1 = 0
+      </otherwise>
+    </choose>
+  </select>
+
   <update id="updateDrink">
     <!-- Update table drinks -->
     WITH updated_drink AS (

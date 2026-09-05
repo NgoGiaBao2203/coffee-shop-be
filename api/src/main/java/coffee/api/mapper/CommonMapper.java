@@ -38,4 +38,16 @@ public interface CommonMapper {
       @Param("categoryName") String categoryName,
       @Param("currentUserRoleName") String currentUserRoleName,
       @Param("currentUserShopId") UUID currentUserShopId);
+
+  Boolean checkTableExisted(
+      @Param("tableId") UUID tableId,
+      @Param("currentUserRoleName") String currentUserRoleName,
+      @Param("currentUserShopId") UUID currentUserShopId);
+
+  Boolean checkTableNumberExisted(
+      @Param("tableId") UUID tableId,
+      @Param("tableNumber") Integer tableNumber,
+      @Param("shopId") UUID shopId,
+      @Param("currentUserRoleName") String currentUserRoleName,
+      @Param("currentUserShopId") UUID currentUserShopId);
 }

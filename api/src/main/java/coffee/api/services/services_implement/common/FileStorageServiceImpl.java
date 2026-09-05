@@ -9,7 +9,6 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -17,8 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class FileStorageServiceImpl implements IFileStorageService {
 
   private static final String UPLOAD_DIR = "uploads/drinks";
-  private static final List<String> ALLOWED_EXTENSIONS =
-      Arrays.asList(".jpg", ".jpeg", ".png", ".webp");
+  private static final List<String> ALLOWED_EXTENSIONS = Arrays.asList(".jpg", ".png");
 
   @Override
   public String storeDrinkImage(MultipartFile file) {
@@ -31,6 +29,7 @@ public class FileStorageServiceImpl implements IFileStorageService {
     }
 
     String extension = extractAndValidateExtension(file.getOriginalFilename());
+    String baseFileName = extractBaseFileName(file.getOriginalFilename());
 
     try {
       Path uploadPath = Paths.get(UPLOAD_DIR);
@@ -38,7 +37,8 @@ public class FileStorageServiceImpl implements IFileStorageService {
         Files.createDirectories(uploadPath);
       }
 
-      String uniqueFileName = UUID.randomUUID() + extension;
+      long nanoTimestamp = System.nanoTime();
+      String uniqueFileName = baseFileName + "_" + nanoTimestamp + extension;
       Path targetLocation = uploadPath.resolve(uniqueFileName);
 
       Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
@@ -61,9 +61,41 @@ public class FileStorageServiceImpl implements IFileStorageService {
 
     String extension = originalFilename.substring(lastDotIndex).toLowerCase();
     if (!ALLOWED_EXTENSIONS.contains(extension)) {
-      throw new InvalidRequestException("Only JPG, JPEG, PNG, and WEBP image files are allowed");
+      throw new InvalidRequestException("Only JPG and PNG image files are allowed");
     }
 
     return extension;
+  }
+
+  private String extractBaseFileName(String originalFilename) {
+    if (originalFilename == null) {
+      throw new InvalidRequestException("Invalid file name");
+    }
+
+    int lastDotIndex = originalFilename.lastIndexOf(".");
+    if (lastDotIndex == -1) {
+      return originalFilename;
+    }
+
+    return originalFilename.substring(0, lastDotIndex);
+  }
+
+  @Override
+  public void deleteDrinkImage(String imageUrl) {
+    if (imageUrl == null || imageUrl.trim().isEmpty()) {
+      return;
+    }
+
+    try {
+      // Remove the leading path prefix and construct the full file path
+      String relativePath = imageUrl.replace("/uploads/drinks/", "");
+      Path filePath = Paths.get(UPLOAD_DIR).resolve(relativePath);
+
+      if (Files.exists(filePath)) {
+        Files.delete(filePath);
+      }
+    } catch (IOException e) {
+      throw new InvalidRequestException("Could not delete old image file: " + imageUrl);
+    }
   }
 }

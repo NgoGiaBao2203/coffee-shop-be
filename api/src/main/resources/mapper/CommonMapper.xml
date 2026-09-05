@@ -141,4 +141,48 @@
     );
   </select>
 
+  <!-- 10. Check if table exists -->
+  <select id="checkTableExisted" resultType="boolean">
+    SELECT EXISTS (
+    SELECT 1
+    FROM shop_tables
+    WHERE table_id = #{tableId}
+    AND is_deleted = false
+    <choose>
+      <!-- OWNER: Can access any table regardless of shop -->
+      <when test="currentUserRoleName == 'OWNER'">
+        <!-- No shop restriction -->
+      </when>
+
+      <!-- MANAGER: Must belong to their specific shop -->
+      <when test="currentUserRoleName == 'MANAGER'">
+        AND shop_id = #{currentUserShopId}
+      </when>
+    </choose>
+    )
+  </select>
+
+  <!-- 11. Check if table number exists in shop (excluding current table) -->
+  <select id="checkTableNumberExisted" resultType="boolean">
+    SELECT EXISTS (
+    SELECT 1
+    FROM shop_tables
+    WHERE table_number = #{tableNumber}
+    AND shop_id = #{shopId}
+    AND table_id != #{tableId}
+    AND is_deleted = false
+    <choose>
+      <!-- OWNER: Can check any shop -->
+      <when test="currentUserRoleName == 'OWNER'">
+        <!-- No shop restriction -->
+      </when>
+
+      <!-- MANAGER: Must be their shop -->
+      <when test="currentUserRoleName == 'MANAGER'">
+        AND shop_id = #{currentUserShopId}
+      </when>
+    </choose>
+    )
+  </select>
+
 </mapper>

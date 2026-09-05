@@ -96,7 +96,7 @@ class FileStorageServiceImplTest {
             InvalidRequestException.class,
             () -> fileStorageService.storeDrinkImage(invalidExtFile));
 
-    assertEquals("Only JPG, JPEG, PNG, and WEBP image files are allowed", exception.getMessage());
+    assertEquals("Only JPG and PNG image files are allowed", exception.getMessage());
   }
 
   @Test
@@ -143,5 +143,91 @@ class FileStorageServiceImplTest {
         assertThrows(RuntimeException.class, () -> fileStorageService.storeDrinkImage(brokenFile));
 
     assertEquals("Could not store image file. Please try again!", exception.getMessage());
+  }
+
+  @Test
+  void process_Success_WhenExtensionIsUppercase_TC009() {
+    MockMultipartFile uppercaseExtFile =
+        new MockMultipartFile("image", "espresso.PNG", "image/png", "sample content".getBytes());
+
+    String result = fileStorageService.storeDrinkImage(uppercaseExtFile);
+
+    assertNotNull(result);
+    assertTrue(result.endsWith(".png"));
+  }
+
+  @Test
+  void deleteDrinkImage_DoesNothing_WhenImageUrlIsNull_TC010() {
+    assertDoesNotThrow(() -> fileStorageService.deleteDrinkImage(null));
+  }
+
+  @Test
+  void deleteDrinkImage_DoesNothing_WhenImageUrlIsEmptyOrWhitespace_TC011() {
+    assertDoesNotThrow(() -> fileStorageService.deleteDrinkImage(""));
+    assertDoesNotThrow(() -> fileStorageService.deleteDrinkImage("   "));
+  }
+
+  @Test
+  void deleteDrinkImage_DoesNothing_WhenFileDoesNotExist_TC012() {
+    String nonExistentUrl = "/uploads/drinks/non_existent_drink.png";
+    assertDoesNotThrow(() -> fileStorageService.deleteDrinkImage(nonExistentUrl));
+  }
+
+  @Test
+  void deleteDrinkImage_Success_WhenFileExists_TC013() throws IOException {
+    Files.createDirectories(testUploadDir);
+    Path testFile = testUploadDir.resolve("latte_test.png");
+    Files.write(testFile, "test image content".getBytes());
+    assertTrue(Files.exists(testFile));
+
+    String imageUrl = "/uploads/drinks/latte_test.png";
+    fileStorageService.deleteDrinkImage(imageUrl);
+
+    assertFalse(Files.exists(testFile));
+  }
+
+  @Test
+  void deleteDrinkImage_ThrowsInvalidRequestException_WhenPathIsDirectory_TC014()
+      throws IOException {
+    // Files.delete(path) throws DirectoryNotEmptyException (a subclass of IOException) if path is a
+    // non-empty directory
+    Files.createDirectories(testUploadDir.resolve("subfolder"));
+    Files.write(testUploadDir.resolve("subfolder/sample.txt"), "data".getBytes());
+
+    String directoryUrl = "/uploads/drinks/subfolder";
+
+    InvalidRequestException exception =
+        assertThrows(
+            InvalidRequestException.class, () -> fileStorageService.deleteDrinkImage(directoryUrl));
+
+    assertTrue(exception.getMessage().contains("Could not delete old image file"));
+  }
+
+  @Test
+  void extractBaseFileName_ReturnsOriginalFilename_WhenNoDotPresent_TC015() throws Exception {
+    java.lang.reflect.Method method =
+        FileStorageServiceImpl.class.getDeclaredMethod("extractBaseFileName", String.class);
+    method.setAccessible(true);
+
+    String filenameWithoutDot = "espresso_image";
+    String result = (String) method.invoke(fileStorageService, filenameWithoutDot);
+
+    assertEquals("espresso_image", result);
+  }
+
+  @Test
+  void extractBaseFileName_ThrowsInvalidRequestException_WhenFilenameIsNull_TC016()
+      throws Exception {
+    java.lang.reflect.Method method =
+        FileStorageServiceImpl.class.getDeclaredMethod("extractBaseFileName", String.class);
+    method.setAccessible(true);
+
+    java.lang.reflect.InvocationTargetException targetException =
+        assertThrows(
+            java.lang.reflect.InvocationTargetException.class,
+            () -> method.invoke(fileStorageService, (String) null));
+
+    assertInstanceOf(InvalidRequestException.class, targetException.getCause());
+    assertEquals("Invalid file name", targetException.getCause().getMessage());
   }
 }

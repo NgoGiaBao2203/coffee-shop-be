@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="coffee.api.mapper.EditTablesMapper">
+
+  <update id="updateTable">
+    UPDATE shop_tables
+    SET
+    table_number = #{request.tableNumber},
+    description = #{request.description},
+    status = COALESCE(#{request.status}, status),
+    is_deleted = false
+    WHERE table_id = #{request.tableId}
+
+    <choose>
+      <!-- OWNER can update any table -->
+      <when test="currentUserRoleName == 'OWNER'">
+        <!-- no extra condition -->
+      </when>
+
+      <!-- MANAGER can update only tables from their shop -->
+      <when test="currentUserRoleName == 'MANAGER'">
+        AND shop_id = #{currentUserShopId}
+      </when>
+    </choose>
+  </update>
+
+</mapper>
