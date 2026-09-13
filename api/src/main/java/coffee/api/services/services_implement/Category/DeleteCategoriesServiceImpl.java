@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class DeleteCategoriesServiceImpl implements IDeleteCategoriesService {
+
   private final CommonMapper commonMapper;
   private final DeleteCategoryMapper deleteCategoryMapper;
 
@@ -26,9 +27,14 @@ public class DeleteCategoriesServiceImpl implements IDeleteCategoriesService {
   public void process(
       DeleteCategoriesRequest request, String currentUserRoleName, UUID currentUserShopId) {
 
+    // 1. Verify category ID input
+    if (request == null || request.getCategoryId() == null) {
+      throw new InvalidRequestException("Category ID is required");
+    }
+
     UUID currentProfileId = getCurrentProfileId();
 
-    // 1. Verify manager role belongs to active shop branch
+    // 2. Verify manager role belongs to active shop branch
     if (Roles.MANAGER.getValue().equals(currentUserRoleName)) {
       if (currentUserShopId == null) {
         throw new InvalidRequestException("Manager is not assigned to any shop branch");
@@ -39,7 +45,7 @@ public class DeleteCategoriesServiceImpl implements IDeleteCategoriesService {
       }
     }
 
-    // 2. Verify category existence and role/shop access
+    // 3. Verify category existence and role/shop access
     boolean isCategoryExisted =
         commonMapper.checkCategoryExisted(
             request.getCategoryId(), currentUserRoleName, currentUserShopId);
@@ -47,15 +53,15 @@ public class DeleteCategoriesServiceImpl implements IDeleteCategoriesService {
       throw new DataNotFoundException("Data not found", request.getCategoryId());
     }
 
-    // 3. Cascade soft-delete drink variants and prices first to prevent orphan records
+    // 4. Cascade soft-delete drink variants and prices first to prevent orphan records
     deleteCategoryMapper.softDeleteDrinkDetailsByCategory(
         request.getCategoryId(), currentUserRoleName, currentUserShopId, currentProfileId);
 
-    // 4. Cascade soft-delete drinks under the category
+    // 5. Cascade soft-delete drinks under the category
     deleteCategoryMapper.softDeleteDrinksByCategory(
         request.getCategoryId(), currentUserRoleName, currentUserShopId, currentProfileId);
 
-    // 5. Soft-delete the category record
+    // 6. Soft-delete the category record
     deleteCategoryMapper.softDeleteCategory(
         request.getCategoryId(), currentUserRoleName, currentUserShopId, currentProfileId);
   }

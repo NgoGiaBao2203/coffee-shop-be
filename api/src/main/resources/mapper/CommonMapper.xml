@@ -96,7 +96,7 @@
     SELECT 1
     FROM drink_categories
     WHERE drink_category_id = #{categoryId}
-    AND is_deleted = FALSE
+    AND deleted_at IS NULL
     <choose>
       <!-- OWNER: Can access any category regardless of shop -->
       <when test="currentUserRoleName == 'OWNER'">
@@ -123,7 +123,7 @@
     WHERE ps.profile_id = #{currentUserId}
     AND ps.shop_id = #{currentUserShopId}
     AND ps.deleted_at IS NULL
-    AND s.is_deleted = FALSE
+    AND s.deleted_at IS NULL
     )
   </select>
 
@@ -134,7 +134,7 @@
     FROM drink_categories
     WHERE LOWER(TRIM(category_name)) = LOWER(TRIM(#{categoryName}))
     AND shop_id = #{shopId}
-    AND is_deleted = false
+    AND deleted_at IS NULL
     <if test="categoryId != null">
       AND drink_category_id != #{categoryId}
     </if>

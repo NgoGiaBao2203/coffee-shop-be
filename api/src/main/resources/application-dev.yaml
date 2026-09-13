@@ -69,4 +69,5 @@ logging:
   level:
     root: info
     org.hibernate.SQL: debug
+    coffee.api.mapper: debug
     org.hibernate.orm.results: trace # Logs the actual data binding values

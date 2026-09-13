@@ -13,7 +13,7 @@
       , shop_id = #{request.shopId}
     </if>
     WHERE drink_category_id = #{request.categoryId}
-    AND is_deleted = FALSE
+    AND deleted_at IS NULL
     <choose>
       <!-- OWNER can update category across any shop -->
       <when test="currentUserRoleName == 'OWNER'">

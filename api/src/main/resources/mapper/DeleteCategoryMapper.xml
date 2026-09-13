@@ -9,35 +9,34 @@
   <update id="softDeleteDrinkDetailsByCategory">
     UPDATE drink_details
     SET deleted_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh',
-      deleted_by = #{deletedBy}
+    deleted_by = #{deletedBy}
     WHERE deleted_at IS NULL
     AND drink_id IN (
-      SELECT d.drink_id
-      FROM drinks AS d
-      WHERE d.drink_category_id = #{categoryId}
-      AND d.is_deleted = FALSE
-      <choose>
-        <when test="currentUserRoleName == 'OWNER'">
-          <!-- OWNER can delete details across all shops -->
-        </when>
-        <when test="currentUserRoleName == 'MANAGER'">
-          AND d.shop_id = #{currentUserShopId}
-        </when>
-        <otherwise>
-          AND 1 = 0
-        </otherwise>
-      </choose>
+    SELECT d.drink_id
+    FROM drinks AS d
+    WHERE d.drink_category_id = #{categoryId}
+    AND d.deleted_at IS NULL
+    <choose>
+      <when test="currentUserRoleName == 'OWNER'">
+        <!-- OWNER can delete details across all shops -->
+      </when>
+      <when test="currentUserRoleName == 'MANAGER'">
+        AND d.shop_id = #{currentUserShopId}
+      </when>
+      <otherwise>
+        AND 1 = 0
+      </otherwise>
+    </choose>
     )
   </update>
 
   <!-- Soft delete all drinks under the category -->
   <update id="softDeleteDrinksByCategory">
     UPDATE drinks
-    SET is_deleted = TRUE,
-      deleted_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh',
-      deleted_by = #{deletedBy}
+    SET deleted_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh',
+    deleted_by = #{deletedBy}
     WHERE drink_category_id = #{categoryId}
-    AND is_deleted = FALSE
+    AND deleted_at IS NULL
     <choose>
       <when test="currentUserRoleName == 'OWNER'">
         <!-- OWNER can delete drinks across all shops -->
@@ -54,11 +53,10 @@
   <!-- Soft delete the category -->
   <update id="softDeleteCategory">
     UPDATE drink_categories
-    SET is_deleted = TRUE,
-      deleted_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh',
-      deleted_by = #{deletedBy}
+    SET deleted_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh',
+    deleted_by = #{deletedBy}
     WHERE drink_category_id = #{categoryId}
-    AND is_deleted = FALSE
+    AND deleted_at IS NULL
     <choose>
       <!-- OWNER can soft-delete categories across all shops -->
       <when test="currentUserRoleName == 'OWNER'">

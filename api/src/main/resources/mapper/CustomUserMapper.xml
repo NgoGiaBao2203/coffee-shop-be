@@ -20,52 +20,44 @@
           parameterType="java.util.UUID"
           resultMap="UserProfileResultMap">
     SELECT p.profile_id,
-    p.email,
-    p.username,
-    p.password,
-    p.full_name,
-    p.created_at,
-    p.updated_at,
-    p.phone_number,
-    p.is_deleted,
-    r.role_name,
-    ps.shop_id
+           p.email,
+           p.username,
+           p.password,
+           p.full_name,
+           p.created_at,
+           p.updated_at,
+           p.phone_number,
+           p.is_deleted,
+           r.role_name,
+           ps.shop_id
     FROM profiles p
-    INNER JOIN roles r ON r.role_id = p.role_id
-    LEFT JOIN profile_shops ps ON ps.profile_id = p.profile_id
-    AND ps.deleted_at IS NULL
-    LEFT JOIN shops s ON s.shop_id = ps.shop_id
-    AND s.is_deleted = false
+           INNER JOIN roles r ON r.role_id = p.role_id
+           LEFT JOIN profile_shops ps ON ps.profile_id = p.profile_id
     WHERE p.profile_id = #{userId}
-    AND p.deleted_at IS NULL
-    AND r.is_deleted = false
-    LIMIT 1
+      AND p.deleted_at IS NULL
+      AND r.is_deleted = false
   </select>
 
   <select id="findByEmail"
           parameterType="string"
           resultMap="UserProfileResultMap">
     SELECT p.profile_id,
-    p.email,
-    p.username,
-    p.password,
-    p.full_name,
-    p.created_at,
-    p.updated_at,
-    p.phone_number,
-    p.is_deleted,
-    r.role_name,
-    ps.shop_id
+           p.email,
+           p.username,
+           p.password,
+           p.full_name,
+           p.created_at,
+           p.updated_at,
+           p.phone_number,
+           p.is_deleted,
+           r.role_name,
+           ps.shop_id
     FROM profiles p
-    INNER JOIN roles r ON r.role_id = p.role_id
-    LEFT JOIN profile_shops ps ON ps.profile_id = p.profile_id
-    AND ps.deleted_at IS NULL
-    LEFT JOIN shops s ON s.shop_id = ps.shop_id
-    AND s.is_deleted = false
+           INNER JOIN roles r ON r.role_id = p.role_id
+           LEFT JOIN profile_shops ps ON ps.profile_id = p.profile_id
     WHERE p.email = #{email}
-    AND p.deleted_at IS NULL
-    AND r.is_deleted = false
-    LIMIT 1
+      AND p.deleted_at IS NULL
+      AND r.is_deleted = false
   </select>
 
 </mapper>

@@ -192,20 +192,33 @@ public class DeleteCategoriesServiceImplTest {
   // =========================================================================
 
   @Test
-  void process_ThrowsNullPointerException_WhenRequestIsNull_TC005() {
-    when(commonMapper.checkShopIdIsExisted(any(), eq(currentUserShopId))).thenReturn(true);
+  void process_ThrowsInvalidRequestException_WhenRequestIsNull_TC005() {
+    InvalidRequestException exception =
+        assertThrows(
+            InvalidRequestException.class,
+            () -> deleteCategoriesService.process(null, managerRole, currentUserShopId));
 
-    // Act & Assert
-    assertThrows(
-        NullPointerException.class,
-        () -> deleteCategoriesService.process(null, managerRole, currentUserShopId));
-
-    verify(commonMapper, times(1)).checkShopIdIsExisted(any(), eq(currentUserShopId));
+    assertEquals("Category ID is required", exception.getMessage());
+    verifyNoInteractions(commonMapper);
     verifyNoInteractions(deleteCategoryMapper);
   }
 
   @Test
-  void process_ThrowsInvalidRequestException_WhenManagerIsNotAssignedToAnyShop_TC006() {
+  void process_ThrowsInvalidRequestException_WhenCategoryIdIsNull_TC006() {
+    validRequest.setCategoryId(null);
+
+    InvalidRequestException exception =
+        assertThrows(
+            InvalidRequestException.class,
+            () -> deleteCategoriesService.process(validRequest, managerRole, currentUserShopId));
+
+    assertEquals("Category ID is required", exception.getMessage());
+    verifyNoInteractions(commonMapper);
+    verifyNoInteractions(deleteCategoryMapper);
+  }
+
+  @Test
+  void process_ThrowsInvalidRequestException_WhenManagerIsNotAssignedToAnyShop_TC007() {
     InvalidRequestException exception =
         assertThrows(
             InvalidRequestException.class,
@@ -219,7 +232,7 @@ public class DeleteCategoriesServiceImplTest {
   }
 
   @Test
-  void process_ThrowsInvalidRequestException_WhenManagerShopMembershipInactiveOrDeleted_TC007() {
+  void process_ThrowsInvalidRequestException_WhenManagerShopMembershipInactiveOrDeleted_TC008() {
     mockSecurityContextWithCustomUser(currentProfileId);
     when(commonMapper.checkShopIdIsExisted(currentProfileId, currentUserShopId)).thenReturn(false);
 
@@ -237,7 +250,7 @@ public class DeleteCategoriesServiceImplTest {
 
   @Test
   void
-      process_ThrowsInvalidRequestException_WhenAuthenticationPrincipalIsNotCustomUserDetail_TC008() {
+      process_ThrowsInvalidRequestException_WhenAuthenticationPrincipalIsNotCustomUserDetail_TC009() {
     mockSecurityContextWithNonCustomUser();
     when(commonMapper.checkShopIdIsExisted(isNull(), eq(currentUserShopId))).thenReturn(false);
 
@@ -253,7 +266,7 @@ public class DeleteCategoriesServiceImplTest {
   }
 
   @Test
-  void process_ThrowsDataNotFoundException_WhenCategoryDoesNotExist_TC009() {
+  void process_ThrowsDataNotFoundException_WhenCategoryDoesNotExist_TC010() {
     mockSecurityContextWithCustomUser(currentProfileId);
     when(commonMapper.checkShopIdIsExisted(currentProfileId, currentUserShopId)).thenReturn(true);
     when(commonMapper.checkCategoryExisted(
@@ -275,7 +288,7 @@ public class DeleteCategoriesServiceImplTest {
   }
 
   @Test
-  void process_ThrowsDataAccessException_WhenCascadeDeleteFails_TC010() {
+  void process_ThrowsDataAccessException_WhenCascadeDeleteFails_TC011() {
     mockSecurityContextWithCustomUser(currentProfileId);
     when(commonMapper.checkShopIdIsExisted(currentProfileId, currentUserShopId)).thenReturn(true);
     when(commonMapper.checkCategoryExisted(
@@ -305,13 +318,13 @@ public class DeleteCategoriesServiceImplTest {
   // =========================================================================
 
   @Test
-  void requestValidation_Success_WhenCategoryIdIsValid_TC011() {
+  void requestValidation_Success_WhenCategoryIdIsValid_TC012() {
     Set<ConstraintViolation<DeleteCategoriesRequest>> violations = validator.validate(validRequest);
     assertEquals(0, violations.size());
   }
 
   @Test
-  void requestValidation_Fails_WhenCategoryIdIsNull_TC012() {
+  void requestValidation_Fails_WhenCategoryIdIsNull_TC013() {
     validRequest.setCategoryId(null);
     Set<ConstraintViolation<DeleteCategoriesRequest>> violations = validator.validate(validRequest);
 

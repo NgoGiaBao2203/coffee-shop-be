@@ -42,24 +42,26 @@ public class EditCategoriesServiceImpl implements IEditCategoriesService {
       UUID currentUserId,
       UUID currentUserShopId) {
 
-    // 1. Verify target shop exists and is active (both OWNER & MANAGER)
+    // 1. Verify target shop input
+    if (request == null || request.getShopId() == null) {
+      throw new InvalidRequestException("Shop ID is required");
+    }
+
+    // 2. Verify target shop exists and is active (both OWNER & MANAGER)
     boolean isShopExisted = commonMapper.checkShopExisted(request.getShopId());
     if (!isShopExisted) {
       throw new DataNotFoundException("Data not found", request.getShopId());
     }
 
-    // 2. Verify manager has permission to access the target shop
+    // 3. Verify manager has permission to access the target shop
     if (Roles.MANAGER.getValue().equals(currentUserRoleName)) {
-      if (request.getShopId() == null) {
-        throw new InvalidRequestException("Shop branch is required");
-      }
       boolean isShopMember = commonMapper.checkShopIdIsExisted(currentUserId, request.getShopId());
       if (!isShopMember) {
         throw new InvalidRequestException("You do not have permission to access this shop branch");
       }
     }
 
-    // 3. Verify category existence and role/shop access
+    // 4. Verify category existence and role/shop access
     boolean isCategoryExisted =
         commonMapper.checkCategoryExisted(
             request.getCategoryId(), currentUserRoleName, currentUserShopId);
@@ -67,8 +69,9 @@ public class EditCategoriesServiceImpl implements IEditCategoriesService {
       throw new DataNotFoundException("Data not found", request.getCategoryId());
     }
 
-    // 4. Verify duplicate category name in the target shop
-    String trimmedCategoryName = request.getCategoryName().trim();
+    // 5. Verify duplicate category name in the target shop
+    String trimmedCategoryName =
+        request.getCategoryName() != null ? request.getCategoryName().trim() : "";
     request.setCategoryName(trimmedCategoryName);
 
     boolean isCategoryNameExisted =

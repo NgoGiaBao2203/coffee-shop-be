@@ -100,8 +100,8 @@ public class CreateCategoriesServiceImplTest {
   void process_Success_WhenUserIsManagerWithMatchingShopAndValidAuth_TC001() {
     mockSecurityContextWithCustomUser(currentUserId);
 
-    when(commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId)).thenReturn(true);
     when(commonMapper.checkShopExisted(validRequest.getShopId())).thenReturn(true);
+    when(commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId)).thenReturn(true);
     when(commonMapper.checkCategoryNameExisted(
             isNull(), eq(validRequest.getCategoryName().trim()), eq(validRequest.getShopId())))
         .thenReturn(false);
@@ -109,8 +109,8 @@ public class CreateCategoriesServiceImplTest {
     assertDoesNotThrow(
         () -> createCategoriesService.process(validRequest, managerRole, currentUserShopId));
 
-    verify(commonMapper, times(1)).checkShopIdIsExisted(currentUserId, currentUserShopId);
     verify(commonMapper, times(1)).checkShopExisted(validRequest.getShopId());
+    verify(commonMapper, times(1)).checkShopIdIsExisted(currentUserId, currentUserShopId);
     verify(commonMapper, times(1))
         .checkCategoryNameExisted(
             isNull(), eq(validRequest.getCategoryName().trim()), eq(validRequest.getShopId()));
@@ -131,8 +131,8 @@ public class CreateCategoriesServiceImplTest {
     assertDoesNotThrow(
         () -> createCategoriesService.process(validRequest, ownerRole, currentUserShopId));
 
-    verify(commonMapper, never()).checkShopIdIsExisted(any(), any());
     verify(commonMapper, times(1)).checkShopExisted(differentShopId);
+    verify(commonMapper, never()).checkShopIdIsExisted(any(), any());
     verify(commonMapper, times(1))
         .checkCategoryNameExisted(
             isNull(), eq(validRequest.getCategoryName().trim()), eq(differentShopId));
@@ -145,8 +145,8 @@ public class CreateCategoriesServiceImplTest {
     mockSecurityContextWithCustomUser(currentUserId);
     validRequest.setCategoryName("   Trà Đào Cam Sả   ");
 
-    when(commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId)).thenReturn(true);
     when(commonMapper.checkShopExisted(validRequest.getShopId())).thenReturn(true);
+    when(commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId)).thenReturn(true);
     when(commonMapper.checkCategoryNameExisted(
             isNull(), eq("Trà Đào Cam Sả"), eq(validRequest.getShopId())))
         .thenReturn(false);
@@ -162,7 +162,27 @@ public class CreateCategoriesServiceImplTest {
   }
 
   @Test
-  void process_Success_WhenUserRoleIsNotManager_SkipsManagerValidationBlock_TC004() {
+  void process_Success_WhenCategoryNameIsNull_DefaultsToEmptyStringAndPasses_TC004() {
+    mockSecurityContextWithCustomUser(currentUserId);
+    validRequest.setCategoryName(null);
+
+    when(commonMapper.checkShopExisted(validRequest.getShopId())).thenReturn(true);
+    when(commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId)).thenReturn(true);
+    when(commonMapper.checkCategoryNameExisted(isNull(), eq(""), eq(validRequest.getShopId())))
+        .thenReturn(false);
+
+    assertDoesNotThrow(
+        () -> createCategoriesService.process(validRequest, managerRole, currentUserShopId));
+
+    assertEquals("", validRequest.getCategoryName());
+    verify(commonMapper, times(1))
+        .checkCategoryNameExisted(isNull(), eq(""), eq(validRequest.getShopId()));
+    verify(createCategoriesMapper, times(1))
+        .createCategories(validRequest, managerRole, currentUserShopId);
+  }
+
+  @Test
+  void process_Success_WhenUserRoleIsNotManager_SkipsManagerValidationBlock_TC005() {
     when(commonMapper.checkShopExisted(validRequest.getShopId())).thenReturn(true);
     when(commonMapper.checkCategoryNameExisted(
             isNull(), eq(validRequest.getCategoryName().trim()), eq(validRequest.getShopId())))
@@ -173,6 +193,7 @@ public class CreateCategoriesServiceImplTest {
             createCategoriesService.process(
                 validRequest, Roles.STAFF.getValue(), currentUserShopId));
 
+    verify(commonMapper, times(1)).checkShopExisted(validRequest.getShopId());
     verify(commonMapper, never()).checkShopIdIsExisted(any(), any());
     verify(createCategoriesMapper, times(1))
         .createCategories(validRequest, Roles.STAFF.getValue(), currentUserShopId);
@@ -180,11 +201,11 @@ public class CreateCategoriesServiceImplTest {
 
   @Test
   void
-      process_Success_WhenManagerWithNoAuthenticationInSecurityContext_CoversReturnNullBranch_TC005() {
+      process_Success_WhenManagerWithNoAuthenticationInSecurityContext_CoversReturnNullBranch_TC006() {
     SecurityContextHolder.clearContext();
 
-    when(commonMapper.checkShopIdIsExisted(isNull(), eq(currentUserShopId))).thenReturn(true);
     when(commonMapper.checkShopExisted(validRequest.getShopId())).thenReturn(true);
+    when(commonMapper.checkShopIdIsExisted(isNull(), eq(currentUserShopId))).thenReturn(true);
     when(commonMapper.checkCategoryNameExisted(
             isNull(), eq(validRequest.getCategoryName().trim()), eq(validRequest.getShopId())))
         .thenReturn(false);
@@ -202,17 +223,52 @@ public class CreateCategoriesServiceImplTest {
   // =========================================================================
 
   @Test
-  void process_ThrowsNullPointerException_WhenRequestIsNull_TC006() {
-    assertThrows(
-        NullPointerException.class,
-        () -> createCategoriesService.process(null, managerRole, currentUserShopId));
+  void process_ThrowsInvalidRequestException_WhenRequestIsNull_TC007() {
+    InvalidRequestException exception =
+        assertThrows(
+            InvalidRequestException.class,
+            () -> createCategoriesService.process(null, managerRole, currentUserShopId));
 
+    assertEquals("Shop ID is required", exception.getMessage());
     verifyNoInteractions(commonMapper);
     verifyNoInteractions(createCategoriesMapper);
   }
 
   @Test
-  void process_ThrowsInvalidRequestException_WhenManagerIsNotAssignedToAnyShop_TC007() {
+  void process_ThrowsInvalidRequestException_WhenShopIdIsNull_TC008() {
+    validRequest.setShopId(null);
+
+    InvalidRequestException exception =
+        assertThrows(
+            InvalidRequestException.class,
+            () -> createCategoriesService.process(validRequest, managerRole, currentUserShopId));
+
+    assertEquals("Shop ID is required", exception.getMessage());
+    verifyNoInteractions(commonMapper);
+    verifyNoInteractions(createCategoriesMapper);
+  }
+
+  @Test
+  void process_ThrowsDataNotFoundException_WhenShopDoesNotExist_TC009() {
+    when(commonMapper.checkShopExisted(validRequest.getShopId())).thenReturn(false);
+
+    DataNotFoundException exception =
+        assertThrows(
+            DataNotFoundException.class,
+            () -> createCategoriesService.process(validRequest, managerRole, currentUserShopId));
+
+    assertEquals("Data not found", exception.getMessage());
+    assertEquals(validRequest.getShopId(), exception.getId());
+
+    verify(commonMapper, times(1)).checkShopExisted(validRequest.getShopId());
+    verify(commonMapper, never()).checkShopIdIsExisted(any(), any());
+    verify(commonMapper, never()).checkCategoryNameExisted(any(), any(), any());
+  }
+
+  @Test
+  void process_ThrowsInvalidRequestException_WhenManagerIsNotAssignedToAnyShop_TC010() {
+    when(commonMapper.checkShopExisted(validRequest.getShopId())).thenReturn(true);
+
     InvalidRequestException exception =
         assertThrows(
             InvalidRequestException.class,
@@ -220,14 +276,16 @@ public class CreateCategoriesServiceImplTest {
 
     assertEquals("Manager is not assigned to any shop branch", exception.getMessage());
 
+    verify(commonMapper, times(1)).checkShopExisted(validRequest.getShopId());
     verify(commonMapper, never()).checkShopIdIsExisted(any(), any());
-    verify(commonMapper, never()).checkShopExisted(any());
   }
 
   @Test
-  void process_ThrowsInvalidRequestException_WhenManagerShopIdMismatches_TC008() {
+  void process_ThrowsInvalidRequestException_WhenManagerShopIdMismatches_TC011() {
     UUID differentShopId = UUID.randomUUID();
     validRequest.setShopId(differentShopId);
+
+    when(commonMapper.checkShopExisted(differentShopId)).thenReturn(true);
 
     InvalidRequestException exception =
         assertThrows(
@@ -236,13 +294,14 @@ public class CreateCategoriesServiceImplTest {
 
     assertEquals("You do not have permission to access this shop branch", exception.getMessage());
 
+    verify(commonMapper, times(1)).checkShopExisted(differentShopId);
     verify(commonMapper, never()).checkShopIdIsExisted(any(), any());
-    verify(commonMapper, never()).checkShopExisted(any());
   }
 
   @Test
-  void process_ThrowsInvalidRequestException_WhenManagerShopMembershipInactive_TC009() {
+  void process_ThrowsInvalidRequestException_WhenManagerShopMembershipInactive_TC012() {
     mockSecurityContextWithCustomUser(currentUserId);
+    when(commonMapper.checkShopExisted(validRequest.getShopId())).thenReturn(true);
     when(commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId)).thenReturn(false);
 
     InvalidRequestException exception =
@@ -252,14 +311,16 @@ public class CreateCategoriesServiceImplTest {
 
     assertEquals("You do not have permission to access this shop branch", exception.getMessage());
 
+    verify(commonMapper, times(1)).checkShopExisted(validRequest.getShopId());
     verify(commonMapper, times(1)).checkShopIdIsExisted(currentUserId, currentUserShopId);
-    verify(commonMapper, never()).checkShopExisted(any());
+    verify(commonMapper, never()).checkCategoryNameExisted(any(), any(), any());
   }
 
   @Test
   void
-      process_ThrowsInvalidRequestException_WhenAuthenticationPrincipalIsNotCustomUserDetail_TC010() {
+      process_ThrowsInvalidRequestException_WhenAuthenticationPrincipalIsNotCustomUserDetail_TC013() {
     mockSecurityContextWithNonCustomUser();
+    when(commonMapper.checkShopExisted(validRequest.getShopId())).thenReturn(true);
     when(commonMapper.checkShopIdIsExisted(isNull(), eq(currentUserShopId))).thenReturn(false);
 
     InvalidRequestException exception =
@@ -273,29 +334,10 @@ public class CreateCategoriesServiceImplTest {
   }
 
   @Test
-  void process_ThrowsDataNotFoundException_WhenShopDoesNotExist_TC011() {
+  void process_ThrowsUserExistException_WhenCategoryNameExists_TC014() {
     mockSecurityContextWithCustomUser(currentUserId);
-    when(commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId)).thenReturn(true);
-    when(commonMapper.checkShopExisted(validRequest.getShopId())).thenReturn(false);
-
-    DataNotFoundException exception =
-        assertThrows(
-            DataNotFoundException.class,
-            () -> createCategoriesService.process(validRequest, managerRole, currentUserShopId));
-
-    assertEquals("Data not found", exception.getMessage());
-    assertEquals(validRequest.getShopId(), exception.getId());
-
-    verify(commonMapper, times(1)).checkShopIdIsExisted(currentUserId, currentUserShopId);
-    verify(commonMapper, times(1)).checkShopExisted(validRequest.getShopId());
-    verify(commonMapper, never()).checkCategoryNameExisted(any(), any(), any());
-  }
-
-  @Test
-  void process_ThrowsUserExistException_WhenCategoryNameExists_TC012() {
-    mockSecurityContextWithCustomUser(currentUserId);
-    when(commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId)).thenReturn(true);
     when(commonMapper.checkShopExisted(validRequest.getShopId())).thenReturn(true);
+    when(commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId)).thenReturn(true);
     when(commonMapper.checkCategoryNameExisted(
             isNull(), eq(validRequest.getCategoryName().trim()), eq(validRequest.getShopId())))
         .thenReturn(true);
@@ -307,8 +349,8 @@ public class CreateCategoriesServiceImplTest {
 
     assertEquals("Category name is existed", exception.getMessage());
 
-    verify(commonMapper, times(1)).checkShopIdIsExisted(currentUserId, currentUserShopId);
     verify(commonMapper, times(1)).checkShopExisted(validRequest.getShopId());
+    verify(commonMapper, times(1)).checkShopIdIsExisted(currentUserId, currentUserShopId);
     verify(commonMapper, times(1))
         .checkCategoryNameExisted(
             isNull(), eq(validRequest.getCategoryName().trim()), eq(validRequest.getShopId()));
@@ -316,10 +358,10 @@ public class CreateCategoriesServiceImplTest {
   }
 
   @Test
-  void process_ThrowsDataAccessException_WhenDatabaseFails_TC013() {
+  void process_ThrowsDataAccessException_WhenDatabaseFails_TC015() {
     mockSecurityContextWithCustomUser(currentUserId);
-    when(commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId)).thenReturn(true);
     when(commonMapper.checkShopExisted(validRequest.getShopId())).thenReturn(true);
+    when(commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId)).thenReturn(true);
     when(commonMapper.checkCategoryNameExisted(
             isNull(), eq(validRequest.getCategoryName().trim()), eq(validRequest.getShopId())))
         .thenReturn(false);
@@ -344,20 +386,20 @@ public class CreateCategoriesServiceImplTest {
   // =========================================================================
 
   @Test
-  void requestValidation_Success_WhenAllFieldsAreValid_TC014() {
+  void requestValidation_Success_WhenAllFieldsAreValid_TC016() {
     Set<ConstraintViolation<CreateCategoriesRequest>> violations = validator.validate(validRequest);
     assertEquals(0, violations.size());
   }
 
   @Test
-  void requestValidation_Success_WhenCategoryNameContainsVietnameseAndHyphen_TC015() {
+  void requestValidation_Success_WhenCategoryNameContainsVietnameseAndHyphen_TC017() {
     validRequest.setCategoryName("Cà-phê Sữa Đá");
     Set<ConstraintViolation<CreateCategoriesRequest>> violations = validator.validate(validRequest);
     assertEquals(0, violations.size());
   }
 
   @Test
-  void requestValidation_Success_WhenCategoryNameIsAtMinLengthOrMaxLength_TC016() {
+  void requestValidation_Success_WhenCategoryNameIsAtMinLengthOrMaxLength_TC018() {
     validRequest.setCategoryName("A");
     Set<ConstraintViolation<CreateCategoriesRequest>> minViolations =
         validator.validate(validRequest);
@@ -374,7 +416,7 @@ public class CreateCategoriesServiceImplTest {
   // =========================================================================
 
   @Test
-  void requestValidation_Fails_WhenCategoryNameIsNull_TC017() {
+  void requestValidation_Fails_WhenCategoryNameIsNull_TC019() {
     validRequest.setCategoryName(null);
     Set<ConstraintViolation<CreateCategoriesRequest>> violations = validator.validate(validRequest);
 
@@ -383,7 +425,7 @@ public class CreateCategoriesServiceImplTest {
   }
 
   @Test
-  void requestValidation_Fails_WhenCategoryNameIsBlank_TC018() {
+  void requestValidation_Fails_WhenCategoryNameIsBlank_TC020() {
     validRequest.setCategoryName("   ");
     Set<ConstraintViolation<CreateCategoriesRequest>> violations = validator.validate(validRequest);
 
@@ -392,7 +434,7 @@ public class CreateCategoriesServiceImplTest {
   }
 
   @Test
-  void requestValidation_Fails_WhenCategoryNameExceeds100Characters_TC019() {
+  void requestValidation_Fails_WhenCategoryNameExceeds100Characters_TC021() {
     validRequest.setCategoryName("A".repeat(101));
     Set<ConstraintViolation<CreateCategoriesRequest>> violations = validator.validate(validRequest);
 
@@ -401,7 +443,7 @@ public class CreateCategoriesServiceImplTest {
   }
 
   @Test
-  void requestValidation_Fails_WhenCategoryNameContainsSpecialCharacters_TC020() {
+  void requestValidation_Fails_WhenCategoryNameContainsSpecialCharacters_TC022() {
     validRequest.setCategoryName("Cà phê @ 2026!");
     Set<ConstraintViolation<CreateCategoriesRequest>> violations = validator.validate(validRequest);
 
@@ -415,7 +457,7 @@ public class CreateCategoriesServiceImplTest {
   // =========================================================================
 
   @Test
-  void requestValidation_Fails_WhenShopIdIsNull_TC021() {
+  void requestValidation_Fails_WhenShopIdIsNull_TC023() {
     validRequest.setShopId(null);
     Set<ConstraintViolation<CreateCategoriesRequest>> violations = validator.validate(validRequest);
 
@@ -424,7 +466,7 @@ public class CreateCategoriesServiceImplTest {
   }
 
   @Test
-  void requestValidation_Fails_WhenAllFieldsAreNull_TC022() {
+  void requestValidation_Fails_WhenAllFieldsAreNull_TC024() {
     CreateCategoriesRequest emptyRequest = new CreateCategoriesRequest();
     Set<ConstraintViolation<CreateCategoriesRequest>> violations = validator.validate(emptyRequest);
 

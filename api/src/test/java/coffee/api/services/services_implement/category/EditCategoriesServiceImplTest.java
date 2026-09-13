@@ -68,8 +68,9 @@ public class EditCategoriesServiceImplTest {
 
   @Test
   void process_Success_WhenUserIsManagerAndAllChecksPass_TC001() {
-    // Arrange
-    when(commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId)).thenReturn(true);
+    when(commonMapper.checkShopExisted(validRequest.getShopId())).thenReturn(true);
+    when(commonMapper.checkShopIdIsExisted(currentUserId, validRequest.getShopId()))
+        .thenReturn(true);
     when(commonMapper.checkCategoryExisted(
             validRequest.getCategoryId(), managerRole, currentUserShopId))
         .thenReturn(true);
@@ -79,13 +80,13 @@ public class EditCategoriesServiceImplTest {
             validRequest.getShopId()))
         .thenReturn(false);
 
-    // Act & Assert
     assertDoesNotThrow(
         () ->
             editCategoriesService.process(
                 validRequest, managerRole, currentUserId, currentUserShopId));
 
-    verify(commonMapper, times(1)).checkShopIdIsExisted(currentUserId, currentUserShopId);
+    verify(commonMapper, times(1)).checkShopExisted(validRequest.getShopId());
+    verify(commonMapper, times(1)).checkShopIdIsExisted(currentUserId, validRequest.getShopId());
     verify(commonMapper, times(1))
         .checkCategoryExisted(validRequest.getCategoryId(), managerRole, currentUserShopId);
     verify(commonMapper, times(1))
@@ -99,10 +100,10 @@ public class EditCategoriesServiceImplTest {
 
   @Test
   void process_Success_WhenUserIsOwnerWithAnyShop_TC002() {
-    // Arrange
     UUID differentShopId = UUID.randomUUID();
     validRequest.setShopId(differentShopId);
 
+    when(commonMapper.checkShopExisted(differentShopId)).thenReturn(true);
     when(commonMapper.checkCategoryExisted(
             validRequest.getCategoryId(), ownerRole, currentUserShopId))
         .thenReturn(true);
@@ -110,12 +111,12 @@ public class EditCategoriesServiceImplTest {
             validRequest.getCategoryId(), validRequest.getCategoryName().trim(), differentShopId))
         .thenReturn(false);
 
-    // Act & Assert
     assertDoesNotThrow(
         () ->
             editCategoriesService.process(
                 validRequest, ownerRole, currentUserId, currentUserShopId));
 
+    verify(commonMapper, times(1)).checkShopExisted(differentShopId);
     verify(commonMapper, never()).checkShopIdIsExisted(any(), any());
     verify(commonMapper, times(1))
         .checkCategoryExisted(validRequest.getCategoryId(), ownerRole, currentUserShopId);
@@ -128,10 +129,11 @@ public class EditCategoriesServiceImplTest {
 
   @Test
   void process_Success_TrimsCategoryNameCorrectly_TC003() {
-    // Arrange
     validRequest.setCategoryName("   Ca Phe Phin   ");
 
-    when(commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId)).thenReturn(true);
+    when(commonMapper.checkShopExisted(validRequest.getShopId())).thenReturn(true);
+    when(commonMapper.checkShopIdIsExisted(currentUserId, validRequest.getShopId()))
+        .thenReturn(true);
     when(commonMapper.checkCategoryExisted(
             validRequest.getCategoryId(), managerRole, currentUserShopId))
         .thenReturn(true);
@@ -139,7 +141,6 @@ public class EditCategoriesServiceImplTest {
             validRequest.getCategoryId(), "Ca Phe Phin", validRequest.getShopId()))
         .thenReturn(false);
 
-    // Act & Assert
     assertDoesNotThrow(
         () ->
             editCategoriesService.process(
@@ -150,39 +151,90 @@ public class EditCategoriesServiceImplTest {
         .updateCategory(validRequest, managerRole, currentUserShopId);
   }
 
+  @Test
+  void process_Success_WhenCategoryNameIsNull_DefaultsToEmptyStringAndPasses_TC004() {
+    validRequest.setCategoryName(null);
+
+    when(commonMapper.checkShopExisted(validRequest.getShopId())).thenReturn(true);
+    when(commonMapper.checkShopIdIsExisted(currentUserId, validRequest.getShopId()))
+        .thenReturn(true);
+    when(commonMapper.checkCategoryExisted(
+            validRequest.getCategoryId(), managerRole, currentUserShopId))
+        .thenReturn(true);
+    when(commonMapper.checkCategoryNameExisted(
+            validRequest.getCategoryId(), "", validRequest.getShopId()))
+        .thenReturn(false);
+
+    assertDoesNotThrow(
+        () ->
+            editCategoriesService.process(
+                validRequest, managerRole, currentUserId, currentUserShopId));
+
+    assertEquals("", validRequest.getCategoryName());
+    verify(commonMapper, times(1))
+        .checkCategoryNameExisted(validRequest.getCategoryId(), "", validRequest.getShopId());
+    verify(updateCategoryMapper, times(1))
+        .updateCategory(validRequest, managerRole, currentUserShopId);
+  }
+
   // =========================================================================
   // SERVICE PROCESS - ABNORMAL / EXCEPTION CASES
   // =========================================================================
 
   @Test
-  void process_ThrowsNullPointerException_WhenRequestIsNull_TC004() {
-    assertThrows(
-        NullPointerException.class,
-        () -> editCategoriesService.process(null, managerRole, currentUserId, currentUserShopId));
+  void process_ThrowsInvalidRequestException_WhenRequestIsNull_TC005() {
+    InvalidRequestException exception =
+        assertThrows(
+            InvalidRequestException.class,
+            () ->
+                editCategoriesService.process(null, managerRole, currentUserId, currentUserShopId));
 
+    assertEquals("Shop ID is required", exception.getMessage());
     verifyNoInteractions(commonMapper);
     verifyNoInteractions(updateCategoryMapper);
   }
 
   @Test
-  void process_ThrowsInvalidRequestException_WhenManagerIsNotAssignedToAnyShop_TC005() {
+  void process_ThrowsInvalidRequestException_WhenShopIdIsNull_TC006() {
+    validRequest.setShopId(null);
+
     InvalidRequestException exception =
         assertThrows(
             InvalidRequestException.class,
-            () -> editCategoriesService.process(validRequest, managerRole, currentUserId, null));
+            () ->
+                editCategoriesService.process(
+                    validRequest, managerRole, currentUserId, currentUserShopId));
 
-    assertEquals("Manager is not assigned to any shop branch", exception.getMessage());
-
-    verify(commonMapper, never()).checkShopIdIsExisted(any(), any());
-    verify(commonMapper, never()).checkCategoryExisted(any(), any(), any());
-    verify(commonMapper, never()).checkCategoryNameExisted(any(), any(), any());
-    verify(updateCategoryMapper, never()).updateCategory(any(), any(), any());
+    assertEquals("Shop ID is required", exception.getMessage());
+    verifyNoInteractions(commonMapper);
+    verifyNoInteractions(updateCategoryMapper);
   }
 
   @Test
-  void process_ThrowsInvalidRequestException_WhenManagerShopIdMismatches_TC006() {
-    UUID differentShopId = UUID.randomUUID();
-    validRequest.setShopId(differentShopId);
+  void process_ThrowsDataNotFoundException_WhenTargetShopDoesNotExist_TC007() {
+    when(commonMapper.checkShopExisted(validRequest.getShopId())).thenReturn(false);
+
+    DataNotFoundException exception =
+        assertThrows(
+            DataNotFoundException.class,
+            () ->
+                editCategoriesService.process(
+                    validRequest, managerRole, currentUserId, currentUserShopId));
+
+    assertEquals("Data not found", exception.getMessage());
+    assertEquals(validRequest.getShopId(), exception.getId());
+
+    verify(commonMapper, times(1)).checkShopExisted(validRequest.getShopId());
+    verify(commonMapper, never()).checkShopIdIsExisted(any(), any());
+    verify(commonMapper, never()).checkCategoryExisted(any(), any(), any());
+    verifyNoInteractions(updateCategoryMapper);
+  }
+
+  @Test
+  void process_ThrowsInvalidRequestException_WhenManagerDoesNotHavePermissionOnShop_TC008() {
+    when(commonMapper.checkShopExisted(validRequest.getShopId())).thenReturn(true);
+    when(commonMapper.checkShopIdIsExisted(currentUserId, validRequest.getShopId()))
+        .thenReturn(false);
 
     InvalidRequestException exception =
         assertThrows(
@@ -193,35 +245,17 @@ public class EditCategoriesServiceImplTest {
 
     assertEquals("You do not have permission to access this shop branch", exception.getMessage());
 
-    verify(commonMapper, never()).checkShopIdIsExisted(any(), any());
+    verify(commonMapper, times(1)).checkShopExisted(validRequest.getShopId());
+    verify(commonMapper, times(1)).checkShopIdIsExisted(currentUserId, validRequest.getShopId());
     verify(commonMapper, never()).checkCategoryExisted(any(), any(), any());
-    verify(commonMapper, never()).checkCategoryNameExisted(any(), any(), any());
-    verify(updateCategoryMapper, never()).updateCategory(any(), any(), any());
+    verifyNoInteractions(updateCategoryMapper);
   }
 
   @Test
-  void process_ThrowsDataNotFoundException_WhenManagerShopMembershipNotFoundOrInactive_TC007() {
-    when(commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId)).thenReturn(false);
-
-    DataNotFoundException exception =
-        assertThrows(
-            DataNotFoundException.class,
-            () ->
-                editCategoriesService.process(
-                    validRequest, managerRole, currentUserId, currentUserShopId));
-
-    assertEquals("Shop Id not found", exception.getMessage());
-    assertEquals(currentUserShopId, exception.getId());
-
-    verify(commonMapper, times(1)).checkShopIdIsExisted(currentUserId, currentUserShopId);
-    verify(commonMapper, never()).checkCategoryExisted(any(), any(), any());
-    verify(commonMapper, never()).checkCategoryNameExisted(any(), any(), any());
-    verify(updateCategoryMapper, never()).updateCategory(any(), any(), any());
-  }
-
-  @Test
-  void process_ThrowsDataNotFoundException_WhenCategoryDoesNotExist_TC008() {
-    when(commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId)).thenReturn(true);
+  void process_ThrowsDataNotFoundException_WhenCategoryDoesNotExist_TC009() {
+    when(commonMapper.checkShopExisted(validRequest.getShopId())).thenReturn(true);
+    when(commonMapper.checkShopIdIsExisted(currentUserId, validRequest.getShopId()))
+        .thenReturn(true);
     when(commonMapper.checkCategoryExisted(
             validRequest.getCategoryId(), managerRole, currentUserShopId))
         .thenReturn(false);
@@ -236,16 +270,19 @@ public class EditCategoriesServiceImplTest {
     assertEquals("Data not found", exception.getMessage());
     assertEquals(validRequest.getCategoryId(), exception.getId());
 
-    verify(commonMapper, times(1)).checkShopIdIsExisted(currentUserId, currentUserShopId);
+    verify(commonMapper, times(1)).checkShopExisted(validRequest.getShopId());
+    verify(commonMapper, times(1)).checkShopIdIsExisted(currentUserId, validRequest.getShopId());
     verify(commonMapper, times(1))
         .checkCategoryExisted(validRequest.getCategoryId(), managerRole, currentUserShopId);
     verify(commonMapper, never()).checkCategoryNameExisted(any(), any(), any());
-    verify(updateCategoryMapper, never()).updateCategory(any(), any(), any());
+    verifyNoInteractions(updateCategoryMapper);
   }
 
   @Test
-  void process_ThrowsInvalidRequestWithErrorDetailsException_WhenCategoryNameAlreadyExists_TC009() {
-    when(commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId)).thenReturn(true);
+  void process_ThrowsInvalidRequestWithErrorDetailsException_WhenCategoryNameAlreadyExists_TC010() {
+    when(commonMapper.checkShopExisted(validRequest.getShopId())).thenReturn(true);
+    when(commonMapper.checkShopIdIsExisted(currentUserId, validRequest.getShopId()))
+        .thenReturn(true);
     when(commonMapper.checkCategoryExisted(
             validRequest.getCategoryId(), managerRole, currentUserShopId))
         .thenReturn(true);
@@ -274,8 +311,10 @@ public class EditCategoriesServiceImplTest {
   }
 
   @Test
-  void process_ThrowsDataAccessException_WhenDatabaseUpdateFails_TC010() {
-    when(commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId)).thenReturn(true);
+  void process_ThrowsDataAccessException_WhenDatabaseUpdateFails_TC011() {
+    when(commonMapper.checkShopExisted(validRequest.getShopId())).thenReturn(true);
+    when(commonMapper.checkShopIdIsExisted(currentUserId, validRequest.getShopId()))
+        .thenReturn(true);
     when(commonMapper.checkCategoryExisted(
             validRequest.getCategoryId(), managerRole, currentUserShopId))
         .thenReturn(true);
@@ -307,20 +346,20 @@ public class EditCategoriesServiceImplTest {
   // =========================================================================
 
   @Test
-  void requestValidation_Success_WhenAllFieldsAreValid_TC011() {
+  void requestValidation_Success_WhenAllFieldsAreValid_TC012() {
     Set<ConstraintViolation<EditCategoriesRequest>> violations = validator.validate(validRequest);
     assertEquals(0, violations.size());
   }
 
   @Test
-  void requestValidation_Success_WhenCategoryNameContainsVietnameseAndHyphen_TC012() {
+  void requestValidation_Success_WhenCategoryNameContainsVietnameseAndHyphen_TC013() {
     validRequest.setCategoryName("Trà Ô-long Lài");
     Set<ConstraintViolation<EditCategoriesRequest>> violations = validator.validate(validRequest);
     assertEquals(0, violations.size());
   }
 
   @Test
-  void requestValidation_Success_WhenCategoryNameIsAtMinLengthOrMaxLength_TC013() {
+  void requestValidation_Success_WhenCategoryNameIsAtMinLengthOrMaxLength_TC014() {
     validRequest.setCategoryName("A");
     Set<ConstraintViolation<EditCategoriesRequest>> minViolations =
         validator.validate(validRequest);
@@ -337,7 +376,7 @@ public class EditCategoriesServiceImplTest {
   // =========================================================================
 
   @Test
-  void requestValidation_Fails_WhenCategoryIdIsNull_TC014() {
+  void requestValidation_Fails_WhenCategoryIdIsNull_TC015() {
     validRequest.setCategoryId(null);
     Set<ConstraintViolation<EditCategoriesRequest>> violations = validator.validate(validRequest);
 
@@ -350,7 +389,7 @@ public class EditCategoriesServiceImplTest {
   // =========================================================================
 
   @Test
-  void requestValidation_Fails_WhenCategoryNameIsNull_TC015() {
+  void requestValidation_Fails_WhenCategoryNameIsNull_TC016() {
     validRequest.setCategoryName(null);
     Set<ConstraintViolation<EditCategoriesRequest>> violations = validator.validate(validRequest);
 
@@ -359,7 +398,7 @@ public class EditCategoriesServiceImplTest {
   }
 
   @Test
-  void requestValidation_Fails_WhenCategoryNameIsBlank_TC016() {
+  void requestValidation_Fails_WhenCategoryNameIsBlank_TC017() {
     validRequest.setCategoryName("   ");
     Set<ConstraintViolation<EditCategoriesRequest>> violations = validator.validate(validRequest);
 
@@ -368,7 +407,7 @@ public class EditCategoriesServiceImplTest {
   }
 
   @Test
-  void requestValidation_Fails_WhenCategoryNameExceeds100Characters_TC017() {
+  void requestValidation_Fails_WhenCategoryNameExceeds100Characters_TC018() {
     validRequest.setCategoryName("A".repeat(101));
     Set<ConstraintViolation<EditCategoriesRequest>> violations = validator.validate(validRequest);
 
@@ -377,7 +416,7 @@ public class EditCategoriesServiceImplTest {
   }
 
   @Test
-  void requestValidation_Fails_WhenCategoryNameContainsSpecialCharacters_TC018() {
+  void requestValidation_Fails_WhenCategoryNameContainsSpecialCharacters_TC019() {
     validRequest.setCategoryName("Trà @# Sữa!");
     Set<ConstraintViolation<EditCategoriesRequest>> violations = validator.validate(validRequest);
 
@@ -391,7 +430,7 @@ public class EditCategoriesServiceImplTest {
   // =========================================================================
 
   @Test
-  void requestValidation_Fails_WhenShopIdIsNull_TC019() {
+  void requestValidation_Fails_WhenShopIdIsNull_TC020() {
     validRequest.setShopId(null);
     Set<ConstraintViolation<EditCategoriesRequest>> violations = validator.validate(validRequest);
 
@@ -400,10 +439,92 @@ public class EditCategoriesServiceImplTest {
   }
 
   @Test
-  void requestValidation_Fails_WhenAllFieldsAreNull_TC020() {
+  void requestValidation_Fails_WhenAllFieldsAreNull_TC021() {
     EditCategoriesRequest emptyRequest = new EditCategoriesRequest();
     Set<ConstraintViolation<EditCategoriesRequest>> violations = validator.validate(emptyRequest);
 
     assertEquals(3, violations.size());
+  }
+
+  @Test
+  void requestValidation_Fails_WhenCategoryIdAndShopIdAreNull_TC022() {
+    validRequest.setCategoryId(null);
+    validRequest.setShopId(null);
+
+    Set<ConstraintViolation<EditCategoriesRequest>> violations = validator.validate(validRequest);
+
+    assertEquals(2, violations.size());
+    boolean allFieldRequired =
+        violations.stream()
+            .allMatch(v -> ValidationMessage.Msg.FIELD_REQUIRED.equals(v.getMessage()));
+    assertTrue(allFieldRequired);
+  }
+
+  @Test
+  void requestValidation_Fails_WhenCategoryNameAndShopIdAreNull_TC023() {
+    validRequest.setCategoryName(null);
+    validRequest.setShopId(null);
+
+    Set<ConstraintViolation<EditCategoriesRequest>> violations = validator.validate(validRequest);
+
+    assertEquals(2, violations.size());
+    boolean allFieldRequired =
+        violations.stream()
+            .allMatch(v -> ValidationMessage.Msg.FIELD_REQUIRED.equals(v.getMessage()));
+    assertTrue(allFieldRequired);
+  }
+
+  @Test
+  void requestValidation_Fails_WhenCategoryNameIsEmptyString_TC024() {
+    validRequest.setCategoryName("");
+
+    Set<ConstraintViolation<EditCategoriesRequest>> violations = validator.validate(validRequest);
+
+    // Chuỗi rỗng vi phạm @NotBlank và @Pattern
+    assertFalse(violations.isEmpty());
+    boolean hasNotBlankError =
+        violations.stream()
+            .anyMatch(v -> ValidationMessage.Msg.FIELD_REQUIRED.equals(v.getMessage()));
+    assertTrue(hasNotBlankError);
+  }
+
+  @Test
+  void requestValidation_Fails_WhenCategoryNameOnlyTabsOrNewlines_TC025() {
+    validRequest.setCategoryName("\t\n  ");
+
+    Set<ConstraintViolation<EditCategoriesRequest>> violations = validator.validate(validRequest);
+
+    assertFalse(violations.isEmpty());
+    boolean hasNotBlankError =
+        violations.stream()
+            .anyMatch(v -> ValidationMessage.Msg.FIELD_REQUIRED.equals(v.getMessage()));
+    assertTrue(hasNotBlankError);
+  }
+
+  @Test
+  void requestValidation_Success_WhenCategoryNameContainsAlphanumericAndApostrophe_TC026() {
+    validRequest.setCategoryName("Cafe 3in1 O'Coffee");
+
+    Set<ConstraintViolation<EditCategoriesRequest>> violations = validator.validate(validRequest);
+
+    assertEquals(0, violations.size());
+  }
+
+  @Test
+  void requestValidation_Fails_WhenAllFieldsAreNull_VerifyEachFieldMessage_TC027() {
+    EditCategoriesRequest emptyRequest = new EditCategoriesRequest();
+
+    Set<ConstraintViolation<EditCategoriesRequest>> violations = validator.validate(emptyRequest);
+
+    assertEquals(3, violations.size());
+
+    Set<String> violatedFields =
+        violations.stream()
+            .map(v -> v.getPropertyPath().toString())
+            .collect(java.util.stream.Collectors.toSet());
+
+    assertTrue(violatedFields.contains("categoryId"));
+    assertTrue(violatedFields.contains("categoryName"));
+    assertTrue(violatedFields.contains("shopId"));
   }
 }
