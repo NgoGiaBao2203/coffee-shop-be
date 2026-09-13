@@ -73,6 +73,9 @@
       <when test="currentUserRoleName == 'MANAGER'">
         AND shop_id = #{currentUserShopId}
       </when>
+      <otherwise>
+        AND 1 = 0
+      </otherwise>
     </choose>
     )
   </select>
@@ -83,7 +86,7 @@
     SELECT 1
     FROM shops
     WHERE shop_id = #{shopId}
-    AND is_deleted = false
+    AND deleted_at IS NULL
     )
   </select>
 
@@ -104,44 +107,41 @@
       <when test="currentUserRoleName == 'MANAGER'">
         AND shop_id = #{currentUserShopId}
       </when>
+      <otherwise>
+        AND 1 = 0
+      </otherwise>
     </choose>
     )
   </select>
 
-  <!-- 9. Check if shop id exists -->
+  <!-- 9. Check if active shop membership exists -->
   <select id="checkShopIdIsExisted" resultType="boolean">
     SELECT EXISTS (
-      SELECT 1
-      FROM profile_shops
-      WHERE profile_id = #{currentUserId}
-        AND shop_id = #{currentUserShopId}
-    );
+    SELECT 1
+    FROM profile_shops ps
+    INNER JOIN shops s ON ps.shop_id = s.shop_id
+    WHERE ps.profile_id = #{currentUserId}
+    AND ps.shop_id = #{currentUserShopId}
+    AND ps.deleted_at IS NULL
+    AND s.is_deleted = FALSE
+    )
   </select>
 
-  <!-- 9. Check if category name exists -->
+  <!-- 10. Check if category name exists in shop (case-insensitive & trimmed) -->
   <select id="checkCategoryNameExisted" resultType="boolean">
     SELECT EXISTS (
     SELECT 1
     FROM drink_categories
-    WHERE category_name = #{categoryName}
+    WHERE LOWER(TRIM(category_name)) = LOWER(TRIM(#{categoryName}))
+    AND shop_id = #{shopId}
     AND is_deleted = false
-    AND drink_category_id != #{categoryId}
-
-    <choose>
-      <!-- OWNER: check all shops -->
-      <when test="currentUserRoleName == 'OWNER'">
-        <!-- no additional shop filter -->
-      </when>
-
-      <!-- MANAGER: restrict to currentUserShopId -->
-      <when test="currentUserRoleName == 'MANAGER'">
-        AND shop_id = #{currentUserShopId}
-      </when>
-    </choose>
-    );
+    <if test="categoryId != null">
+      AND drink_category_id != #{categoryId}
+    </if>
+    )
   </select>
 
-  <!-- 10. Check if table exists -->
+  <!-- 11. Check if table exists -->
   <select id="checkTableExisted" resultType="boolean">
     SELECT EXISTS (
     SELECT 1
@@ -162,7 +162,7 @@
     )
   </select>
 
-  <!-- 11. Check if table number exists in shop (excluding current table) -->
+  <!-- 12. Check if table number exists in shop (excluding current table) -->
   <select id="checkTableNumberExisted" resultType="boolean">
     SELECT EXISTS (
     SELECT 1

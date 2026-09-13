@@ -7,17 +7,19 @@
   <sql id="categoryFilterCondition">
     WHERE c.is_deleted = false
 
-    <!-- If branchShopId is provided, override shop filtering -->
-    <if test="branchShopId != null">
-      AND c.shop_id = #{branchShopId}
-    </if>
+    <choose>
+      <!-- OWNER: Can filter by branchShopId if provided, otherwise view all -->
+      <when test="currentUserRoleName == 'OWNER'">
+        <if test="branchShopId != null">
+          AND c.shop_id = #{branchShopId}
+        </if>
+      </when>
 
-    <!-- If branchShopId is NOT provided, apply role-based filtering -->
-    <if test="branchShopId == null">
-      <if test="currentUserRoleName != 'OWNER'">
+      <!-- MANAGER & STAFF: Strictly restricted to their assigned shop only -->
+      <otherwise>
         AND c.shop_id = #{currentUserShopId}
-      </if>
-    </if>
+      </otherwise>
+    </choose>
 
     <!-- Search Filter -->
     <if test="search != null and search != ''">
@@ -29,8 +31,10 @@
     SELECT
     c.drink_category_id AS categoryId,
     c.shop_id AS shopId,
-    c.category_name AS categoryName
+    c.category_name AS categoryName,
+    s.shop_name AS shopName
     FROM drink_categories c
+    LEFT JOIN shops s ON c.shop_id = s.shop_id AND s.is_deleted = false
     <include refid="categoryFilterCondition"/>
     ORDER BY
     <choose>

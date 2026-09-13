@@ -1,0 +1,37 @@
+# Git files
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.vscode
+.idea
+*.iml
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Build
+target/
+*.class
+*.jar
+*.log
+
+# Documentation
+*.md
+docs/
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Maven wrapper
+mvnw.cmd
+
+# Other
+node_modules/
+*.tmp
+.env
+.env.local

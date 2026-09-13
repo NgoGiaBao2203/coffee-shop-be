@@ -1,0 +1,86 @@
+version: 2.1
+
+jobs:
+  build:
+    docker:
+      - image: cimg/openjdk:21.0
+    steps:
+      - checkout
+      - run:
+          name: Checkout Production Branch
+          command: git checkout production
+      - restore_cache:
+          keys:
+            - maven-{{ checksum "pom.xml" }}
+            - maven-
+      - run:
+          name: Build Project
+          command: ./mvnw clean package -DskipTests
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: maven-{{ checksum "pom.xml" }}
+      - persist_to_workspace:
+          root: .
+          paths:
+            - target/
+
+  test:
+    docker:
+      - image: cimg/openjdk:21.0
+      - image: postgres:latest
+        environment:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: coffee_shop
+    steps:
+      - checkout
+      - run:
+          name: Checkout Production Branch
+          command: git checkout production
+      - restore_cache:
+          keys:
+            - maven-{{ checksum "pom.xml" }}
+            - maven-
+      - run:
+          name: Wait for Database
+          command: |
+            for i in {1..30}; do
+              if nc -z localhost 5432; then
+                echo "Database is ready"
+                exit 0
+              fi
+              echo "Waiting for database... ($i/30)"
+              sleep 1
+            done
+            echo "Database failed to start"
+            exit 1
+      - run:
+          name: Run Tests
+          command: ./mvnw test
+      - run:
+          name: Generate Code Coverage Report
+          command: ./mvnw jacoco:report
+          when: always
+      - run:
+          name: Check Code Coverage >= 80%
+          command: ./mvnw jacoco:check -Djacoco.maven.plugin.version=0.8.11
+          when: always
+      - store_test_results:
+          path: target/surefire-reports
+      - store_artifacts:
+          path: target/site/jacoco
+          destination: coverage
+      - persist_to_workspace:
+          root: .
+          paths:
+            - target/jacoco.exec
+            - target/site/jacoco
+
+workflows:
+  build-and-test:
+    jobs:
+      - build
+      - test:
+          requires:
+            - build

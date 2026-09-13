@@ -8,20 +8,26 @@
   <update id="updateCategory">
     UPDATE drink_categories
     SET
-    category_name = #{request.categoryName},
-    is_deleted = false
+    category_name = TRIM(#{request.categoryName})
+    <if test="currentUserRoleName == 'OWNER'">
+      , shop_id = #{request.shopId}
+    </if>
     WHERE drink_category_id = #{request.categoryId}
-
+    AND is_deleted = FALSE
     <choose>
-      <!-- OWNER can update anything -->
+      <!-- OWNER can update category across any shop -->
       <when test="currentUserRoleName == 'OWNER'">
         <!-- no extra condition -->
       </when>
 
-      <!-- MANAGER can update only categories from their shop -->
+      <!-- MANAGER can update only categories belonging to their shop -->
       <when test="currentUserRoleName == 'MANAGER'">
         AND shop_id = #{currentUserShopId}
       </when>
+
+      <otherwise>
+        AND 1 = 0
+      </otherwise>
     </choose>
   </update>
 

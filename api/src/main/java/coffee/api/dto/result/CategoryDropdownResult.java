@@ -1,12 +1,16 @@
 package coffee.api.dto.result;
 
 import java.util.UUID;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
-public class CategoryResult {
+@NoArgsConstructor
+@AllArgsConstructor
+public class CategoryDropdownResult {
   private UUID categoryId;
-  private UUID shopId;
   private String categoryName;
+  private UUID shopId;
   private String shopName;
 }

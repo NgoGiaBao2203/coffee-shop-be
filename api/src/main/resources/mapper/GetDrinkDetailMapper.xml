@@ -27,7 +27,7 @@
     dd.size,
     dd.price
     FROM drinks AS d
-    LEFT JOIN drink_details AS dd ON d.drink_id = dd.drink_id
+    LEFT JOIN drink_details AS dd ON d.drink_id = dd.drink_id AND dd.deleted_at IS NULL
     WHERE d.drink_id = #{drinkId}
     AND d.is_deleted = false
     <if test="currentUserRoleName != 'OWNER'">

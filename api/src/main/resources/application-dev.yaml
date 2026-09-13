@@ -1,12 +1,15 @@
+server:
+  port: 8081
+
 spring:
   config:
     activate:
       on-profile: dev
 
   datasource:
-    # Changed 'localhost' to ${DB_HOST:localhost} so it adapts to the Docker network container name
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:coffee-shop-db}
-    username: ${DB_USERNAME:postgres}
+    # Supabase connection
+    url: jdbc:postgresql://${DB_HOST:aws-0-ap-southeast-1.pooler.supabase.com}:${DB_PORT:5432}/${DB_NAME:postgres}
+    username: ${DB_USERNAME:postgres.xauxrvolraonrrxavkrt}
     password: ${DB_PASSWORD:postgres@1234}
     driver-class-name: org.postgresql.Driver
 
@@ -35,6 +38,32 @@ springdoc:
     enabled: true
   swagger-ui:
     enabled: true
+
+app:
+  cors:
+    allowed-origins:
+      - "http://localhost:5173"
+      - "http://localhost:3000"
+    allowed-methods:
+      - "GET"
+      - "POST"
+      - "PUT"
+      - "DELETE"
+      - "PATCH"
+      - "OPTIONS"
+    allowed-headers:
+      - "*"
+    allow-credentials: true
+
+storage:
+  supabase:
+    enabled: true
+    bucket-name: ${SUPABASE_BUCKET_NAME:drinks}
+    region: ${SUPABASE_REGION:ap-southeast-1}
+    endpoint: ${SUPABASE_ENDPOINT:https://xauxrvolraonrrxavkrt.storage.supabase.co/storage/v1/s3}
+    public-url: ${SUPABASE_PUBLIC_URL:https://xauxrvolraonrrxavkrt.supabase.co/storage/v1/object/public}
+    access-key: ${SUPABASE_ACCESS_KEY:0c03e80fa11360e1d89d67accc97e881}
+    secret-key: ${SUPABASE_SECRET_KEY:22991f32da268f8012e5fe40185b7eccba4506d41638bc6f474a4bc47fe47c8c}
 
 logging:
   level:

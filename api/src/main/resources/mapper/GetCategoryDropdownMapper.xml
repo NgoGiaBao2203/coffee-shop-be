@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="coffee.api.mapper.GetCategoryDropdownMapper">
+
+  <select id="getCategoryDropdown" resultType="coffee.api.dto.result.CategoryDropdownResult">
+    SELECT
+      c.drink_category_id AS categoryId,
+      c.category_name AS categoryName,
+      c.shop_id AS shopId,
+      s.shop_name AS shopName
+    FROM drink_categories c
+    INNER JOIN shops s ON c.shop_id = s.shop_id
+    WHERE c.is_deleted = false
+    <if test="currentUserRoleName != 'OWNER'">
+      AND c.shop_id = #{currentUserShopId}
+    </if>
+    ORDER BY s.shop_name ASC, c.category_name ASC
+  </select>
+
+</mapper>

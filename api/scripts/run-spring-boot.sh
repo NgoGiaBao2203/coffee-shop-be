@@ -8,8 +8,5 @@ PROFILE="${1:-dev}"
 
 cd "$PROJECT_DIR"
 
-echo "Starting database..."
-docker compose up -d --wait
-
 echo "Starting Spring Boot with profile: $PROFILE"
 ./mvnw spring-boot:run -Dspring-boot.run.profiles="$PROFILE"
