@@ -16,7 +16,6 @@ public class CreateShopBranchServiceImpl implements ICreateShopBranchService {
 
   @Override
   public void process(CreateShopBranchRequest request) {
-
     Boolean isShopExisted =
         createShopBranchMapper.checkShopExistedByName(request.getShopName().trim());
     if (Boolean.TRUE.equals(isShopExisted)) {
@@ -29,23 +28,16 @@ public class CreateShopBranchServiceImpl implements ICreateShopBranchService {
       throw new UserExistException("Address is existed");
     }
 
-    if (request.getPhoneNumber() != null && !request.getPhoneNumber().trim().isEmpty()) {
-      Boolean isPhoneExisted =
-          createShopBranchMapper.checkShopExistedByPhone(request.getPhoneNumber().trim());
-      if (Boolean.TRUE.equals(isPhoneExisted)) {
-        throw new UserExistException("Phone number is existed");
-      }
-    }
+    String phoneNumber = request.getPhoneNumber().trim();
 
-    // Auto-generate UUID and default isDeleted to false
     UUID newShopId = UUID.randomUUID();
-    Boolean isDeleted = Boolean.TRUE.equals(request.getIsDeleted());
+    Boolean isDeleted = false;
 
     createShopBranchMapper.createShopBranch(
         newShopId,
-        request.getShopName(),
-        request.getAddress(),
-        request.getPhoneNumber(),
+        request.getShopName().trim(),
+        request.getAddress().trim(),
+        phoneNumber,
         isDeleted);
   }
 }

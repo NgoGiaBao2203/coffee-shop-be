@@ -15,7 +15,7 @@
     )
   </select>
 
-  <!-- Count unpaid/processing invoices (status = 0: PENDING / UNPAID) -->
+  <!-- Count active / unpaid invoices (status = 0: PENDING / UNPAID) -->
   <select id="countActiveInvoicesByShopId" resultType="int">
     SELECT COUNT(1)
     FROM invoices
@@ -24,12 +24,27 @@
     AND is_deleted = FALSE
   </select>
 
-  <!-- Soft delete shop branch -->
-  <update id="softDeleteShopBranch">
-    UPDATE shops
+  <!-- Soft delete drink details (sizes, prices) belonging to drinks of this shop -->
+  <update id="softDeleteDrinkDetailsByShopId">
+    UPDATE drink_details
+    SET
+    deleted_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh',
+    deleted_by = #{deletedBy}
+    WHERE drink_id IN (
+    SELECT drink_id
+    FROM drinks
+    WHERE shop_id = #{shopId}
+    )
+    AND deleted_at IS NULL
+  </update>
+
+  <!-- Soft delete all drinks under this shop -->
+  <update id="softDeleteDrinksByShopId">
+    UPDATE drinks
     SET
     is_deleted = TRUE,
-    updated_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh'
+    deleted_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh',
+    deleted_by = #{deletedBy}
     WHERE shop_id = #{shopId}
     AND is_deleted = FALSE
   </update>
@@ -37,15 +52,43 @@
   <!-- Soft delete all categories under this shop -->
   <update id="softDeleteCategoriesByShopId">
     UPDATE drink_categories
-    SET is_deleted = TRUE
+    SET
+    is_deleted = TRUE,
+    deleted_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh',
+    deleted_by = #{deletedBy}
     WHERE shop_id = #{shopId}
     AND is_deleted = FALSE
   </update>
 
-  <!-- Soft delete all drinks under this shop -->
-  <update id="softDeleteDrinksByShopId">
-    UPDATE drinks
-    SET is_deleted = TRUE
+  <!-- Soft delete all tables under this shop -->
+  <update id="softDeleteTablesByShopId">
+    UPDATE shop_tables
+    SET
+    is_deleted = TRUE,
+    deleted_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh',
+    deleted_by = #{deletedBy}
+    WHERE shop_id = #{shopId}
+    AND is_deleted = FALSE
+  </update>
+
+  <!-- Soft delete branch-staff association mappings -->
+  <update id="softDeleteProfileShopsByShopId">
+    UPDATE profile_shops
+    SET
+    deleted_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh',
+    deleted_by = #{deletedBy}
+    WHERE shop_id = #{shopId}
+    AND deleted_at IS NULL
+  </update>
+
+  <!-- Soft delete the target shop branch -->
+  <update id="softDeleteShopBranch">
+    UPDATE shops
+    SET
+    is_deleted = TRUE,
+    deleted_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh',
+    deleted_by = #{deletedBy},
+    updated_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh'
     WHERE shop_id = #{shopId}
     AND is_deleted = FALSE
   </update>

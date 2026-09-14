@@ -37,28 +37,17 @@
     )
   </select>
 
-  <!-- Check duplicate phone number except current shop -->
-  <select id="checkShopExistedByPhoneExceptCurrent" resultType="java.lang.Boolean">
-    SELECT EXISTS (
-    SELECT 1
-    FROM shops
-    WHERE phone_number = #{phoneNumber}
-    AND shop_id != #{shopId}
-    AND is_deleted = FALSE
-    )
-  </select>
-
-  <!-- Update shop branch -->
+  <!-- Update shop branch details -->
   <update id="updateShopBranch">
     UPDATE shops
     <set>
       shop_name = #{shopName},
       address = #{address},
       phone_number = #{phoneNumber},
-      is_deleted = #{isDeleted},
       updated_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh'
     </set>
     WHERE shop_id = #{shopId}
+    AND is_deleted = FALSE
   </update>
 
 </mapper>

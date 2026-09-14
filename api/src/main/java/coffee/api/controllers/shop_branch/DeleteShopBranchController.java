@@ -22,7 +22,6 @@ public class DeleteShopBranchController {
   @PreAuthorize("hasAnyRole('OWNER')")
   public ResponseEntity<DeleteShopBranchResponse> deleteShopBranch(
       @RequestBody @Valid DeleteShopBranchRequest request) {
-
     deleteShopBranchService.process(request);
 
     return ResponseEntity.ok()

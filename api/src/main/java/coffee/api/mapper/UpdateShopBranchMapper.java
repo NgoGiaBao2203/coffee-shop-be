@@ -15,13 +15,9 @@ public interface UpdateShopBranchMapper {
   Boolean checkShopExistedByAddressExceptCurrent(
       @Param("shopId") UUID shopId, @Param("address") String address);
 
-  Boolean checkShopExistedByPhoneExceptCurrent(
-      @Param("shopId") UUID shopId, @Param("phoneNumber") String phoneNumber);
-
   void updateShopBranch(
       @Param("shopId") UUID shopId,
       @Param("shopName") String shopName,
       @Param("address") String address,
-      @Param("phoneNumber") String phoneNumber,
-      @Param("isDeleted") Boolean isDeleted);
+      @Param("phoneNumber") String phoneNumber);
 }

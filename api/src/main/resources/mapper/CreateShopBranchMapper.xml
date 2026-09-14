@@ -9,7 +9,7 @@
     SELECT EXISTS (
     SELECT 1
     FROM shops
-    WHERE shop_name = #{shopName}
+    WHERE LOWER(TRIM(shop_name)) = LOWER(TRIM(#{shopName}))
     AND is_deleted = FALSE
     )
   </select>
@@ -20,16 +20,6 @@
     SELECT 1
     FROM shops
     WHERE LOWER(TRIM(address)) = LOWER(TRIM(#{address}))
-    AND is_deleted = FALSE
-    )
-  </select>
-
-  <!-- Check phone shop -->
-  <select id="checkShopExistedByPhone" resultType="java.lang.Boolean">
-    SELECT EXISTS (
-    SELECT 1
-    FROM shops
-    WHERE phone_number = #{phoneNumber}
     AND is_deleted = FALSE
     )
   </select>

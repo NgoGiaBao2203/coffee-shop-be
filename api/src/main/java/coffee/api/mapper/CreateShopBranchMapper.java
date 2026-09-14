@@ -11,8 +11,6 @@ public interface CreateShopBranchMapper {
 
   Boolean checkShopExistedByAddress(@Param("address") String address);
 
-  Boolean checkShopExistedByPhone(@Param("phoneNumber") String phoneNumber);
-
   void createShopBranch(
       @Param("shopId") UUID shopId,
       @Param("shopName") String shopName,

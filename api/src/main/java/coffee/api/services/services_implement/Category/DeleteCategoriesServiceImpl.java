@@ -6,12 +6,9 @@ import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.exceptions.InvalidRequestException;
 import coffee.api.mapper.CommonMapper;
 import coffee.api.mapper.DeleteCategoryMapper;
-import coffee.api.security.CustomUserDetail;
 import coffee.api.services.services_interface.category.IDeleteCategoriesService;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,21 +22,22 @@ public class DeleteCategoriesServiceImpl implements IDeleteCategoriesService {
   @Override
   @Transactional(rollbackFor = Exception.class)
   public void process(
-      DeleteCategoriesRequest request, String currentUserRoleName, UUID currentUserShopId) {
+      DeleteCategoriesRequest request,
+      String currentUserRoleName,
+      UUID currentUserShopId,
+      UUID currentUserId) {
 
     // 1. Verify category ID input
     if (request == null || request.getCategoryId() == null) {
       throw new InvalidRequestException("Category ID is required");
     }
 
-    UUID currentProfileId = getCurrentProfileId();
-
     // 2. Verify manager role belongs to active shop branch
     if (Roles.MANAGER.getValue().equals(currentUserRoleName)) {
       if (currentUserShopId == null) {
         throw new InvalidRequestException("Manager is not assigned to any shop branch");
       }
-      boolean isShopMember = commonMapper.checkShopIdIsExisted(currentProfileId, currentUserShopId);
+      boolean isShopMember = commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId);
       if (!isShopMember) {
         throw new InvalidRequestException("You do not have permission to access this shop branch");
       }
@@ -55,23 +53,14 @@ public class DeleteCategoriesServiceImpl implements IDeleteCategoriesService {
 
     // 4. Cascade soft-delete drink variants and prices first to prevent orphan records
     deleteCategoryMapper.softDeleteDrinkDetailsByCategory(
-        request.getCategoryId(), currentUserRoleName, currentUserShopId, currentProfileId);
+        request.getCategoryId(), currentUserRoleName, currentUserShopId, currentUserId);
 
     // 5. Cascade soft-delete drinks under the category
     deleteCategoryMapper.softDeleteDrinksByCategory(
-        request.getCategoryId(), currentUserRoleName, currentUserShopId, currentProfileId);
+        request.getCategoryId(), currentUserRoleName, currentUserShopId, currentUserId);
 
     // 6. Soft-delete the category record
     deleteCategoryMapper.softDeleteCategory(
-        request.getCategoryId(), currentUserRoleName, currentUserShopId, currentProfileId);
-  }
-
-  private UUID getCurrentProfileId() {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    if (authentication != null
-        && authentication.getPrincipal() instanceof CustomUserDetail userDetail) {
-      return userDetail.getUserId();
-    }
-    return null;
+        request.getCategoryId(), currentUserRoleName, currentUserShopId, currentUserId);
   }
 }

@@ -7,13 +7,16 @@
 
   <select id="getCategoryDropdown" resultType="coffee.api.dto.result.CategoryDropdownResult">
     SELECT
-      c.drink_category_id AS categoryId,
-      c.category_name AS categoryName,
-      c.shop_id AS shopId,
-      s.shop_name AS shopName
+    c.drink_category_id AS categoryId,
+    c.category_name AS categoryName,
+    c.shop_id AS shopId,
+    s.shop_name AS shopName
     FROM drink_categories c
     INNER JOIN shops s ON c.shop_id = s.shop_id
     WHERE c.is_deleted = false
+    AND c.deleted_at IS NULL
+    AND s.is_deleted = false
+    AND s.deleted_at IS NULL
     <if test="currentUserRoleName != 'OWNER'">
       AND c.shop_id = #{currentUserShopId}
     </if>

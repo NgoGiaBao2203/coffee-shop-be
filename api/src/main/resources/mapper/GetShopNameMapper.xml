@@ -7,9 +7,10 @@
 
   <select id="getShopNames" resultType="coffee.api.dto.result.ShopNameResult">
     SELECT
-      shop_id AS shopId,
-      shop_name AS shopName
+    shop_id AS shopId,
+    shop_name AS shopName
     FROM shops
+    WHERE deleted_at IS NULL
   </select>
 
 </mapper>

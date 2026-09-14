@@ -11,14 +11,12 @@ import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.exceptions.InvalidRequestException;
 import coffee.api.mapper.CommonMapper;
 import coffee.api.mapper.DeleteCategoryMapper;
-import coffee.api.security.CustomUserDetail;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
 import java.util.Set;
 import java.util.UUID;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,9 +24,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataAccessException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
 
 @ExtendWith(MockitoExtension.class)
 public class DeleteCategoriesServiceImplTest {
@@ -42,7 +37,7 @@ public class DeleteCategoriesServiceImplTest {
   private Validator validator;
   private DeleteCategoriesRequest validRequest;
   private UUID currentUserShopId;
-  private UUID currentProfileId;
+  private UUID currentUserId;
   private String managerRole;
   private String ownerRole;
 
@@ -53,7 +48,7 @@ public class DeleteCategoriesServiceImplTest {
     }
 
     currentUserShopId = UUID.randomUUID();
-    currentProfileId = UUID.randomUUID();
+    currentUserId = UUID.randomUUID();
 
     validRequest = new DeleteCategoriesRequest();
     validRequest.setCategoryId(UUID.randomUUID());
@@ -62,75 +57,47 @@ public class DeleteCategoriesServiceImplTest {
     ownerRole = Roles.OWNER.getValue();
   }
 
-  @AfterEach
-  void tearDown() {
-    SecurityContextHolder.clearContext();
-  }
-
-  private void mockSecurityContextWithCustomUser(UUID userId) {
-    CustomUserDetail userDetail = mock(CustomUserDetail.class);
-    when(userDetail.getUserId()).thenReturn(userId);
-
-    Authentication authentication = mock(Authentication.class);
-    when(authentication.getPrincipal()).thenReturn(userDetail);
-
-    SecurityContext securityContext = mock(SecurityContext.class);
-    when(securityContext.getAuthentication()).thenReturn(authentication);
-
-    SecurityContextHolder.setContext(securityContext);
-  }
-
-  private void mockSecurityContextWithNonCustomUser() {
-    Authentication authentication = mock(Authentication.class);
-    when(authentication.getPrincipal()).thenReturn("anonymousUser");
-
-    SecurityContext securityContext = mock(SecurityContext.class);
-    when(securityContext.getAuthentication()).thenReturn(authentication);
-
-    SecurityContextHolder.setContext(securityContext);
-  }
-
   // =========================================================================
   // SERVICE PROCESS - NORMAL & BUSINESS CASES
   // =========================================================================
 
   @Test
   void process_Success_WhenUserIsManagerWithActiveShop_TC001() {
-    mockSecurityContextWithCustomUser(currentProfileId);
-
-    when(commonMapper.checkShopIdIsExisted(currentProfileId, currentUserShopId)).thenReturn(true);
+    when(commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId)).thenReturn(true);
     when(commonMapper.checkCategoryExisted(
             validRequest.getCategoryId(), managerRole, currentUserShopId))
         .thenReturn(true);
 
     assertDoesNotThrow(
-        () -> deleteCategoriesService.process(validRequest, managerRole, currentUserShopId));
+        () ->
+            deleteCategoriesService.process(
+                validRequest, managerRole, currentUserShopId, currentUserId));
 
-    verify(commonMapper, times(1)).checkShopIdIsExisted(currentProfileId, currentUserShopId);
+    verify(commonMapper, times(1)).checkShopIdIsExisted(currentUserId, currentUserShopId);
     verify(commonMapper, times(1))
         .checkCategoryExisted(validRequest.getCategoryId(), managerRole, currentUserShopId);
 
     verify(deleteCategoryMapper, times(1))
         .softDeleteDrinkDetailsByCategory(
-            validRequest.getCategoryId(), managerRole, currentUserShopId, currentProfileId);
+            validRequest.getCategoryId(), managerRole, currentUserShopId, currentUserId);
     verify(deleteCategoryMapper, times(1))
         .softDeleteDrinksByCategory(
-            validRequest.getCategoryId(), managerRole, currentUserShopId, currentProfileId);
+            validRequest.getCategoryId(), managerRole, currentUserShopId, currentUserId);
     verify(deleteCategoryMapper, times(1))
         .softDeleteCategory(
-            validRequest.getCategoryId(), managerRole, currentUserShopId, currentProfileId);
+            validRequest.getCategoryId(), managerRole, currentUserShopId, currentUserId);
   }
 
   @Test
   void process_Success_WhenUserIsOwner_BypassesShopMembershipCheck_TC002() {
-    mockSecurityContextWithCustomUser(currentProfileId);
-
     when(commonMapper.checkCategoryExisted(
             validRequest.getCategoryId(), ownerRole, currentUserShopId))
         .thenReturn(true);
 
     assertDoesNotThrow(
-        () -> deleteCategoriesService.process(validRequest, ownerRole, currentUserShopId));
+        () ->
+            deleteCategoriesService.process(
+                validRequest, ownerRole, currentUserShopId, currentUserId));
 
     verify(commonMapper, never()).checkShopIdIsExisted(any(), any());
     verify(commonMapper, times(1))
@@ -138,53 +105,37 @@ public class DeleteCategoriesServiceImplTest {
 
     verify(deleteCategoryMapper, times(1))
         .softDeleteDrinkDetailsByCategory(
-            validRequest.getCategoryId(), ownerRole, currentUserShopId, currentProfileId);
+            validRequest.getCategoryId(), ownerRole, currentUserShopId, currentUserId);
     verify(deleteCategoryMapper, times(1))
         .softDeleteDrinksByCategory(
-            validRequest.getCategoryId(), ownerRole, currentUserShopId, currentProfileId);
+            validRequest.getCategoryId(), ownerRole, currentUserShopId, currentUserId);
     verify(deleteCategoryMapper, times(1))
         .softDeleteCategory(
-            validRequest.getCategoryId(), ownerRole, currentUserShopId, currentProfileId);
+            validRequest.getCategoryId(), ownerRole, currentUserShopId, currentUserId);
   }
 
   @Test
   void process_Success_WhenUserRoleIsNotManager_TC003() {
+    String staffRole = Roles.STAFF.getValue();
     when(commonMapper.checkCategoryExisted(
-            validRequest.getCategoryId(), Roles.STAFF.getValue(), currentUserShopId))
+            validRequest.getCategoryId(), staffRole, currentUserShopId))
         .thenReturn(true);
 
     assertDoesNotThrow(
         () ->
             deleteCategoriesService.process(
-                validRequest, Roles.STAFF.getValue(), currentUserShopId));
+                validRequest, staffRole, currentUserShopId, currentUserId));
 
     verify(commonMapper, never()).checkShopIdIsExisted(any(), any());
     verify(deleteCategoryMapper, times(1))
         .softDeleteDrinkDetailsByCategory(
-            validRequest.getCategoryId(), Roles.STAFF.getValue(), currentUserShopId, null);
+            validRequest.getCategoryId(), staffRole, currentUserShopId, currentUserId);
     verify(deleteCategoryMapper, times(1))
         .softDeleteDrinksByCategory(
-            validRequest.getCategoryId(), Roles.STAFF.getValue(), currentUserShopId, null);
+            validRequest.getCategoryId(), staffRole, currentUserShopId, currentUserId);
     verify(deleteCategoryMapper, times(1))
         .softDeleteCategory(
-            validRequest.getCategoryId(), Roles.STAFF.getValue(), currentUserShopId, null);
-  }
-
-  @Test
-  void process_Success_WhenSecurityContextIsEmpty_CoversReturnNullBranch_TC004() {
-    SecurityContextHolder.clearContext();
-
-    when(commonMapper.checkShopIdIsExisted(isNull(), eq(currentUserShopId))).thenReturn(true);
-    when(commonMapper.checkCategoryExisted(
-            validRequest.getCategoryId(), managerRole, currentUserShopId))
-        .thenReturn(true);
-
-    assertDoesNotThrow(
-        () -> deleteCategoriesService.process(validRequest, managerRole, currentUserShopId));
-
-    verify(commonMapper, times(1)).checkShopIdIsExisted(isNull(), eq(currentUserShopId));
-    verify(deleteCategoryMapper, times(1))
-        .softDeleteCategory(validRequest.getCategoryId(), managerRole, currentUserShopId, null);
+            validRequest.getCategoryId(), staffRole, currentUserShopId, currentUserId);
   }
 
   // =========================================================================
@@ -192,11 +143,13 @@ public class DeleteCategoriesServiceImplTest {
   // =========================================================================
 
   @Test
-  void process_ThrowsInvalidRequestException_WhenRequestIsNull_TC005() {
+  void process_ThrowsInvalidRequestException_WhenRequestIsNull_TC004() {
     InvalidRequestException exception =
         assertThrows(
             InvalidRequestException.class,
-            () -> deleteCategoriesService.process(null, managerRole, currentUserShopId));
+            () ->
+                deleteCategoriesService.process(
+                    null, managerRole, currentUserShopId, currentUserId));
 
     assertEquals("Category ID is required", exception.getMessage());
     verifyNoInteractions(commonMapper);
@@ -204,13 +157,15 @@ public class DeleteCategoriesServiceImplTest {
   }
 
   @Test
-  void process_ThrowsInvalidRequestException_WhenCategoryIdIsNull_TC006() {
+  void process_ThrowsInvalidRequestException_WhenCategoryIdIsNull_TC005() {
     validRequest.setCategoryId(null);
 
     InvalidRequestException exception =
         assertThrows(
             InvalidRequestException.class,
-            () -> deleteCategoriesService.process(validRequest, managerRole, currentUserShopId));
+            () ->
+                deleteCategoriesService.process(
+                    validRequest, managerRole, currentUserShopId, currentUserId));
 
     assertEquals("Category ID is required", exception.getMessage());
     verifyNoInteractions(commonMapper);
@@ -218,11 +173,11 @@ public class DeleteCategoriesServiceImplTest {
   }
 
   @Test
-  void process_ThrowsInvalidRequestException_WhenManagerIsNotAssignedToAnyShop_TC007() {
+  void process_ThrowsInvalidRequestException_WhenManagerIsNotAssignedToAnyShop_TC006() {
     InvalidRequestException exception =
         assertThrows(
             InvalidRequestException.class,
-            () -> deleteCategoriesService.process(validRequest, managerRole, null));
+            () -> deleteCategoriesService.process(validRequest, managerRole, null, currentUserId));
 
     assertEquals("Manager is not assigned to any shop branch", exception.getMessage());
 
@@ -232,43 +187,26 @@ public class DeleteCategoriesServiceImplTest {
   }
 
   @Test
-  void process_ThrowsInvalidRequestException_WhenManagerShopMembershipInactiveOrDeleted_TC008() {
-    mockSecurityContextWithCustomUser(currentProfileId);
-    when(commonMapper.checkShopIdIsExisted(currentProfileId, currentUserShopId)).thenReturn(false);
+  void process_ThrowsInvalidRequestException_WhenManagerShopMembershipInactiveOrDeleted_TC007() {
+    when(commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId)).thenReturn(false);
 
     InvalidRequestException exception =
         assertThrows(
             InvalidRequestException.class,
-            () -> deleteCategoriesService.process(validRequest, managerRole, currentUserShopId));
+            () ->
+                deleteCategoriesService.process(
+                    validRequest, managerRole, currentUserShopId, currentUserId));
 
     assertEquals("You do not have permission to access this shop branch", exception.getMessage());
 
-    verify(commonMapper, times(1)).checkShopIdIsExisted(currentProfileId, currentUserShopId);
+    verify(commonMapper, times(1)).checkShopIdIsExisted(currentUserId, currentUserShopId);
     verify(commonMapper, never()).checkCategoryExisted(any(), any(), any());
     verifyNoInteractions(deleteCategoryMapper);
   }
 
   @Test
-  void
-      process_ThrowsInvalidRequestException_WhenAuthenticationPrincipalIsNotCustomUserDetail_TC009() {
-    mockSecurityContextWithNonCustomUser();
-    when(commonMapper.checkShopIdIsExisted(isNull(), eq(currentUserShopId))).thenReturn(false);
-
-    InvalidRequestException exception =
-        assertThrows(
-            InvalidRequestException.class,
-            () -> deleteCategoriesService.process(validRequest, managerRole, currentUserShopId));
-
-    assertEquals("You do not have permission to access this shop branch", exception.getMessage());
-
-    verify(commonMapper, times(1)).checkShopIdIsExisted(isNull(), eq(currentUserShopId));
-    verifyNoInteractions(deleteCategoryMapper);
-  }
-
-  @Test
-  void process_ThrowsDataNotFoundException_WhenCategoryDoesNotExist_TC010() {
-    mockSecurityContextWithCustomUser(currentProfileId);
-    when(commonMapper.checkShopIdIsExisted(currentProfileId, currentUserShopId)).thenReturn(true);
+  void process_ThrowsDataNotFoundException_WhenCategoryDoesNotExist_TC008() {
+    when(commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId)).thenReturn(true);
     when(commonMapper.checkCategoryExisted(
             validRequest.getCategoryId(), managerRole, currentUserShopId))
         .thenReturn(false);
@@ -276,21 +214,22 @@ public class DeleteCategoriesServiceImplTest {
     DataNotFoundException exception =
         assertThrows(
             DataNotFoundException.class,
-            () -> deleteCategoriesService.process(validRequest, managerRole, currentUserShopId));
+            () ->
+                deleteCategoriesService.process(
+                    validRequest, managerRole, currentUserShopId, currentUserId));
 
     assertEquals("Data not found", exception.getMessage());
     assertEquals(validRequest.getCategoryId(), exception.getId());
 
-    verify(commonMapper, times(1)).checkShopIdIsExisted(currentProfileId, currentUserShopId);
+    verify(commonMapper, times(1)).checkShopIdIsExisted(currentUserId, currentUserShopId);
     verify(commonMapper, times(1))
         .checkCategoryExisted(validRequest.getCategoryId(), managerRole, currentUserShopId);
     verifyNoInteractions(deleteCategoryMapper);
   }
 
   @Test
-  void process_ThrowsDataAccessException_WhenCascadeDeleteFails_TC011() {
-    mockSecurityContextWithCustomUser(currentProfileId);
-    when(commonMapper.checkShopIdIsExisted(currentProfileId, currentUserShopId)).thenReturn(true);
+  void process_ThrowsDataAccessException_WhenCascadeDeleteFails_TC009() {
+    when(commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId)).thenReturn(true);
     when(commonMapper.checkCategoryExisted(
             validRequest.getCategoryId(), managerRole, currentUserShopId))
         .thenReturn(true);
@@ -302,13 +241,15 @@ public class DeleteCategoriesServiceImplTest {
     DataAccessException exception =
         assertThrows(
             DataAccessException.class,
-            () -> deleteCategoriesService.process(validRequest, managerRole, currentUserShopId));
+            () ->
+                deleteCategoriesService.process(
+                    validRequest, managerRole, currentUserShopId, currentUserId));
 
     assertEquals("Database timeout during cascade deletion", exception.getMessage());
 
     verify(deleteCategoryMapper, times(1))
         .softDeleteDrinkDetailsByCategory(
-            validRequest.getCategoryId(), managerRole, currentUserShopId, currentProfileId);
+            validRequest.getCategoryId(), managerRole, currentUserShopId, currentUserId);
     verify(deleteCategoryMapper, never()).softDeleteDrinksByCategory(any(), any(), any(), any());
     verify(deleteCategoryMapper, never()).softDeleteCategory(any(), any(), any(), any());
   }
@@ -318,13 +259,13 @@ public class DeleteCategoriesServiceImplTest {
   // =========================================================================
 
   @Test
-  void requestValidation_Success_WhenCategoryIdIsValid_TC012() {
+  void requestValidation_Success_WhenCategoryIdIsValid_TC010() {
     Set<ConstraintViolation<DeleteCategoriesRequest>> violations = validator.validate(validRequest);
     assertEquals(0, violations.size());
   }
 
   @Test
-  void requestValidation_Fails_WhenCategoryIdIsNull_TC013() {
+  void requestValidation_Fails_WhenCategoryIdIsNull_TC011() {
     validRequest.setCategoryId(null);
     Set<ConstraintViolation<DeleteCategoriesRequest>> violations = validator.validate(validRequest);
 

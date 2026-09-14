@@ -11,9 +11,18 @@ public interface DeleteShopBranchMapper {
 
   int countActiveInvoicesByShopId(@Param("shopId") UUID shopId);
 
-  void softDeleteShopBranch(@Param("shopId") UUID shopId);
+  void softDeleteDrinkDetailsByShopId(
+      @Param("shopId") UUID shopId, @Param("deletedBy") UUID deletedBy);
 
-  void softDeleteCategoriesByShopId(@Param("shopId") UUID shopId);
+  void softDeleteDrinksByShopId(@Param("shopId") UUID shopId, @Param("deletedBy") UUID deletedBy);
 
-  void softDeleteDrinksByShopId(@Param("shopId") UUID shopId);
+  void softDeleteCategoriesByShopId(
+      @Param("shopId") UUID shopId, @Param("deletedBy") UUID deletedBy);
+
+  void softDeleteTablesByShopId(@Param("shopId") UUID shopId, @Param("deletedBy") UUID deletedBy);
+
+  void softDeleteProfileShopsByShopId(
+      @Param("shopId") UUID shopId, @Param("deletedBy") UUID deletedBy);
+
+  void softDeleteShopBranch(@Param("shopId") UUID shopId, @Param("deletedBy") UUID deletedBy);
 }

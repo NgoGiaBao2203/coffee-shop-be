@@ -137,7 +137,7 @@ public class CreateCategoriesServiceImplTest {
         .checkCategoryNameExisted(
             isNull(), eq(validRequest.getCategoryName().trim()), eq(differentShopId));
     verify(createCategoriesMapper, times(1))
-        .createCategories(validRequest, ownerRole, currentUserShopId);
+        .createCategories(validRequest, ownerRole, differentShopId);
   }
 
   @Test

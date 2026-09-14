@@ -69,7 +69,7 @@ public class CreateCategoriesServiceImpl implements ICreateCategoriesService {
     }
 
     // 5. Insert new category
-    createCategoriesMapper.createCategories(request, currentUserRoleName, currentUserShopId);
+    createCategoriesMapper.createCategories(request, currentUserRoleName, request.getShopId());
   }
 
   private UUID getCurrentProfileId() {

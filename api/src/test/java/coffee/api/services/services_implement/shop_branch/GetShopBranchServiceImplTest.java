@@ -8,10 +8,16 @@ import coffee.api.dto.request.shop_branch.SearchShopBranchRequest;
 import coffee.api.dto.response.base_response.PageResponse;
 import coffee.api.dto.result.ShopBranchResult;
 import coffee.api.enums.SortDirection;
+import coffee.api.enums.ValidationMessage;
 import coffee.api.mapper.GetShopBranchMapper;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,6 +25,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataAccessException;
 
 @ExtendWith(MockitoExtension.class)
 public class GetShopBranchServiceImplTest {
@@ -27,6 +34,7 @@ public class GetShopBranchServiceImplTest {
 
   @InjectMocks private GetShopBranchServiceImpl getShopBranchService;
 
+  private Validator validator;
   private SearchShopBranchRequest validRequest;
   private ShopBranchResult sampleShopBranchResult;
   private UUID currentUserId;
@@ -34,6 +42,10 @@ public class GetShopBranchServiceImplTest {
 
   @BeforeEach
   void setUp() {
+    try (ValidatorFactory factory = Validation.buildDefaultValidatorFactory()) {
+      validator = factory.getValidator();
+    }
+
     currentUserId = UUID.fromString("11111111-1111-1111-1111-111111111111");
     currentUserRoleName = "OWNER";
 
@@ -53,6 +65,10 @@ public class GetShopBranchServiceImplTest {
     sampleShopBranchResult.setUpdatedAt(LocalDateTime.now());
     sampleShopBranchResult.setIsDeleted(false);
   }
+
+  // =========================================================================
+  // SUCCESS / NORMAL CASES
+  // =========================================================================
 
   @Test
   void process_SuccessWithItems_TC001() {
@@ -219,9 +235,9 @@ public class GetShopBranchServiceImplTest {
   }
 
   @Test
-  void process_DefaultSortDirectionWhenNull_TC005() {
+  void process_Success_WhenSortDirectionIsNull_TC005() {
     // Arrange
-    validRequest.setSortDirection(null); // When sort direction is not specified
+    validRequest.setSortDirection(null);
     String search = validRequest.trimmedSearch();
     String sortBy = validRequest.getSortBy();
     int size = validRequest.getSize();
@@ -255,5 +271,174 @@ public class GetShopBranchServiceImplTest {
             eq(offset),
             eq(currentUserRoleName),
             eq(currentUserId));
+  }
+
+  @Test
+  void process_Success_WhenRoleIsManager_TC006() {
+    // Arrange
+    String managerRole = "MANAGER";
+    when(getShopBranchMapper.countShopBranchesFiltered(any(), eq(managerRole), eq(currentUserId)))
+        .thenReturn(1L);
+    when(getShopBranchMapper.getShopBranchesFiltered(
+            any(), any(), any(), anyInt(), anyInt(), eq(managerRole), eq(currentUserId)))
+        .thenReturn(Collections.singletonList(sampleShopBranchResult));
+
+    // Act
+    PageResponse<ShopBranchResult> response =
+        getShopBranchService.process(validRequest, managerRole, currentUserId);
+
+    // Assert
+    assertNotNull(response);
+    assertEquals(1, response.getItems().size());
+    verify(getShopBranchMapper, times(1))
+        .countShopBranchesFiltered(any(), eq(managerRole), eq(currentUserId));
+  }
+
+  // =========================================================================
+  // ABNORMAL / DATABASE EXCEPTION CASES
+  // =========================================================================
+
+  @Test
+  void process_ThrowsDataAccessException_WhenCountQueryFails_TC007() {
+    // Arrange
+    when(getShopBranchMapper.countShopBranchesFiltered(any(), any(), any()))
+        .thenThrow(new DataAccessException("Database connection timeout") {});
+
+    // Act & Assert
+    DataAccessException exception =
+        assertThrows(
+            DataAccessException.class,
+            () -> getShopBranchService.process(validRequest, currentUserRoleName, currentUserId));
+
+    assertEquals("Database connection timeout", exception.getMessage());
+    verify(getShopBranchMapper, never())
+        .getShopBranchesFiltered(any(), any(), any(), anyInt(), anyInt(), any(), any());
+  }
+
+  @Test
+  void process_ThrowsDataAccessException_WhenSelectQueryFails_TC008() {
+    // Arrange
+    when(getShopBranchMapper.countShopBranchesFiltered(any(), any(), any())).thenReturn(5L);
+    when(getShopBranchMapper.getShopBranchesFiltered(
+            any(), any(), any(), anyInt(), anyInt(), any(), any()))
+        .thenThrow(new DataAccessException("Syntax error in query execution") {});
+
+    // Act & Assert
+    DataAccessException exception =
+        assertThrows(
+            DataAccessException.class,
+            () -> getShopBranchService.process(validRequest, currentUserRoleName, currentUserId));
+
+    assertEquals("Syntax error in query execution", exception.getMessage());
+  }
+
+  // =========================================================================
+  // DTO HELPER METHODS TESTS (calcOffset, totalPages, trimmedSearch)
+  // =========================================================================
+
+  @Test
+  void process_DtoHelpers_CalculationAndTrimmingCoverage_TC009() {
+    SearchShopBranchRequest req = new SearchShopBranchRequest();
+    req.setPage(3);
+    req.setSize(15);
+    assertEquals(30, req.calcOffset());
+
+    // totalPages cases
+    assertEquals(0, req.totalPages(0));
+    assertEquals(1, req.totalPages(10));
+    assertEquals(1, req.totalPages(15));
+    assertEquals(2, req.totalPages(16));
+
+    // trimmedSearch cases
+    req.setSearch(null);
+    assertNull(req.trimmedSearch());
+
+    req.setSearch("");
+    assertNull(req.trimmedSearch());
+
+    req.setSearch("   ");
+    assertNull(req.trimmedSearch());
+
+    req.setSearch("  Hưng Lợi  ");
+    assertEquals("Hưng Lợi", req.trimmedSearch());
+  }
+
+  // =========================================================================
+  // REQUEST BEAN VALIDATION CASES
+  // =========================================================================
+
+  @Test
+  void process_ValidationSuccess_WhenRequestIsValid_TC010() {
+    Set<ConstraintViolation<SearchShopBranchRequest>> violations = validator.validate(validRequest);
+    assertTrue(violations.isEmpty());
+  }
+
+  @Test
+  void process_ValidationSuccess_WhenSearchIsNull_TC011() {
+    validRequest.setSearch(null);
+    Set<ConstraintViolation<SearchShopBranchRequest>> violations = validator.validate(validRequest);
+    assertTrue(violations.isEmpty());
+  }
+
+  @Test
+  void process_ValidationSuccess_WhenSearchIsEmptyOrWhitespace_TC012() {
+    validRequest.setSearch("   ");
+    Set<ConstraintViolation<SearchShopBranchRequest>> violations = validator.validate(validRequest);
+    assertTrue(violations.isEmpty());
+  }
+
+  @Test
+  void process_ValidationFails_WhenPageIsLessThanOne_TC013() {
+    validRequest.setPage(0);
+    Set<ConstraintViolation<SearchShopBranchRequest>> violations = validator.validate(validRequest);
+
+    assertEquals(1, violations.size());
+    assertEquals(ValidationMessage.Msg.PAGE_MIN, violations.iterator().next().getMessage());
+  }
+
+  @Test
+  void process_ValidationFails_WhenSizeIsLessThanOne_TC014() {
+    validRequest.setSize(0);
+    Set<ConstraintViolation<SearchShopBranchRequest>> violations = validator.validate(validRequest);
+
+    assertEquals(1, violations.size());
+    assertEquals(ValidationMessage.Msg.SIZE_MIN, violations.iterator().next().getMessage());
+  }
+
+  @Test
+  void process_ValidationFails_WhenSizeExceedsMax_TC015() {
+    validRequest.setSize(101);
+    Set<ConstraintViolation<SearchShopBranchRequest>> violations = validator.validate(validRequest);
+
+    assertEquals(1, violations.size());
+    assertEquals(ValidationMessage.Msg.SIZE_MAX, violations.iterator().next().getMessage());
+  }
+
+  @Test
+  void process_ValidationFails_WhenSearchExceeds100Characters_TC016() {
+    validRequest.setSearch("A".repeat(101));
+    Set<ConstraintViolation<SearchShopBranchRequest>> violations = validator.validate(validRequest);
+
+    assertEquals(1, violations.size());
+    assertEquals(ValidationMessage.Msg.SIZE_MAX, violations.iterator().next().getMessage());
+  }
+
+  @Test
+  void process_ValidationFails_WhenSearchContainsProhibitedCharacters_TC017() {
+    validRequest.setSearch("SELECT * FROM shops; <script>");
+    Set<ConstraintViolation<SearchShopBranchRequest>> violations = validator.validate(validRequest);
+
+    assertEquals(1, violations.size());
+    assertEquals(
+        ValidationMessage.Msg.SPECIAL_CHARACTERS, violations.iterator().next().getMessage());
+  }
+
+  @Test
+  void process_ValidationFails_WhenSortByIsInvalidColumn_TC018() {
+    validRequest.setSortBy("passwordHash");
+    Set<ConstraintViolation<SearchShopBranchRequest>> violations = validator.validate(validRequest);
+
+    assertEquals(1, violations.size());
+    assertEquals(ValidationMessage.Msg.SORT_BY_INVALID, violations.iterator().next().getMessage());
   }
 }

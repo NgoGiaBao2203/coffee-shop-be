@@ -20,6 +20,7 @@ public class SearchDrinksRequest {
   @Max(value = 100, message = ValidationMessage.Msg.SIZE_MAX)
   private int size = 10;
 
+  @Pattern(regexp = "^[\\p{L}\\p{N}\\s\\-']*$", message = ValidationMessage.Msg.SPECIAL_CHARACTERS)
   private String search;
 
   @Pattern(

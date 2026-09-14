@@ -5,7 +5,7 @@
 <mapper namespace="coffee.api.mapper.GetCategoriesMapper">
 
   <sql id="categoryFilterCondition">
-    WHERE c.is_deleted = false
+    WHERE c.deleted_at IS NULL
 
     <choose>
       <!-- OWNER: Can filter by branchShopId if provided, otherwise view all -->
@@ -21,20 +21,21 @@
       </otherwise>
     </choose>
 
-    <!-- Search Filter -->
+    <!-- Search Filter (Case-insensitive via ILIKE for PostgreSQL) -->
     <if test="search != null and search != ''">
-      AND LOWER(c.category_name) LIKE LOWER(CONCAT('%', #{search}, '%'))
+      AND c.category_name ILIKE CONCAT('%', #{search}, '%')
     </if>
   </sql>
 
   <select id="getCategoriesFiltered" resultType="coffee.api.dto.result.CategoryResult">
     SELECT
     c.drink_category_id AS categoryId,
-    c.shop_id AS shopId,
-    c.category_name AS categoryName,
-    s.shop_name AS shopName
+    c.shop_id           AS shopId,
+    c.category_name     AS categoryName,
+    s.shop_name         AS shopName
     FROM drink_categories c
-    LEFT JOIN shops s ON c.shop_id = s.shop_id AND s.is_deleted = false
+    LEFT JOIN shops s ON c.shop_id = s.shop_id
+    AND s.deleted_at IS NULL
     <include refid="categoryFilterCondition"/>
     ORDER BY
     <choose>
