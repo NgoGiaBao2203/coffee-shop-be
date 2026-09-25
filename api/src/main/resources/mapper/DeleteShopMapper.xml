@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="coffee.api.mapper.DeleteShopMapper">
+
+  <!-- Check shop existence -->
+  <select id="checkShopExistedById" resultType="java.lang.Boolean">
+    SELECT EXISTS (
+    SELECT 1
+    FROM shops
+    WHERE shop_id = #{shopId}
+    AND is_deleted = FALSE
+    AND deleted_at IS NULL
+    )
+  </select>
+
+  <!-- Count active / unpaid invoices (status = 0: PENDING / UNPAID) -->
+  <select id="countActiveInvoicesByShopId" resultType="int">
+    SELECT COUNT(1)
+    FROM invoices
+    WHERE shop_id = #{shopId}
+    AND status = 0
+    AND is_deleted = FALSE
+    AND deleted_at IS NULL
+  </select>
+
+  <!-- Count active staff members assigned to this shop -->
+  <select id="countActiveStaffByShopId" resultType="int">
+    SELECT COUNT(1)
+    FROM profile_shops
+    WHERE shop_id = #{shopId}
+    AND deleted_at IS NULL
+  </select>
+
+  <!-- Soft delete drink details (sizes, prices) belonging to drinks of this shop -->
+  <update id="softDeleteDrinkDetailsByShopId">
+    UPDATE drink_details
+    SET
+    deleted_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh',
+    deleted_by = #{deletedBy}
+    WHERE drink_id IN (
+    SELECT drink_id
+    FROM drinks
+    WHERE shop_id = #{shopId}
+    )
+    AND deleted_at IS NULL
+  </update>
+
+  <!-- Soft delete all drinks under this shop -->
+  <update id="softDeleteDrinksByShopId">
+    UPDATE drinks
+    SET
+    is_deleted = TRUE,
+    deleted_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh',
+    deleted_by = #{deletedBy}
+    WHERE shop_id = #{shopId}
+    AND is_deleted = FALSE
+  </update>
+
+  <!-- Soft delete all categories under this shop -->
+  <update id="softDeleteCategoriesByShopId">
+    UPDATE drink_categories
+    SET
+    is_deleted = TRUE,
+    deleted_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh',
+    deleted_by = #{deletedBy}
+    WHERE shop_id = #{shopId}
+    AND is_deleted = FALSE
+  </update>
+
+  <!-- Soft delete all tables under this shop -->
+  <update id="softDeleteTablesByShopId">
+    UPDATE shop_tables
+    SET
+    is_deleted = TRUE,
+    deleted_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh',
+    deleted_by = #{deletedBy}
+    WHERE shop_id = #{shopId}
+    AND is_deleted = FALSE
+  </update>
+
+  <!-- Soft delete shop-staff association mappings -->
+  <update id="softDeleteProfileShopsByShopId">
+    UPDATE profile_shops
+    SET
+    deleted_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh',
+    deleted_by = #{deletedBy}
+    WHERE shop_id = #{shopId}
+    AND deleted_at IS NULL
+  </update>
+
+  <!-- Soft delete the target shop -->
+  <update id="softDeleteShop">
+    UPDATE shops
+    SET
+    is_deleted = TRUE,
+    deleted_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh',
+    deleted_by = #{deletedBy},
+    updated_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh'
+    WHERE shop_id = #{shopId}
+    AND is_deleted = FALSE
+  </update>
+
+</mapper>
