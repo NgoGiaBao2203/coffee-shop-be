@@ -9,7 +9,6 @@ import coffee.api.enums.Roles;
 import coffee.api.enums.ValidationMessage;
 import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.exceptions.InvalidRequestException;
-import coffee.api.exceptions.UserExistException;
 import coffee.api.mapper.CommonMapper;
 import coffee.api.mapper.CreateCategoriesMapper;
 import coffee.api.security.CustomUserDetail;
@@ -137,7 +136,20 @@ public class CreateCategoriesServiceImplTest {
         .checkCategoryNameExisted(
             isNull(), eq(validRequest.getCategoryName().trim()), eq(differentShopId));
     verify(createCategoriesMapper, times(1))
-        .createCategories(validRequest, ownerRole, differentShopId);
+        .createCategories(validRequest, ownerRole, currentUserShopId);
+  }
+
+  @Test
+  void process_Success_WhenOwnerHasNoAssignedShop_TC003() {
+    when(commonMapper.checkShopExisted(validRequest.getShopId())).thenReturn(true);
+    when(commonMapper.checkCategoryNameExisted(
+            isNull(), eq(validRequest.getCategoryName()), eq(validRequest.getShopId())))
+        .thenReturn(false);
+
+    assertDoesNotThrow(() -> createCategoriesService.process(validRequest, ownerRole, null));
+
+    verify(commonMapper, never()).checkShopIdIsExisted(any(), any());
+    verify(createCategoriesMapper).createCategories(validRequest, ownerRole, null);
   }
 
   @Test
@@ -334,7 +346,7 @@ public class CreateCategoriesServiceImplTest {
   }
 
   @Test
-  void process_ThrowsUserExistException_WhenCategoryNameExists_TC014() {
+  void process_ThrowsInvalidRequestException_WhenCategoryNameExists_TC014() {
     mockSecurityContextWithCustomUser(currentUserId);
     when(commonMapper.checkShopExisted(validRequest.getShopId())).thenReturn(true);
     when(commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId)).thenReturn(true);
@@ -342,9 +354,9 @@ public class CreateCategoriesServiceImplTest {
             isNull(), eq(validRequest.getCategoryName().trim()), eq(validRequest.getShopId())))
         .thenReturn(true);
 
-    UserExistException exception =
+    InvalidRequestException exception =
         assertThrows(
-            UserExistException.class,
+            InvalidRequestException.class,
             () -> createCategoriesService.process(validRequest, managerRole, currentUserShopId));
 
     assertEquals("Category name is existed", exception.getMessage());
@@ -394,6 +406,13 @@ public class CreateCategoriesServiceImplTest {
   @Test
   void requestValidation_Success_WhenCategoryNameContainsVietnameseAndHyphen_TC017() {
     validRequest.setCategoryName("Cà-phê Sữa Đá");
+    Set<ConstraintViolation<CreateCategoriesRequest>> violations = validator.validate(validRequest);
+    assertEquals(0, violations.size());
+  }
+
+  @Test
+  void requestValidation_Success_WhenCategoryNameContainsAllowedPunctuation_TC018() {
+    validRequest.setCategoryName("Cà phê & Trà/Đào (đặc biệt),.");
     Set<ConstraintViolation<CreateCategoriesRequest>> violations = validator.validate(validRequest);
     assertEquals(0, violations.size());
   }

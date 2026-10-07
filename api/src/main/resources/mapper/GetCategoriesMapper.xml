@@ -8,10 +8,10 @@
     WHERE c.deleted_at IS NULL
 
     <choose>
-      <!-- OWNER: Can filter by branchShopId if provided, otherwise view all -->
+      <!-- OWNER: Can filter by shopId if provided, otherwise view all -->
       <when test="currentUserRoleName == 'OWNER'">
-        <if test="branchShopId != null">
-          AND c.shop_id = #{branchShopId}
+        <if test="shopId != null">
+          AND c.shop_id = #{shopId}
         </if>
       </when>
 

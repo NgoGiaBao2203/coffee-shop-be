@@ -6,6 +6,9 @@ import org.apache.ibatis.annotations.Param;
 
 @Mapper
 public interface DeleteCategoryMapper {
+
+  int countPendingInvoicesByCategory(@Param("categoryId") UUID categoryId);
+
   void softDeleteDrinkDetailsByCategory(
       @Param("categoryId") UUID categoryId,
       @Param("currentUserRoleName") String currentUserRoleName,
@@ -18,7 +21,7 @@ public interface DeleteCategoryMapper {
       @Param("currentUserShopId") UUID currentUserShopId,
       @Param("deletedBy") UUID deletedBy);
 
-  void softDeleteCategory(
+  int softDeleteCategory(
       @Param("categoryId") UUID categoryId,
       @Param("currentUserRoleName") String currentUserRoleName,
       @Param("currentUserShopId") UUID currentUserShopId,

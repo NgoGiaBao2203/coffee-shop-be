@@ -42,26 +42,37 @@ public class EditCategoriesServiceImpl implements IEditCategoriesService {
       UUID currentUserId,
       UUID currentUserShopId) {
 
-    // 1. Verify target shop input
+    // 1. Verify request, shop ID and category ID
     if (request == null || request.getShopId() == null) {
       throw new InvalidRequestException("Shop ID is required");
     }
+    if (request.getCategoryId() == null) {
+      throw new InvalidRequestException("Category ID is required");
+    }
 
-    // 2. Verify target shop exists and is active (both OWNER & MANAGER)
+    // 2. Verify shop exists
     boolean isShopExisted = commonMapper.checkShopExisted(request.getShopId());
     if (!isShopExisted) {
       throw new DataNotFoundException("Data not found", request.getShopId());
     }
 
-    // 3. Verify manager has permission to access the target shop
+    // 3. Verify authorization and active assignment for MANAGER
     if (Roles.MANAGER.getValue().equals(currentUserRoleName)) {
-      boolean isShopMember = commonMapper.checkShopIdIsExisted(currentUserId, request.getShopId());
+      if (currentUserShopId == null) {
+        throw new InvalidRequestException("Manager is not assigned to any shop branch");
+      }
+
+      if (!currentUserShopId.equals(request.getShopId())) {
+        throw new InvalidRequestException("You do not have permission to access this shop branch");
+      }
+
+      boolean isShopMember = commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId);
       if (!isShopMember) {
         throw new InvalidRequestException("You do not have permission to access this shop branch");
       }
     }
 
-    // 4. Verify category existence and role/shop access
+    // 4. Verify category exists and role/shop access
     boolean isCategoryExisted =
         commonMapper.checkCategoryExisted(
             request.getCategoryId(), currentUserRoleName, currentUserShopId);
@@ -69,11 +80,24 @@ public class EditCategoriesServiceImpl implements IEditCategoriesService {
       throw new DataNotFoundException("Data not found", request.getCategoryId());
     }
 
-    // 5. Verify duplicate category name in the target shop
+    // 5. OWNER can access any shop, but the category must actually belong to the shop it
+    if (Roles.OWNER.getValue().equals(currentUserRoleName)) {
+      boolean categoryBelongsToRequestedShop =
+          commonMapper.checkCategoryExistsInShop(request.getCategoryId(), request.getShopId());
+      if (!categoryBelongsToRequestedShop) {
+        throw new DataNotFoundException("Data not found", request.getCategoryId());
+      }
+    }
+
+    // 6. Trim category name and verify empty
     String trimmedCategoryName =
         request.getCategoryName() != null ? request.getCategoryName().trim() : "";
+    if (trimmedCategoryName.isEmpty()) {
+      throw new InvalidRequestException("Category name is required");
+    }
     request.setCategoryName(trimmedCategoryName);
 
+    // 7. Verify duplicate category name in shop
     boolean isCategoryNameExisted =
         commonMapper.checkCategoryNameExisted(
             request.getCategoryId(), trimmedCategoryName, request.getShopId());

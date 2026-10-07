@@ -51,16 +51,29 @@ public class DeleteCategoriesServiceImpl implements IDeleteCategoriesService {
       throw new DataNotFoundException("Data not found", request.getCategoryId());
     }
 
-    // 4. Cascade soft-delete drink variants and prices first to prevent orphan records
+    // 4. Preserve open invoice data before deleting drinks or their details
+    int pendingInvoices =
+        deleteCategoryMapper.countPendingInvoicesByCategory(request.getCategoryId());
+    if (pendingInvoices > 0) {
+      throw new InvalidRequestException("Can not delete category with pending invoices");
+    }
+
+    // 5. Cascade soft-delete drink variants and prices first to prevent orphan records
     deleteCategoryMapper.softDeleteDrinkDetailsByCategory(
         request.getCategoryId(), currentUserRoleName, currentUserShopId, currentUserId);
 
-    // 5. Cascade soft-delete drinks under the category
+    // 6. Cascade soft-delete drinks under the category
     deleteCategoryMapper.softDeleteDrinksByCategory(
         request.getCategoryId(), currentUserRoleName, currentUserShopId, currentUserId);
 
-    // 6. Soft-delete the category record
-    deleteCategoryMapper.softDeleteCategory(
-        request.getCategoryId(), currentUserRoleName, currentUserShopId, currentUserId);
+    // 7. Soft-delete the category record and verify affected rows
+    int affectedRows =
+        deleteCategoryMapper.softDeleteCategory(
+            request.getCategoryId(), currentUserRoleName, currentUserShopId, currentUserId);
+    if (affectedRows == 0) {
+      throw new DataNotFoundException(
+          "Category has already been deleted or modified by another request",
+          request.getCategoryId());
+    }
   }
 }

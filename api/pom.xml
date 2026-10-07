@@ -29,6 +29,9 @@
   <properties>
     <java.version>21</java.version>
     <aws-java-sdk-v2.version>2.25.0</aws-java-sdk-v2.version>
+    <sonar.projectKey>coffee-shop-be</sonar.projectKey>
+    <sonar.host.url>http://localhost:9000</sonar.host.url>
+    <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
   </properties>
 
   <dependencyManagement>
@@ -217,6 +220,11 @@
         </executions>
       </plugin>
       <plugin>
+        <groupId>org.sonarsource.scanner.maven</groupId>
+        <artifactId>sonar-maven-plugin</artifactId>
+        <version>5.8.0.7211</version>
+      </plugin>
+      <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
         <version>0.8.11</version>
@@ -232,6 +240,11 @@
             <goals>
               <goal>report</goal>
             </goals>
+            <configuration>
+              <includes>
+                <include>coffee/api/services/**</include>
+              </includes>
+            </configuration>
           </execution>
           <execution>
             <id>jacoco-check</id>
@@ -239,6 +252,9 @@
               <goal>check</goal>
             </goals>
             <configuration>
+              <includes>
+                <include>coffee/api/services/**</include>
+              </includes>
               <rules>
                 <rule>
                   <element>PACKAGE</element>

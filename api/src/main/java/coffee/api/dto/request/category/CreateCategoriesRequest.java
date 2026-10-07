@@ -11,9 +11,12 @@ import lombok.Data;
 @Data
 public class CreateCategoriesRequest {
 
+  // Allows: Unicode letters, numbers, spaces, and punctuation: - & / ( ) , . '
   @NotBlank(message = ValidationMessage.Msg.FIELD_REQUIRED)
   @Size(max = 100, message = ValidationMessage.Msg.SIZE_MAX)
-  @Pattern(regexp = "^[\\p{L}\\p{N}\\s\\-']+$", message = ValidationMessage.Msg.SPECIAL_CHARACTERS)
+  @Pattern(
+      regexp = "^[\\p{L}\\p{N}\\s\\-&/(),.']+$",
+      message = ValidationMessage.Msg.SPECIAL_CHARACTERS)
   private String categoryName;
 
   @NotNull(message = ValidationMessage.Msg.FIELD_REQUIRED)

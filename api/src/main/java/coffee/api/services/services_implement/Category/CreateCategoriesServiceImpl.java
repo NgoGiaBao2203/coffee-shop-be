@@ -4,7 +4,6 @@ import coffee.api.dto.request.category.CreateCategoriesRequest;
 import coffee.api.enums.Roles;
 import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.exceptions.InvalidRequestException;
-import coffee.api.exceptions.UserExistException;
 import coffee.api.mapper.CommonMapper;
 import coffee.api.mapper.CreateCategoriesMapper;
 import coffee.api.security.CustomUserDetail;
@@ -30,12 +29,12 @@ public class CreateCategoriesServiceImpl implements ICreateCategoriesService {
 
     UUID currentUserId = getCurrentProfileId();
 
-    // 1. Verify target shop input
+    // 1. Verify request and shop ID
     if (request == null || request.getShopId() == null) {
       throw new InvalidRequestException("Shop ID is required");
     }
 
-    // 2. Validate target shop exists and is active (both OWNER and MANAGER)
+    // 2. Verify shop exists
     boolean isShopExisted = commonMapper.checkShopExisted(request.getShopId());
     if (!isShopExisted) {
       throw new DataNotFoundException("Data not found", request.getShopId());
@@ -57,7 +56,7 @@ public class CreateCategoriesServiceImpl implements ICreateCategoriesService {
       }
     }
 
-    // 4. Trim category name and verify uniqueness within the target shop
+    // 4. Trim category name and verify uniqueness in shop
     String trimmedCategoryName =
         request.getCategoryName() != null ? request.getCategoryName().trim() : "";
     request.setCategoryName(trimmedCategoryName);
@@ -65,11 +64,11 @@ public class CreateCategoriesServiceImpl implements ICreateCategoriesService {
     boolean isCategoryExisted =
         commonMapper.checkCategoryNameExisted(null, trimmedCategoryName, request.getShopId());
     if (isCategoryExisted) {
-      throw new UserExistException("Category name is existed");
+      throw new InvalidRequestException("Category name is existed");
     }
 
     // 5. Insert new category
-    createCategoriesMapper.createCategories(request, currentUserRoleName, request.getShopId());
+    createCategoriesMapper.createCategories(request, currentUserRoleName, currentUserShopId);
   }
 
   private UUID getCurrentProfileId() {

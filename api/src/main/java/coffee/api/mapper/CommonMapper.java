@@ -25,6 +25,9 @@ public interface CommonMapper {
       @Param("currentUserRoleName") String currentUserRoleName,
       @Param("currentUserShopId") UUID currentUserShopId);
 
+  Boolean checkCategoryExistsInShop(
+      @Param("categoryId") UUID categoryId, @Param("shopId") UUID shopId);
+
   Boolean checkDrinkExisted(
       @Param("drinkId") UUID drinkId,
       @Param("currentUserRoleName") String currentUserRoleName,
