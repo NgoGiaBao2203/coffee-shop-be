@@ -62,6 +62,7 @@
     SELECT 1
     FROM drinks
     WHERE drink_id = #{drinkId}
+    AND deleted_at IS NULL
     AND is_deleted = FALSE
     <choose>
       <!-- OWNER: Can access any drink regardless of shop -->
@@ -87,6 +88,7 @@
     FROM shops
     WHERE shop_id = #{shopId}
     AND deleted_at IS NULL
+    AND is_deleted = false
     )
   </select>
 
@@ -97,6 +99,7 @@
     FROM drink_categories
     WHERE drink_category_id = #{categoryId}
     AND deleted_at IS NULL
+    AND is_deleted = false
     <choose>
       <!-- OWNER: Can access any category regardless of shop -->
       <when test="currentUserRoleName == 'OWNER'">
@@ -122,6 +125,7 @@
     WHERE drink_category_id = #{categoryId}
     AND shop_id = #{shopId}
     AND deleted_at IS NULL
+    AND is_deleted = false
     )
   </select>
 
@@ -193,6 +197,21 @@
         AND shop_id = #{currentUserShopId}
       </when>
     </choose>
+    )
+  </select>
+
+  <!-- 14. Check if drink name exists in shop (case-insensitive & trimmed) -->
+  <select id="checkDrinkNameExisted" resultType="boolean">
+    SELECT EXISTS (
+    SELECT 1
+    FROM drinks
+    WHERE LOWER(TRIM(drink_name)) = LOWER(TRIM(#{drinkName}))
+    AND shop_id = #{shopId}
+    AND deleted_at IS NULL
+    AND is_deleted = false
+    <if test="drinkId != null">
+      AND drink_id != #{drinkId}
+    </if>
     )
   </select>
 

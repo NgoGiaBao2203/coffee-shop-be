@@ -16,6 +16,7 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
@@ -46,6 +47,16 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
         .body(
             ErrorApiResponse.of(ResponseCode.BAD_REQUEST, "Malformed or unreadable request body"));
+  }
+
+  @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+  public ResponseEntity<ErrorApiResponse> handleMethodArgumentTypeMismatch(
+      MethodArgumentTypeMismatchException ex) {
+    String message =
+        String.format("Invalid value for parameter '%s': %s", ex.getName(), ex.getValue());
+    log.error(message);
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+        .body(ErrorApiResponse.of(ResponseCode.BAD_REQUEST, message));
   }
 
   @ExceptionHandler(NoHandlerFoundException.class)

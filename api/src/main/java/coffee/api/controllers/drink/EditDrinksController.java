@@ -28,7 +28,11 @@ public class EditDrinksController {
       @RequestPart("data") @Valid EditDrinksRequest request,
       @RequestPart(value = "image", required = false) MultipartFile imageFile) {
     editDrinksService.process(
-        request, imageFile, customUserDetail.getRoleName(), customUserDetail.getShopId());
+        request,
+        imageFile,
+        customUserDetail.getUserId(),
+        customUserDetail.getRoleName(),
+        customUserDetail.getShopId());
     return ResponseEntity.ok()
         .body(EditDrinkResponse.of(ResponseCode.SUCCESS, "Drink updated successfully"));
   }

@@ -7,15 +7,15 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: prod
       # Supabase Database
-      DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT}
-      DB_NAME: ${DB_NAME}
-      DB_USERNAME: ${DB_USERNAME}
+      DB_HOST: ${DB_HOST:aws-0-ap-south-1.pooler.supabase.com}
+      DB_PORT: ${DB_PORT:5432}
+      DB_NAME: ${DB_NAME:postgres}
+      DB_USERNAME: ${DB_USERNAME:postgres.ldamaltfehzopoqfywpa}
       DB_PASSWORD: ${DB_PASSWORD}
       # Supabase Storage (S3)
-      SUPABASE_BUCKET_NAME: ${SUPABASE_BUCKET_NAME}
-      SUPABASE_REGION: ${SUPABASE_REGION}
-      SUPABASE_ENDPOINT: ${SUPABASE_ENDPOINT}
+      SUPABASE_BUCKET_NAME: ${SUPABASE_BUCKET_NAME:drinks}
+      SUPABASE_REGION: ${SUPABASE_REGION:ap-south-1}
+      SUPABASE_ENDPOINT: ${SUPABASE_ENDPOINT:https://aws-0-ap-south-1.pooler.supabase.com}
       SUPABASE_ACCESS_KEY: ${SUPABASE_ACCESS_KEY}
       SUPABASE_SECRET_KEY: ${SUPABASE_SECRET_KEY}
     ports:

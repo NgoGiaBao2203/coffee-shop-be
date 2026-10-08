@@ -1,5 +1,6 @@
 package coffee.api.mapper;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -7,17 +8,14 @@ import org.apache.ibatis.annotations.Param;
 @Mapper
 public interface CreateDrinkMapper {
 
-  void createDrink(
+  void insertDrink(
+      @Param("drinkId") UUID drinkId,
       @Param("drinkCategoryId") UUID drinkCategoryId,
-      @Param("drinkDetailId") UUID drinkDetailId,
       @Param("shopId") UUID shopId,
       @Param("drinkName") String drinkName,
       @Param("imageUrl") String imageUrl,
-      @Param("status") Integer status,
-      @Param("isDeleted") Boolean isDeleted,
-      @Param("size") String size,
-      @Param("price") Float price);
+      @Param("status") Integer status);
 
-  Boolean checkDrinkExistedByName(
-      @Param("shopId") UUID shopId, @Param("drinkName") String drinkName);
+  void insertDrinkDetail(
+      @Param("drinkId") UUID drinkId, @Param("size") String size, @Param("price") BigDecimal price);
 }

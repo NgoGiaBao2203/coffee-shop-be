@@ -5,9 +5,9 @@ spring:
 
   datasource:
     # Supabase connection
-    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    url: jdbc:postgresql://${DB_HOST:aws-0-ap-south-1.pooler.supabase.com}:${DB_PORT:5432}/${DB_NAME:postgres}
+    username: ${DB_USERNAME:postgres.ldamaltfehzopoqfywpa}
+    password: ${DB_PASSWORD:postgres@1234}
     driver-class-name: org.postgresql.Driver
 
   flyway:
@@ -54,15 +54,15 @@ app:
 storage:
   supabase:
     enabled: true
-    bucket-name: ${SUPABASE_BUCKET_NAME}
+    bucket-name: ${SUPABASE_BUCKET_NAME:drinks}
     # MUST match the region shown on Storage -> S3 Connection page (may differ from DB region)
-    region: ${SUPABASE_REGION}
+    region: ${SUPABASE_REGION:ap-south-1}
     # S3-compatible endpoint: https://<project_ref>.storage.supabase.co/storage/v1/s3
-    endpoint: ${SUPABASE_ENDPOINT}
+    endpoint: ${SUPABASE_ENDPOINT:https://ldamaltfehzopoqfywpa.storage.supabase.co/storage/v1/s3}
     # Public URL prefix for serving files: https://<project_ref>.supabase.co/storage/v1/object/public
-    public-url: ${SUPABASE_PUBLIC_URL}
-    access-key: ${SUPABASE_ACCESS_KEY}
-    secret-key: ${SUPABASE_SECRET_KEY}
+    public-url: ${SUPABASE_PUBLIC_URL:https://ldamaltfehzopoqfywpa.supabase.co/storage/v1/object/public}
+    access-key: ${SUPABASE_ACCESS_KEY:4c9a677a3a06e3474c7d905bdb7c6c08}
+    secret-key: ${SUPABASE_SECRET_KEY:496e037276080d91da3f50eeb7e14c16880eb065b4d0a90d6734a999ec6afe63}
 
 logging:
   level:
