@@ -25,7 +25,10 @@ public class DeleteCategoryController {
       @AuthenticationPrincipal CustomUserDetail customUserDetail,
       @RequestBody @Valid DeleteCategoriesRequest request) {
     deleteCategoriesService.process(
-        request, customUserDetail.getRoleName(), customUserDetail.getShopId());
+        request,
+        customUserDetail.getRoleName(),
+        customUserDetail.getShopId(),
+        customUserDetail.getUserId());
     return ResponseEntity.ok()
         .body(DeleteCategoriesResponse.of(ResponseCode.SUCCESS, "Category deleted successfully"));
   }

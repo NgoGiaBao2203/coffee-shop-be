@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="coffee.api.mapper.UpdateShopMapper">
+
+  <!-- Check shop existence by ID -->
+  <select id="checkShopExistedById" resultType="java.lang.Boolean">
+    SELECT EXISTS (
+    SELECT 1
+    FROM shops
+    WHERE shop_id = #{shopId}
+    AND is_deleted = FALSE
+    AND deleted_at IS NULL
+    )
+  </select>
+
+  <!-- Check duplicate shop name except current shop -->
+  <select id="checkShopExistedByNameExceptCurrent" resultType="java.lang.Boolean">
+    SELECT EXISTS (
+    SELECT 1
+    FROM shops
+    WHERE LOWER(TRIM(shop_name)) = LOWER(TRIM(#{shopName}))
+    AND shop_id != #{shopId}
+    AND is_deleted = FALSE
+    AND deleted_at IS NULL
+    )
+  </select>
+
+  <!-- Check duplicate address except current shop -->
+  <select id="checkShopExistedByAddressExceptCurrent" resultType="java.lang.Boolean">
+    SELECT EXISTS (
+    SELECT 1
+    FROM shops
+    WHERE LOWER(TRIM(address)) = LOWER(TRIM(#{address}))
+    AND shop_id != #{shopId}
+    AND is_deleted = FALSE
+    AND deleted_at IS NULL
+    )
+  </select>
+
+  <!-- Update shop details -->
+  <update id="updateShop">
+    UPDATE shops
+    <set>
+      shop_name = #{shopName},
+      address = #{address},
+      phone_number = #{phoneNumber},
+      updated_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh'
+    </set>
+    WHERE shop_id = #{shopId}
+    AND is_deleted = FALSE
+    AND deleted_at IS NULL
+  </update>
+
+</mapper>

@@ -4,10 +4,10 @@ spring:
       on-profile: prod
 
   datasource:
-    # Changed 'localhost' to ${DB_HOST:localhost} so it adapts to the Docker network container name
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:coffee-shop-db}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres@1234}
+    # Supabase connection
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   flyway:
@@ -34,9 +34,45 @@ springdoc:
   swagger-ui:
     enabled: false
 
+app:
+  cors:
+    # Use patterns instead of wildcard when allowCredentials is true
+    # Matches: https://domain.com, https://sub.domain.com, http://localhost:*, etc.
+    allowed-origin-patterns:
+      - "https://coffee-shop-fe.onrender.com"
+    allowed-methods:
+      - "GET"
+      - "POST"
+      - "PUT"
+      - "DELETE"
+      - "PATCH"
+      - "OPTIONS"
+    allowed-headers:
+      - "*"
+    allow-credentials: true
+
+storage:
+  supabase:
+    enabled: true
+    bucket-name: ${SUPABASE_BUCKET_NAME}
+    # MUST match the region shown on Storage -> S3 Connection page (may differ from DB region)
+    region: ${SUPABASE_REGION}
+    # S3-compatible endpoint: https://<project_ref>.storage.supabase.co/storage/v1/s3
+    endpoint: ${SUPABASE_ENDPOINT}
+    # Public URL prefix for serving files: https://<project_ref>.supabase.co/storage/v1/object/public
+    public-url: ${SUPABASE_PUBLIC_URL}
+    access-key: ${SUPABASE_ACCESS_KEY}
+    secret-key: ${SUPABASE_SECRET_KEY}
+
 logging:
   level:
-    root: info
-    # Keep SQL execution hidden unless diagnosing an emergency
-    org.hibernate.SQL: error
-    org.hibernate.orm.results: error
+    root: warn
+    # Enable logging for API calls
+    coffee.api: info
+    # Log HTTP requests and responses
+    org.springframework.web: info
+    org.springframework.security: info
+    # Show SQL queries in production for debugging
+    org.hibernate.SQL: info
+    org.hibernate.orm.results: info
+    org.mybatis: info

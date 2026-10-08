@@ -7,6 +7,7 @@ import org.apache.ibatis.annotations.Param;
 
 @Mapper
 public interface CreateCategoriesMapper {
+
   void createCategories(
       @Param("request") CreateCategoriesRequest request,
       @Param("currentUserRoleName") String currentUserRoleName,

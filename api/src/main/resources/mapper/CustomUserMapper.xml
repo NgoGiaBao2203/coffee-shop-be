@@ -35,7 +35,7 @@
            LEFT JOIN profile_shops ps ON ps.profile_id = p.profile_id
     WHERE p.profile_id = #{userId}
       AND p.deleted_at IS NULL
-      AND r.is_deleted = false
+      AND r.deleted_at IS NULL
   </select>
 
   <select id="findByEmail"
@@ -57,7 +57,7 @@
            LEFT JOIN profile_shops ps ON ps.profile_id = p.profile_id
     WHERE p.email = #{email}
       AND p.deleted_at IS NULL
-      AND r.is_deleted = false
+      AND r.deleted_at IS NULL
   </select>
 
 </mapper>

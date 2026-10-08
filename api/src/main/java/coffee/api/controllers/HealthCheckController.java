@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class HealthCheckController {
-  @GetMapping("heath-check")
+  @GetMapping("actuator/health")
   @PreAuthorize("hasRole('OWNER')")
   public String healthCheck() {
     return "OK";

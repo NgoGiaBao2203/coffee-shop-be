@@ -7,5 +7,6 @@ import lombok.Data;
 public class CategoryResult {
   private UUID categoryId;
   private UUID shopId;
+  private String shopName;
   private String categoryName;
 }

@@ -10,19 +10,29 @@
     shop_id,
     category_name,
     is_deleted
-    ) VALUES (
+    )
+    SELECT
     gen_random_uuid(),
+    #{request.shopId},
+    TRIM(#{request.categoryName}),
+    false
+    WHERE EXISTS (
+    SELECT 1
+    FROM shops s
+    WHERE s.shop_id = #{request.shopId}
+    AND s.deleted_at IS NULL
+    )
     <choose>
       <when test="currentUserRoleName == 'OWNER'">
-        #{request.shopId}
+        <!-- OWNER can create for any active shop -->
+      </when>
+      <when test="currentUserRoleName == 'MANAGER'">
+        AND #{request.shopId} = #{currentUserShopId}
       </when>
       <otherwise>
-        #{currentUserShopId}
+        AND 1 = 0
       </otherwise>
-    </choose>,
-    #{request.categoryName},
-    false
-    )
+    </choose>
   </insert>
 
 </mapper>

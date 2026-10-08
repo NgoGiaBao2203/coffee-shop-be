@@ -5,21 +5,90 @@
 
 <mapper namespace="coffee.api.mapper.DeleteCategoryMapper">
 
-  <update id="deleteCategory">
-    UPDATE drink_categories
-    SET is_deleted = TRUE
+<!-- 1. Count serving invoices that contain active drinks in this category -->
+  <select id="countPendingInvoicesByCategory" resultType="int">
+    SELECT COUNT(DISTINCT inv.invoice_id)
+    FROM invoices inv
+    JOIN invoice_details invd ON invd.invoice_id = inv.invoice_id
+    JOIN drink_details dd     ON dd.drink_detail_id = invd.drink_detail_id
+    JOIN drinks d             ON d.drink_id = dd.drink_id
+    WHERE d.drink_category_id = #{categoryId}
+      AND inv.status = 0
+      AND inv.is_deleted = FALSE
+      AND inv.deleted_at IS NULL
+      AND invd.deleted_at IS NULL
+      AND d.is_deleted = FALSE
+      AND d.deleted_at IS NULL
+      AND dd.deleted_at IS NULL
+  </select>
+
+  <!-- 2. Soft delete all drink details under the category -->
+  <update id="softDeleteDrinkDetailsByCategory">
+    UPDATE drink_details
+    SET deleted_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh',
+    deleted_by = #{deletedBy}
+    WHERE deleted_at IS NULL
+    AND drink_id IN (
+    SELECT d.drink_id
+    FROM drinks AS d
+    WHERE d.drink_category_id = #{categoryId}
+    AND d.is_deleted = FALSE
+    AND d.deleted_at IS NULL
+    <choose>
+      <when test="currentUserRoleName == 'OWNER'">
+        <!-- OWNER deletes details across all shops -->
+      </when>
+      <when test="currentUserRoleName == 'MANAGER'">
+        AND d.shop_id = #{currentUserShopId}
+      </when>
+      <otherwise>
+        AND 1 = 0
+      </otherwise>
+    </choose>
+    )
+  </update>
+
+  <!-- 3. Soft delete all drinks under the category -->
+  <update id="softDeleteDrinksByCategory">
+    UPDATE drinks
+    SET deleted_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh',
+    is_deleted = true,
+    deleted_by = #{deletedBy}
     WHERE drink_category_id = #{categoryId}
     AND is_deleted = FALSE
+    AND deleted_at IS NULL
     <choose>
-      <!-- OWNER can soft-delete categories across all shops -->
       <when test="currentUserRoleName == 'OWNER'">
-        <!-- No shop restriction -->
+        <!-- OWNER deletes drinks across all shops -->
       </when>
-
-      <!-- MANAGER can only soft delete categories belonging to their shop -->
       <when test="currentUserRoleName == 'MANAGER'">
         AND shop_id = #{currentUserShopId}
       </when>
+      <otherwise>
+        AND 1 = 0
+      </otherwise>
+    </choose>
+  </update>
+
+  <!-- 4. Soft delete the category -->
+  <update id="softDeleteCategory">
+    UPDATE drink_categories
+    SET deleted_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh',
+    is_deleted = true,
+    deleted_by = #{deletedBy}
+    WHERE drink_category_id = #{categoryId}
+    AND is_deleted = FALSE
+    AND deleted_at IS NULL
+    <choose>
+      <when test="currentUserRoleName == 'OWNER'">
+        <!-- OWNER deletes category without shop restriction -->
+      </when>
+      <when test="currentUserRoleName == 'MANAGER'">
+        AND shop_id = #{currentUserShopId}
+      </when>
+      <otherwise>
+        AND 1 = 0
+      </otherwise>
     </choose>
   </update>
 

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="coffee.api.mapper.GetShopMapper">
+
+  <!-- 1. Result Map matching ShopResult DTO -->
+  <resultMap id="ShopResultMap" type="coffee.api.dto.result.ShopResult">
+    <id property="shopId" column="shop_id" javaType="java.util.UUID"/>
+    <result property="shopName" column="shop_name"/>
+    <result property="address" column="address"/>
+    <result property="phoneNumber" column="phone_number"/>
+    <result property="activeStaffCount" column="active_staff_count"/>
+    <result property="createdAt" column="created_at"/>
+    <result property="updatedAt" column="updated_at"/>
+    <result property="isDeleted" column="is_deleted"/>
+  </resultMap>
+
+  <!-- 2. Reusable SQL Fragment for filtering -->
+  <sql id="shopFilterCondition">
+    <!-- Exclude soft-deleted shops -->
+    s.is_deleted = false
+    AND s.deleted_at IS NULL
+
+    <!-- Only OWNER can view all shops -->
+    <if test="currentUserRoleName != 'OWNER'">
+      AND s.shop_id IN (
+      SELECT ps.shop_id
+      FROM profile_shops ps
+      WHERE ps.profile_id = #{currentUserId}
+      AND ps.deleted_at IS NULL
+      )
+    </if>
+
+    <!-- Text Search Constraints -->
+    <if test="search != null and search != ''">
+      AND (
+      s.shop_name ILIKE CONCAT('%', #{search}, '%')
+      OR s.address ILIKE CONCAT('%', #{search}, '%')
+      OR s.phone_number ILIKE CONCAT('%', #{search}, '%')
+      OR s.shop_id::text ILIKE CONCAT('%', #{search}, '%')
+      )
+    </if>
+  </sql>
+
+  <!-- 3. Fetch filtered and paginated shops with active staff count -->
+  <select id="getShopsFiltered" resultMap="ShopResultMap">
+    SELECT
+    s.shop_id,
+    s.shop_name,
+    s.address,
+    s.phone_number,
+    COALESCE(sc.staff_count, 0) AS active_staff_count,
+    s.created_at,
+    s.updated_at,
+    s.is_deleted
+    FROM shops s
+    <!-- Aggregate active staff count per shop to avoid N+1 query problem -->
+    LEFT JOIN (
+    SELECT
+    shop_id,
+    COUNT(*) AS staff_count
+    FROM profile_shops
+    WHERE deleted_at IS NULL
+    GROUP BY shop_id
+    ) sc ON s.shop_id = sc.shop_id
+    <where>
+      <include refid="shopFilterCondition"/>
+    </where>
+
+    ORDER BY
+    <choose>
+      <when test="sortBy == 'shopId'">s.shop_id</when>
+      <when test="sortBy == 'shopName'">s.shop_name</when>
+      <when test="sortBy == 'address'">s.address</when>
+      <when test="sortBy == 'phoneNumber'">s.phone_number</when>
+      <when test="sortBy == 'createdAt'">s.created_at</when>
+      <when test="sortBy == 'updatedAt'">s.updated_at</when>
+      <when test="sortBy == 'isDeleted'">s.is_deleted</when>
+      <otherwise>s.created_at</otherwise>
+    </choose>
+    <choose>
+      <when test="sortDirection != null and sortDirection.toUpperCase() == 'DESC'">DESC</when>
+      <otherwise>ASC</otherwise>
+    </choose>
+
+    LIMIT #{size} OFFSET #{offset}
+  </select>
+
+  <!-- 4. Count total matches for pagination -->
+  <select id="countShopsFiltered" resultType="long">
+    SELECT COUNT(*)
+    FROM shops s
+    <where>
+      <include refid="shopFilterCondition"/>
+    </where>
+  </select>
+
+</mapper>

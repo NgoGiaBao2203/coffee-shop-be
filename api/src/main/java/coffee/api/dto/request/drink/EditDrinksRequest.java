@@ -3,6 +3,7 @@ package coffee.api.dto.request.drink;
 import coffee.api.enums.ValidationMessage;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import java.util.UUID;
 import lombok.Data;
 
@@ -13,6 +14,7 @@ public class EditDrinksRequest {
   private UUID drinkId;
 
   @NotBlank(message = ValidationMessage.Msg.FIELD_REQUIRED)
+  @Pattern(regexp = "^[\\p{L}\\p{N}\\s\\-']+$", message = ValidationMessage.Msg.SPECIAL_CHARACTERS)
   private String drinkName;
 
   // Image URL is optional - if not provided, old image is kept

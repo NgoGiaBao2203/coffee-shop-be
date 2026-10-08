@@ -29,6 +29,7 @@ public class SecurityConfig {
   private final CustomAccessDeniedHandler customAccessDeniedHandler;
   private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
   private final ObjectMapper objectMapper;
+  private final CorsProperties corsProperties;
 
   @Bean
   public UserIdHeaderAuthenticationFilter userIdHeaderAuthenticationFilter() {
@@ -67,10 +68,35 @@ public class SecurityConfig {
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration config = new CorsConfiguration();
-    config.setAllowedOrigins(List.of("http://localhost:5173"));
-    config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-    config.setAllowedHeaders(List.of("*"));
-    config.setAllowCredentials(true);
+
+    // Use allowedOriginPatterns when credentials are enabled or patterns are provided
+    if (corsProperties.isAllowCredentials()
+        && corsProperties.getAllowedOriginPatterns() != null
+        && !corsProperties.getAllowedOriginPatterns().isEmpty()) {
+      config.setAllowedOriginPatterns(corsProperties.getAllowedOriginPatterns());
+    } else if (corsProperties.getAllowedOrigins() != null
+        && !corsProperties.getAllowedOrigins().isEmpty()) {
+      config.setAllowedOrigins(corsProperties.getAllowedOrigins());
+    } else {
+      // Fallback to localhost for development
+      config.setAllowedOrigins(List.of("http://localhost:5173"));
+    }
+
+    if (corsProperties.getAllowedMethods() != null
+        && !corsProperties.getAllowedMethods().isEmpty()) {
+      config.setAllowedMethods(corsProperties.getAllowedMethods());
+    } else {
+      config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+    }
+
+    if (corsProperties.getAllowedHeaders() != null
+        && !corsProperties.getAllowedHeaders().isEmpty()) {
+      config.setAllowedHeaders(corsProperties.getAllowedHeaders());
+    } else {
+      config.setAllowedHeaders(List.of("*"));
+    }
+
+    config.setAllowCredentials(corsProperties.isAllowCredentials());
 
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     source.registerCorsConfiguration("/**", config);
