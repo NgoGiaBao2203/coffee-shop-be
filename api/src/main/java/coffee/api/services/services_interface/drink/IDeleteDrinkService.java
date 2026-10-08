@@ -4,5 +4,9 @@ import coffee.api.dto.request.drink.DeleteDrinksRequest;
 import java.util.UUID;
 
 public interface IDeleteDrinkService {
-  void process(DeleteDrinksRequest request, String currentUserRoleName, UUID currentUserShopId);
+  void process(
+      DeleteDrinksRequest request,
+      UUID currentUserId,
+      String currentUserRoleName,
+      UUID currentUserShopId);
 }

@@ -4,13 +4,16 @@
 
   <resultMap id="DrinkDetailResultMap" type="coffee.api.dto.result.DrinkResult">
     <id property="drinkId" column="drink_id" javaType="java.util.UUID"/>
+    <result property="shopId" column="shop_id" javaType="java.util.UUID"/>
     <result property="drinkCategoryId" column="drink_category_id" javaType="java.util.UUID"/>
+    <result property="categoryName" column="category_name"/>
     <result property="drinkName" column="drink_name"/>
     <result property="imageUrl" column="image_url"/>
     <result property="status" column="status"/>
     <result property="isDeleted" column="is_deleted"/>
 
     <collection property="variants" javaType="java.util.List" ofType="coffee.api.dto.result.DrinkResult$DrinkVariantResult">
+      <id property="drinkDetailId" column="drink_detail_id" javaType="java.util.UUID"/>
       <result property="size" column="size"/>
       <result property="price" column="price"/>
     </collection>
@@ -19,17 +22,27 @@
   <select id="getDrinkDetailById" resultMap="DrinkDetailResultMap">
     SELECT
     d.drink_id,
+    d.shop_id,
     d.drink_category_id,
+    dc.category_name,
     d.drink_name,
     d.image_url,
     d.status,
     d.is_deleted,
+    dd.drink_detail_id,
     dd.size,
     dd.price
     FROM drinks AS d
-    LEFT JOIN drink_details AS dd ON d.drink_id = dd.drink_id AND dd.deleted_at IS NULL
+    JOIN drink_categories AS dc
+    ON d.drink_category_id = dc.drink_category_id
+    AND dc.is_deleted = false
+    AND dc.deleted_at IS NULL
+    LEFT JOIN drink_details AS dd
+    ON d.drink_id = dd.drink_id
+    AND dd.deleted_at IS NULL
     WHERE d.drink_id = #{drinkId}
     AND d.is_deleted = false
+    AND d.deleted_at IS NULL
     <if test="currentUserRoleName != 'OWNER'">
       AND d.shop_id = #{currentUserShopId}
     </if>

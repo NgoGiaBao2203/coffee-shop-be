@@ -17,11 +17,11 @@ public interface GetDrinksMapper {
       @Param("offset") int offset,
       @Param("currentUserRoleName") String currentUserRoleName,
       @Param("currentUserShopId") UUID currentUserShopId,
-      @Param("branchShopId") UUID branchShopId);
+      @Param("shopId") UUID shopId);
 
   long countDrinksFiltered(
       @Param("search") String search,
       @Param("currentUserRoleName") String currentUserRoleName,
       @Param("currentUserShopId") UUID currentUserShopId,
-      @Param("branchShopId") UUID branchShopId);
+      @Param("shopId") UUID shopId);
 }

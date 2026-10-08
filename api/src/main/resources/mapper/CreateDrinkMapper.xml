@@ -1,21 +1,12 @@
 ﻿<?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="coffee.api.mapper.CreateDrinkMapper">
 
-  <select id="checkDrinkExistedByName" resultType="java.lang.Boolean">
-    SELECT EXISTS (
-    SELECT 1
-    FROM drinks
-    WHERE drink_name = #{drinkName}
-    AND shop_id = #{shopId}
-    AND is_deleted = FALSE
-    )
-  </select>
-
-  <insert id="createDrink">
-    WITH inserted_drink AS (
+  <!-- 1. Insert into drinks -->
+  <insert id="insertDrink">
     INSERT INTO drinks (
     drink_id,
     drink_name,
@@ -25,27 +16,29 @@
     drink_category_id,
     shop_id
     ) VALUES (
-    gen_random_uuid(),
+    #{drinkId},
     #{drinkName},
     #{imageUrl},
     #{status},
-    #{isDeleted},
+    false,
     #{drinkCategoryId},
     #{shopId}
     )
-    RETURNING drink_id
-    )
+  </insert>
+
+  <!-- 2. Insert into drink_details -->
+  <insert id="insertDrinkDetail">
     INSERT INTO drink_details (
     drink_detail_id,
     size,
     price,
     drink_id
-    ) SELECT
-    COALESCE(#{drinkDetailId}, gen_random_uuid()),
+    ) VALUES (
+    gen_random_uuid(),
     #{size},
     #{price},
-    drink_id
-    FROM inserted_drink;
+    #{drinkId}
+    )
   </insert>
 
 </mapper>

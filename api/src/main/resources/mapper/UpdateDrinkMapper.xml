@@ -5,10 +5,26 @@
 
 <mapper namespace="coffee.api.mapper.UpdateDrinkMapper">
 
+  <select id="checkDrinkNameExistedForEdit" resultType="boolean">
+    SELECT EXISTS (
+    SELECT 1
+    FROM drinks d
+    JOIN drinks t ON t.drink_id = #{drinkId}
+    WHERE d.shop_id = t.shop_id
+    AND d.drink_id != #{drinkId}
+    AND LOWER(TRIM(d.drink_name)) = LOWER(TRIM(#{drinkName}))
+    AND d.deleted_at IS NULL
+    AND d.is_deleted = FALSE
+    AND t.deleted_at IS NULL
+    AND t.is_deleted = FALSE
+    )
+  </select>
+
   <select id="getDrinkImageUrl" resultType="java.lang.String">
     SELECT image_url
     FROM drinks
     WHERE drink_id = #{drinkId}
+    AND deleted_at IS NULL
     AND is_deleted = FALSE
 
     <choose>
@@ -25,8 +41,6 @@
   </select>
 
   <update id="updateDrink">
-    <!-- Update table drinks -->
-    WITH updated_drink AS (
     UPDATE drinks
     <set>
       drink_name = #{drinkName},
@@ -40,6 +54,7 @@
     </set>
     WHERE drink_id = #{drinkId}
     AND is_deleted = FALSE
+    AND deleted_at IS NULL
 
     <choose>
       <when test="currentUserRoleName == 'OWNER'">
@@ -52,13 +67,6 @@
         AND 1 = 0
       </otherwise>
     </choose>
-    RETURNING drink_id
-    )
-    <!-- Update table drink_details -->
-    UPDATE drink_details
-    SET price = #{price}
-    WHERE drink_id IN (SELECT drink_id FROM updated_drink)
-    AND size = #{size};
   </update>
 
 </mapper>
