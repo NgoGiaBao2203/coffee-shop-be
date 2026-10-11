@@ -23,4 +23,6 @@ public interface UpdateDrinkMapper {
       @Param("drinkId") UUID drinkId,
       @Param("currentUserRoleName") String currentUserRoleName,
       @Param("currentUserShopId") UUID currentUserShopId);
+
+  UUID getShopIdByDrinkId(@Param("drinkId") UUID drinkId);
 }

@@ -5,6 +5,7 @@
 
 <mapper namespace="coffee.api.mapper.UpdateDrinkMapper">
 
+  <!-- 1. Check if drink name already exists in the same shop (excluding current drink) -->
   <select id="checkDrinkNameExistedForEdit" resultType="boolean">
     SELECT EXISTS (
     SELECT 1
@@ -20,6 +21,7 @@
     )
   </select>
 
+  <!-- 2. Get drink image URL with role-based visibility -->
   <select id="getDrinkImageUrl" resultType="java.lang.String">
     SELECT image_url
     FROM drinks
@@ -40,25 +42,39 @@
     </choose>
   </select>
 
+  <!-- 3. Retrieve shop ID belonging to the target drink -->
+  <select id="getShopIdByDrinkId" resultType="java.util.UUID">
+    SELECT shop_id
+    FROM drinks
+    WHERE drink_id = #{drinkId}
+    AND deleted_at IS NULL
+    AND is_deleted = FALSE
+  </select>
+
+  <!-- 4. Update drink without altering its parent shop -->
   <update id="updateDrink">
     UPDATE drinks
     <set>
       drink_name = #{drinkName},
       image_url = #{imageUrl},
       status = #{status},
-      drink_category_id = #{drinkCategoryId},
-
-      <if test="currentUserRoleName == 'OWNER' and shopId != null">
-        shop_id = #{shopId},
-      </if>
+      drink_category_id = #{drinkCategoryId}
     </set>
     WHERE drink_id = #{drinkId}
     AND is_deleted = FALSE
     AND deleted_at IS NULL
-
+    <!-- Ensure the selected category belongs to the exact same shop as this drink -->
+    AND EXISTS (
+    SELECT 1
+    FROM drink_categories dc
+    WHERE dc.drink_category_id = #{drinkCategoryId}
+    AND dc.shop_id = drinks.shop_id
+    AND dc.deleted_at IS NULL
+    AND dc.is_deleted = FALSE
+    )
     <choose>
       <when test="currentUserRoleName == 'OWNER'">
-        <!-- Full access -->
+        <!-- Full access across shops -->
       </when>
       <when test="currentUserRoleName == 'MANAGER'">
         AND shop_id = #{shopId}
