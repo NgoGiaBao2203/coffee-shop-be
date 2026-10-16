@@ -11,6 +11,7 @@ import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.exceptions.InvalidRequestException;
 import coffee.api.mapper.CommonMapper;
 import coffee.api.mapper.DeleteDrinkMapper;
+import coffee.api.services.services_implement.drink.common.DrinkValidator;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
@@ -20,7 +21,6 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataAccessException;
@@ -32,7 +32,7 @@ public class DeleteDrinkServiceImplTest {
 
   @Mock private DeleteDrinkMapper deleteDrinkMapper;
 
-  @InjectMocks private DeleteDrinkServiceImpl deleteDrinkService;
+  private DeleteDrinkServiceImpl deleteDrinkService;
 
   private Validator validator;
   private DeleteDrinksRequest validRequest;
@@ -47,6 +47,9 @@ public class DeleteDrinkServiceImplTest {
     try (ValidatorFactory factory = Validation.buildDefaultValidatorFactory()) {
       validator = factory.getValidator();
     }
+
+    DrinkValidator drinkValidator = new DrinkValidator(commonMapper);
+    deleteDrinkService = new DeleteDrinkServiceImpl(deleteDrinkMapper, drinkValidator);
 
     drinkId = UUID.randomUUID();
     currentUserId = UUID.randomUUID();

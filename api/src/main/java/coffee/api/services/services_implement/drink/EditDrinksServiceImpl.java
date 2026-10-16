@@ -3,25 +3,25 @@ package coffee.api.services.services_implement.drink;
 import coffee.api.dto.request.drink.EditDrinksRequest;
 import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.exceptions.InvalidRequestException;
-import coffee.api.mapper.CommonMapper;
 import coffee.api.mapper.UpdateDrinkMapper;
+import coffee.api.services.services_implement.drink.common.DrinkValidator;
 import coffee.api.services.services_interface.common.IFileStorageService;
 import coffee.api.services.services_interface.drink.IEditDrinksService;
-import coffee.api.utils.DrinkImageHelper;
-import coffee.api.utils.DrinkValidationHelper;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
 public class EditDrinksServiceImpl implements IEditDrinksService {
 
-  private final CommonMapper commonMapper;
   private final UpdateDrinkMapper updateDrinkMapper;
   private final IFileStorageService fileStorageService;
+  private final DrinkValidator drinkValidator;
 
   @Override
   @Transactional(rollbackFor = Exception.class)
@@ -32,34 +32,42 @@ public class EditDrinksServiceImpl implements IEditDrinksService {
       String currentUserRoleName,
       UUID currentUserShopId) {
 
+    // 1. Verify request and drink ID
     validateRequest(request);
-    validateDrinkExistence(request.getDrinkId(), currentUserRoleName, currentUserShopId);
 
+    // 2. Verify drink existence and role/shop access
+    drinkValidator.validateDrinkExistence(
+        request.getDrinkId(), currentUserRoleName, currentUserShopId);
+
+    // 3. Resolve drink shop ID
     UUID drinkShopId = resolveDrinkShopId(request.getDrinkId());
-    DrinkValidationHelper.validateManagerShopPermission(
+
+    // 4. Verify manager shop permission
+    drinkValidator.validateManagerShopPermission(
         currentUserRoleName,
         currentUserShopId,
         drinkShopId,
         currentUserId,
-        "You do not have permission to edit a drink from another shop",
-        commonMapper);
-    DrinkValidationHelper.validateCategoryBelongsToShopForEdit(
-        request.getDrinkCategoryId(), drinkShopId, commonMapper);
+        "You do not have permission to edit a drink from another shop");
 
-    String trimmedDrinkName = DrinkValidationHelper.validateAndFormatName(request.getDrinkName());
+    // 5. Verify category belongs to shop for edit
+    drinkValidator.validateCategoryBelongsToShopForEdit(request.getDrinkCategoryId(), drinkShopId);
+
+    // 6. Trim name and verify uniqueness for edit
+    String trimmedDrinkName = drinkValidator.validateAndFormatName(request.getDrinkName());
     request.setDrinkName(trimmedDrinkName);
     validateDrinkNameNotDuplicatedForEdit(request.getDrinkId(), trimmedDrinkName);
 
+    // 7. Resolve image upload or fallback URL
     String storedImageUrl =
-        DrinkImageHelper.resolveImageForEdit(
+        resolveImageForEdit(
             imageFile,
             request.getImageUrl(),
             request.getDrinkId(),
             currentUserRoleName,
-            drinkShopId,
-            updateDrinkMapper,
-            fileStorageService);
+            drinkShopId);
 
+    // 8. Update drink record
     updateDrinkMapper.updateDrink(
         request.getDrinkId(),
         trimmedDrinkName,
@@ -73,13 +81,6 @@ public class EditDrinksServiceImpl implements IEditDrinksService {
   private void validateRequest(EditDrinksRequest request) {
     if (request == null || request.getDrinkId() == null) {
       throw new InvalidRequestException("Drink ID is required");
-    }
-  }
-
-  private void validateDrinkExistence(UUID drinkId, String roleName, UUID shopId) {
-    boolean isDrinkExisted = commonMapper.checkDrinkExisted(drinkId, roleName, shopId);
-    if (!isDrinkExisted) {
-      throw new DataNotFoundException("Data not found", drinkId);
     }
   }
 
@@ -97,5 +98,50 @@ public class EditDrinksServiceImpl implements IEditDrinksService {
     if (isDrinkNameDuplicated) {
       throw new InvalidRequestException("Drink name is existed");
     }
+  }
+
+  private String resolveImageForEdit(
+      MultipartFile imageFile,
+      String requestedImageUrl,
+      UUID drinkId,
+      String currentUserRoleName,
+      UUID drinkShopId) {
+
+    if (imageFile != null && !imageFile.isEmpty()) {
+      String oldImageUrl =
+          updateDrinkMapper.getDrinkImageUrl(drinkId, currentUserRoleName, drinkShopId);
+      return handleUploadedImageWithSync(imageFile, oldImageUrl);
+    }
+
+    if (requestedImageUrl == null || requestedImageUrl.isBlank()) {
+      return updateDrinkMapper.getDrinkImageUrl(drinkId, currentUserRoleName, drinkShopId);
+    }
+
+    return requestedImageUrl;
+  }
+
+  private String handleUploadedImageWithSync(MultipartFile imageFile, String oldImageUrl) {
+    final String newStoredImageUrl = fileStorageService.storeDrinkImage(imageFile);
+
+    if (TransactionSynchronizationManager.isSynchronizationActive()) {
+      TransactionSynchronizationManager.registerSynchronization(
+          new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+              if (oldImageUrl != null && !oldImageUrl.isBlank()) {
+                fileStorageService.deleteDrinkImage(oldImageUrl);
+              }
+            }
+
+            @Override
+            public void afterCompletion(int status) {
+              if (status == STATUS_ROLLED_BACK) {
+                fileStorageService.deleteDrinkImage(newStoredImageUrl);
+              }
+            }
+          });
+    }
+
+    return newStoredImageUrl;
   }
 }
