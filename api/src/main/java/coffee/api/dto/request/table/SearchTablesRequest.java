@@ -5,10 +5,13 @@ import coffee.api.enums.ValidationMessage;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+import java.util.UUID;
 import lombok.Data;
 
 @Data
 public class SearchTablesRequest {
+
   @Min(value = 1, message = ValidationMessage.Msg.PAGE_MIN)
   private int page = 1;
 
@@ -16,12 +19,21 @@ public class SearchTablesRequest {
   @Max(value = 100, message = ValidationMessage.Msg.SIZE_MAX)
   private int size = 10;
 
+  private UUID shopId;
+
+  @Min(value = 1, message = ValidationMessage.Msg.SIZE_MIN)
+  @Max(value = 3, message = ValidationMessage.Msg.SIZE_MAX)
   private Integer status;
 
+  // Allows: Unicode letters, numbers, spaces, and punctuation: - & / ( ) , . '
+  @Size(max = 100, message = ValidationMessage.Msg.SIZE_MAX)
+  @Pattern(
+      regexp = "^\\s*$|^[\\p{L}\\p{N}\\s&/(),.'\\-]+$",
+      message = ValidationMessage.Msg.SPECIAL_CHARACTERS)
   private String search;
 
   @Pattern(
-      regexp = "^(tableId|tableNumber|status|createdAt|updatedAt)$",
+      regexp = "^(tableId|tableNumber|status|shopId|createdAt|updatedAt)$",
       message = ValidationMessage.Msg.SORT_BY_INVALID)
   private String sortBy = "tableNumber";
 
@@ -38,9 +50,5 @@ public class SearchTablesRequest {
   public String trimmedSearch() {
     if (search == null || search.isBlank()) return null;
     return search.trim();
-  }
-
-  public String directionValue() {
-    return sortDirection == null ? "ASC" : sortDirection.getValue();
   }
 }

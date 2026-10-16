@@ -10,7 +10,6 @@ public class DrinkResult {
   private UUID drinkId;
   private UUID shopId;
   private UUID drinkCategoryId;
-  private String categoryName;
   private String drinkName;
   private String imageUrl;
   private String status;
@@ -20,7 +19,6 @@ public class DrinkResult {
 
   @Data
   public static class DrinkVariantResult {
-    private UUID drinkDetailId;
     private String size;
     private BigDecimal price;
   }

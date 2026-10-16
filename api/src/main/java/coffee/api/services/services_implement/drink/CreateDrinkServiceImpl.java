@@ -18,13 +18,12 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class CreateDrinkServiceImpl implements ICreateDrinkService {
 
-  private final CommonMapper commonMapper;
   private final CreateDrinkMapper createDrinksMapper;
   private final IFileStorageService fileStorageService;
   private final DrinkValidator drinkValidator;
 
   @Override
-  @Transactional(rollbackFor = Exception.class)
+  @Transactional
   public void process(
       CreateDrinksRequest request,
       MultipartFile imageFile,

@@ -7,11 +7,6 @@ import org.apache.ibatis.annotations.Param;
 @Mapper
 public interface CommonMapper {
 
-  boolean checkDrinkNameExisted(
-      @Param("drinkId") UUID drinkId,
-      @Param("drinkName") String drinkName,
-      @Param("shopId") UUID shopId);
-
   Boolean checkStaffExisted(@Param("profileId") UUID profileId);
 
   Boolean checkStaffExistedByUsername(@Param("username") String username);
@@ -51,6 +46,8 @@ public interface CommonMapper {
       @Param("tableId") UUID tableId,
       @Param("currentUserRoleName") String currentUserRoleName,
       @Param("currentUserShopId") UUID currentUserShopId);
+
+  Boolean checkTableExistsInShop(@Param("tableId") UUID tableId, @Param("shopId") UUID shopId);
 
   Boolean checkTableNumberExisted(
       @Param("tableId") UUID tableId,

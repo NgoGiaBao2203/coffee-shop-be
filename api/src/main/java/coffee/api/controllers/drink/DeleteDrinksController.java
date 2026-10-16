@@ -25,10 +25,7 @@ public class DeleteDrinksController {
       @AuthenticationPrincipal CustomUserDetail customUserDetail,
       @RequestBody @Valid DeleteDrinksRequest request) {
     deleteDrinksService.process(
-        request,
-        customUserDetail.getUserId(),
-        customUserDetail.getRoleName(),
-        customUserDetail.getShopId());
+        request, customUserDetail.getRoleName(), customUserDetail.getShopId());
     return ResponseEntity.ok()
         .body(DeleteDrinkResponse.of(ResponseCode.SUCCESS, "Drink deleted successfully"));
   }

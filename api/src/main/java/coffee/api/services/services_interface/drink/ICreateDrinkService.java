@@ -6,9 +6,5 @@ import org.springframework.web.multipart.MultipartFile;
 
 public interface ICreateDrinkService {
   void process(
-      CreateDrinksRequest request,
-      MultipartFile imageFile,
-      UUID currentUserId,
-      UUID currentShopID,
-      String roleName);
+      CreateDrinksRequest request, MultipartFile imageFile, UUID currentShopID, String roleName);
 }

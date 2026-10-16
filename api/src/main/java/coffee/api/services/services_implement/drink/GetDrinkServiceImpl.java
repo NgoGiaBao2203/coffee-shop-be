@@ -4,8 +4,6 @@ import coffee.api.dto.request.drink.SearchDrinksRequest;
 import coffee.api.dto.response.base_response.PageResponse;
 import coffee.api.dto.response.base_response.PaginationMeta;
 import coffee.api.dto.result.DrinkResult;
-import coffee.api.enums.Roles;
-import coffee.api.exceptions.InvalidRequestException;
 import coffee.api.mapper.GetDrinksMapper;
 import coffee.api.services.services_interface.drink.IGetDrinkService;
 import java.util.Collections;
@@ -67,7 +65,7 @@ public class GetDrinkServiceImpl implements IGetDrinkService {
         getDrinksMapper.getDrinksFiltered(
             request.trimmedSearch(),
             request.getSortBy(),
-            sortDirection,
+            request.getSortDirection().toString(),
             request.getSize(),
             request.calcOffset(),
             currentUserRoleName,
