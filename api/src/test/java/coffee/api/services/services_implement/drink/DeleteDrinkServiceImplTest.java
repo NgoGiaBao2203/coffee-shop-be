@@ -21,6 +21,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataAccessException;
@@ -80,7 +81,10 @@ public class DeleteDrinkServiceImplTest {
 
     verify(commonMapper, times(1)).checkShopIdIsExisted(currentUserId, currentUserShopId);
     verify(commonMapper, times(1)).checkDrinkExisted(drinkId, managerRole, currentUserShopId);
-    verify(deleteDrinkMapper, times(1))
+    InOrder inOrder = inOrder(deleteDrinkMapper);
+    inOrder.verify(deleteDrinkMapper).softDeleteDrinkDetails(drinkId, currentUserId);
+    inOrder
+        .verify(deleteDrinkMapper)
         .deleteDrink(drinkId, currentUserId, managerRole, currentUserShopId);
   }
 
@@ -96,7 +100,10 @@ public class DeleteDrinkServiceImplTest {
 
     verify(commonMapper, never()).checkShopIdIsExisted(any(), any());
     verify(commonMapper, times(1)).checkDrinkExisted(drinkId, ownerRole, currentUserShopId);
-    verify(deleteDrinkMapper, times(1))
+    InOrder inOrder = inOrder(deleteDrinkMapper);
+    inOrder.verify(deleteDrinkMapper).softDeleteDrinkDetails(drinkId, currentUserId);
+    inOrder
+        .verify(deleteDrinkMapper)
         .deleteDrink(drinkId, currentUserId, ownerRole, currentUserShopId);
   }
 
@@ -236,7 +243,10 @@ public class DeleteDrinkServiceImplTest {
                     validRequest, currentUserId, managerRole, currentUserShopId));
 
     assertEquals("Database connection timeout", exception.getMessage());
-    verify(deleteDrinkMapper, times(1))
+    InOrder inOrder = inOrder(deleteDrinkMapper);
+    inOrder.verify(deleteDrinkMapper).softDeleteDrinkDetails(drinkId, currentUserId);
+    inOrder
+        .verify(deleteDrinkMapper)
         .deleteDrink(drinkId, currentUserId, managerRole, currentUserShopId);
   }
 
@@ -256,7 +266,10 @@ public class DeleteDrinkServiceImplTest {
     assertEquals(
         "Drink has already been deleted or modified by another request", exception.getMessage());
     assertEquals(drinkId, exception.getId());
-    verify(deleteDrinkMapper, times(1))
+    InOrder inOrder = inOrder(deleteDrinkMapper);
+    inOrder.verify(deleteDrinkMapper).softDeleteDrinkDetails(drinkId, currentUserId);
+    inOrder
+        .verify(deleteDrinkMapper)
         .deleteDrink(drinkId, currentUserId, ownerRole, currentUserShopId);
   }
 

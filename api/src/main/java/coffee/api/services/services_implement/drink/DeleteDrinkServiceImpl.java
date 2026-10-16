@@ -36,19 +36,20 @@ public class DeleteDrinkServiceImpl implements IDeleteDrinkService {
     drinkValidator.validateDrinkExistence(
         request.getDrinkId(), currentUserRoleName, currentUserShopId);
 
-    // 4. Soft-delete only the drinks record and verify affected rows
+    // 4. Soft-delete drink details before the drink to preserve referential history
+    deleteDrinkMapper.softDeleteDrinkDetails(request.getDrinkId(), currentUserId);
+
+    // 5. Soft-delete the drink record and verify affected rows
     softDeleteDrinkRecord(
         request.getDrinkId(), currentUserId, currentUserRoleName, currentUserShopId);
   }
 
-  // 1. Verify drink ID input
   private void validateRequest(DeleteDrinksRequest request) {
     if (request == null || request.getDrinkId() == null) {
       throw new InvalidRequestException("Drink ID is required");
     }
   }
 
-  // 4. Soft-delete only the drinks record and verify affected rows
   private void softDeleteDrinkRecord(
       UUID drinkId, UUID currentUserId, String currentUserRoleName, UUID currentUserShopId) {
     int affectedRows =
