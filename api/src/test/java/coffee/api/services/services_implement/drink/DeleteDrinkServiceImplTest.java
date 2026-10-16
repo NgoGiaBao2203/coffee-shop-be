@@ -9,11 +9,17 @@ import coffee.api.enums.Roles;
 import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.mapper.CommonMapper;
 import coffee.api.mapper.DeleteDrinkMapper;
+import coffee.api.services.services_implement.drink.common.DrinkValidator;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -24,7 +30,7 @@ public class DeleteDrinkServiceImplTest {
 
   @Mock private DeleteDrinkMapper deleteDrinkMapper;
 
-  @InjectMocks private DeleteDrinkServiceImpl deleteDrinkService;
+  private DeleteDrinkServiceImpl deleteDrinkService;
 
   private DeleteDrinksRequest validRequest;
   private UUID drinkId;
@@ -33,12 +39,47 @@ public class DeleteDrinkServiceImplTest {
 
   @BeforeEach
   void setUp() {
+    try (ValidatorFactory factory = Validation.buildDefaultValidatorFactory()) {
+      validator = factory.getValidator();
+    }
+
+    DrinkValidator drinkValidator = new DrinkValidator(commonMapper);
+    deleteDrinkService = new DeleteDrinkServiceImpl(deleteDrinkMapper, drinkValidator);
+
     drinkId = UUID.randomUUID();
     currentUserShopId = UUID.randomUUID();
     currentUserRoleName = Roles.MANAGER.getValue();
 
     validRequest = new DeleteDrinksRequest();
     validRequest.setDrinkId(drinkId);
+
+    managerRole = Roles.MANAGER.getValue();
+    ownerRole = Roles.OWNER.getValue();
+  }
+
+  // =========================================================================
+  // SERVICE PROCESS - NORMAL & BUSINESS CASES
+  // =========================================================================
+
+  @Test
+  void process_Success_WhenUserIsManagerWithActiveShop_TC001() {
+    when(commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId)).thenReturn(true);
+    when(commonMapper.checkDrinkExisted(drinkId, managerRole, currentUserShopId)).thenReturn(true);
+    when(deleteDrinkMapper.deleteDrink(drinkId, currentUserId, managerRole, currentUserShopId))
+        .thenReturn(1);
+
+    assertDoesNotThrow(
+        () ->
+            deleteDrinkService.process(
+                validRequest, currentUserId, managerRole, currentUserShopId));
+
+    verify(commonMapper, times(1)).checkShopIdIsExisted(currentUserId, currentUserShopId);
+    verify(commonMapper, times(1)).checkDrinkExisted(drinkId, managerRole, currentUserShopId);
+    InOrder inOrder = inOrder(deleteDrinkMapper);
+    inOrder.verify(deleteDrinkMapper).softDeleteDrinkDetails(drinkId, currentUserId);
+    inOrder
+        .verify(deleteDrinkMapper)
+        .deleteDrink(drinkId, currentUserId, managerRole, currentUserShopId);
   }
 
   @Test
@@ -55,11 +96,29 @@ public class DeleteDrinkServiceImplTest {
     assertDoesNotThrow(
         () -> deleteDrinkService.process(validRequest, currentUserRoleName, currentUserShopId));
 
-    // Assert
-    verify(commonMapper, times(1))
-        .checkDrinkExisted(drinkId, currentUserRoleName, currentUserShopId);
-    verify(deleteDrinkMapper, times(1))
-        .deleteDrink(drinkId, currentUserRoleName, currentUserShopId);
+    verify(commonMapper, never()).checkShopIdIsExisted(any(), any());
+    verify(commonMapper, times(1)).checkDrinkExisted(drinkId, ownerRole, currentUserShopId);
+    InOrder inOrder = inOrder(deleteDrinkMapper);
+    inOrder.verify(deleteDrinkMapper).softDeleteDrinkDetails(drinkId, currentUserId);
+    inOrder
+        .verify(deleteDrinkMapper)
+        .deleteDrink(drinkId, currentUserId, ownerRole, currentUserShopId);
+  }
+
+  // =========================================================================
+  // SERVICE PROCESS - ABNORMAL / EXCEPTION CASES
+  // =========================================================================
+
+  @Test
+  void process_ThrowsInvalidRequestException_WhenRequestIsNull_TC003() {
+    InvalidRequestException exception =
+        assertThrows(
+            InvalidRequestException.class,
+            () -> deleteDrinkService.process(null, currentUserId, managerRole, currentUserShopId));
+
+    assertEquals("Drink ID is required", exception.getMessage());
+    verifyNoInteractions(commonMapper);
+    verifyNoInteractions(deleteDrinkMapper);
   }
 
   @Test
@@ -82,10 +141,30 @@ public class DeleteDrinkServiceImplTest {
   }
 
   @Test
-  void process_Success_WhenUserIsOwner_TC003() {
-    // Arrange
-    String ownerRole = Roles.OWNER.getValue();
+  void process_ThrowsDataAccessException_WhenDatabaseAccessFails_TC010() {
+    when(commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId)).thenReturn(true);
+    when(commonMapper.checkDrinkExisted(drinkId, managerRole, currentUserShopId)).thenReturn(true);
+    doThrow(new DataAccessException("Database connection timeout") {})
+        .when(deleteDrinkMapper)
+        .deleteDrink(drinkId, currentUserId, managerRole, currentUserShopId);
 
+    DataAccessException exception =
+        assertThrows(
+            DataAccessException.class,
+            () ->
+                deleteDrinkService.process(
+                    validRequest, currentUserId, managerRole, currentUserShopId));
+
+    assertEquals("Database connection timeout", exception.getMessage());
+    InOrder inOrder = inOrder(deleteDrinkMapper);
+    inOrder.verify(deleteDrinkMapper).softDeleteDrinkDetails(drinkId, currentUserId);
+    inOrder
+        .verify(deleteDrinkMapper)
+        .deleteDrink(drinkId, currentUserId, managerRole, currentUserShopId);
+  }
+
+  @Test
+  void process_ThrowsDataNotFoundException_WhenDeleteAffectsNoRows_TC011() {
     when(commonMapper.checkDrinkExisted(drinkId, ownerRole, currentUserShopId)).thenReturn(true);
 
     doNothing().when(deleteDrinkMapper).deleteDrink(drinkId, ownerRole, currentUserShopId);
@@ -94,9 +173,24 @@ public class DeleteDrinkServiceImplTest {
     assertDoesNotThrow(
         () -> deleteDrinkService.process(validRequest, ownerRole, currentUserShopId));
 
-    // Assert
-    verify(commonMapper, times(1)).checkDrinkExisted(drinkId, ownerRole, currentUserShopId);
-    verify(deleteDrinkMapper, times(1)).deleteDrink(drinkId, ownerRole, currentUserShopId);
+    assertEquals(
+        "Drink has already been deleted or modified by another request", exception.getMessage());
+    assertEquals(drinkId, exception.getId());
+    InOrder inOrder = inOrder(deleteDrinkMapper);
+    inOrder.verify(deleteDrinkMapper).softDeleteDrinkDetails(drinkId, currentUserId);
+    inOrder
+        .verify(deleteDrinkMapper)
+        .deleteDrink(drinkId, currentUserId, ownerRole, currentUserShopId);
+  }
+
+  // =========================================================================
+  // REQUEST BEAN VALIDATION
+  // =========================================================================
+
+  @Test
+  void requestValidation_Success_WhenDrinkIdIsValid_TC012() {
+    Set<ConstraintViolation<DeleteDrinksRequest>> violations = validator.validate(validRequest);
+    assertTrue(violations.isEmpty());
   }
 
   @Test

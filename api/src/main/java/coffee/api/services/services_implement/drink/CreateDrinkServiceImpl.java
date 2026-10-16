@@ -1,8 +1,11 @@
 package coffee.api.services.services_implement.drink;
 
 import coffee.api.dto.request.drink.CreateDrinksRequest;
-import coffee.api.exceptions.UserExistException;
+import coffee.api.exceptions.DataNotFoundException;
+import coffee.api.exceptions.InvalidRequestException;
+import coffee.api.mapper.CommonMapper;
 import coffee.api.mapper.CreateDrinkMapper;
+import coffee.api.services.services_implement.drink.common.DrinkValidator;
 import coffee.api.services.services_interface.common.IFileStorageService;
 import coffee.api.services.services_interface.drink.ICreateDrinkService;
 import java.util.UUID;
@@ -17,51 +20,83 @@ public class CreateDrinkServiceImpl implements ICreateDrinkService {
 
   private final CreateDrinkMapper createDrinksMapper;
   private final IFileStorageService fileStorageService;
+  private final DrinkValidator drinkValidator;
 
   @Override
   @Transactional
   public void process(
-      CreateDrinksRequest request, MultipartFile imageFile, UUID currentShopID, String roleName) {
+      CreateDrinksRequest request,
+      MultipartFile imageFile,
+      UUID currentUserId,
+      UUID currentShopId,
+      String currentUserRoleName) {
 
-    UUID targetShopId = validateShopId(roleName, request.getShopId(), currentShopID);
+    // 1. Verify request and shop existence
+    validateRequestShop(request);
 
-    Boolean isDrinkExisted =
-        createDrinksMapper.checkDrinkExistedByName(targetShopId, request.getDrinkName());
-    if (isDrinkExisted) {
-      throw new UserExistException("Drink is existed");
-    }
+    // 2. Verify manager shop permission
+    drinkValidator.validateManagerShopPermission(
+        currentUserRoleName,
+        currentShopId,
+        request.getShopId(),
+        currentUserId,
+        "You do not have permission to access this shop");
 
-    String size = request.getSize() != null ? request.getSize().trim().toUpperCase() : "";
-    if (!size.equals("S") && !size.equals("M") && !size.equals("L")) {
-      throw new RuntimeException("Size is invalid. Must be S, M, or L");
-    }
+    // 3. Verify category belongs to shop for create
+    drinkValidator.validateCategoryBelongsToShopForCreate(
+        request.getDrinkCategoryId(), request.getShopId());
 
-    if (request.getPrice() == null || request.getPrice() <= 0) {
-      throw new RuntimeException("Price must be greater than 0");
-    }
+    // 4. Trim name and verify uniqueness in shop
+    String trimmedDrinkName = drinkValidator.validateAndFormatName(request.getDrinkName());
+    request.setDrinkName(trimmedDrinkName);
+    validateDrinkNameNotDuplicated(trimmedDrinkName, request.getShopId());
 
-    // Save image to disk if uploaded
-    String storedImageUrl = request.getImageUrl();
-    if (imageFile != null && !imageFile.isEmpty()) {
-      storedImageUrl = fileStorageService.storeDrinkImage(imageFile);
-    }
+    // 5. Validate and format drink size
+    String size = drinkValidator.validateAndFormatSize(request.getSize());
+    request.setSize(size);
 
-    createDrinksMapper.createDrink(
-        request.getDrinkCategoryId(),
-        request.getDrinkDetailId(),
-        targetShopId,
-        request.getDrinkName(),
-        storedImageUrl,
-        request.getStatus(),
-        request.getIsDeleted(),
-        size,
-        request.getPrice());
+    // 6. Resolve image upload or fallback URL
+    String storedImageUrl = resolveImageForCreate(imageFile, request.getImageUrl());
+
+    // 7. Insert new drink and drink detail records
+    insertDrinkWithDetail(request, trimmedDrinkName, storedImageUrl, size);
   }
 
-  private UUID validateShopId(String roleName, UUID requestShopId, UUID currentShopId) {
-    if ("OWNER".equals(roleName)) {
-      return requestShopId;
+  private void validateRequestShop(CreateDrinksRequest request) {
+    if (request == null || request.getShopId() == null) {
+      throw new InvalidRequestException("Shop ID is required");
     }
-    return currentShopId;
+    boolean isShopExisted = commonMapper.checkShopExisted(request.getShopId());
+    if (!isShopExisted) {
+      throw new DataNotFoundException("Data not found", request.getShopId());
+    }
+  }
+
+  private void validateDrinkNameNotDuplicated(String drinkName, UUID shopId) {
+    boolean isDrinkExisted = commonMapper.checkDrinkNameExisted(null, drinkName, shopId);
+    if (isDrinkExisted) {
+      throw new InvalidRequestException("Drink name is existed");
+    }
+  }
+
+  private String resolveImageForCreate(MultipartFile imageFile, String defaultImageUrl) {
+    if (imageFile != null && !imageFile.isEmpty()) {
+      return fileStorageService.storeDrinkImage(imageFile);
+    }
+    return defaultImageUrl;
+  }
+
+  private void insertDrinkWithDetail(
+      CreateDrinksRequest request, String drinkName, String imageUrl, String size) {
+    UUID drinkId = UUID.randomUUID();
+    createDrinksMapper.insertDrink(
+        drinkId,
+        request.getDrinkCategoryId(),
+        request.getShopId(),
+        drinkName,
+        imageUrl,
+        request.getStatus());
+
+    createDrinksMapper.insertDrinkDetail(drinkId, size, request.getPrice());
   }
 }
