@@ -174,6 +174,11 @@ public class GlobalExceptionHandler {
   public ResponseEntity<ErrorApiResponse> handleInvalidRequestException(
       InvalidRequestException ex) {
     log.error("Request error: {}", ex.getMessage());
+
+    if ("Drink name is existed".equals(ex.getMessage())) {
+      return ResponseEntity.status(HttpStatus.CONFLICT)
+          .body(ErrorApiResponse.of(ResponseCode.CONFLICT, ex.getMessage()));
+    }
     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
         .body(ErrorApiResponse.of(ResponseCode.INVALID_REQUEST, ex.getMessage()));
   }

@@ -11,6 +11,7 @@ import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.exceptions.InvalidRequestException;
 import coffee.api.mapper.CommonMapper;
 import coffee.api.mapper.CreateDrinkMapper;
+import coffee.api.services.services_implement.drink.common.DrinkValidator;
 import coffee.api.services.services_interface.common.IFileStorageService;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
@@ -22,7 +23,6 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataAccessException;
@@ -35,7 +35,7 @@ class CreateDrinkServiceImplTest {
   @Mock private CreateDrinkMapper createDrinkMapper;
   @Mock private IFileStorageService fileStorageService;
 
-  @InjectMocks private CreateDrinkServiceImpl createDrinkService;
+  private CreateDrinkServiceImpl createDrinkService;
 
   private Validator validator;
   private CreateDrinksRequest validRequest;
@@ -48,6 +48,11 @@ class CreateDrinkServiceImplTest {
     try (ValidatorFactory factory = Validation.buildDefaultValidatorFactory()) {
       validator = factory.getValidator();
     }
+
+    DrinkValidator drinkValidator = new DrinkValidator(commonMapper);
+    createDrinkService =
+        new CreateDrinkServiceImpl(
+            commonMapper, createDrinkMapper, fileStorageService, drinkValidator);
 
     currentUserId = UUID.fromString("a1000000-0000-0000-0000-000000000001");
     currentShopId = UUID.fromString("b1000000-0000-0000-0000-000000000001");

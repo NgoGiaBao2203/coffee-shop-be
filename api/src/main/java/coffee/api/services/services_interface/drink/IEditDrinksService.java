@@ -5,6 +5,7 @@ import java.util.UUID;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface IEditDrinksService {
+
   void process(
       EditDrinksRequest request,
       MultipartFile imageFile,

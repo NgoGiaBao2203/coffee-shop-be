@@ -24,17 +24,44 @@ public class GetDrinkServiceImpl implements IGetDrinkService {
   public PageResponse<DrinkResult> process(
       SearchDrinksRequest request, String currentUserRoleName, UUID currentUserShopId) {
 
-    // Manager or Staff must have an assigned shop
+    // 1. Manager or Staff must have an assigned shop
+    verifyShopBranchAssignment(currentUserRoleName, currentUserShopId);
+
+    // 2. Count total elements matching filter criteria
+    long totalElements = countDrinks(request, currentUserRoleName, currentUserShopId);
+
+    // 3. Fetch paginated drinks list
+    List<DrinkResult> drinks = fetchDrinks(request, currentUserRoleName, currentUserShopId);
+
+    // 4. Normalize status label for each drink
+    normalizeDrinkStatuses(drinks);
+
+    // 5. Build pagination metadata
+    PaginationMeta pagination = buildPaginationMeta(request, totalElements);
+
+    return PageResponse.of("Get drinks successfully", drinks, pagination);
+  }
+
+  // 1. Manager or Staff must have an assigned shop
+  private void verifyShopBranchAssignment(String currentUserRoleName, UUID currentUserShopId) {
     if (!Roles.OWNER.getValue().equals(currentUserRoleName) && currentUserShopId == null) {
       throw new InvalidRequestException("User is not assigned to any shop");
     }
+  }
+
+  // 2. Count total elements matching filter criteria
+  private long countDrinks(
+      SearchDrinksRequest request, String currentUserRoleName, UUID currentUserShopId) {
+    return getDrinksMapper.countDrinksFiltered(
+        request.trimmedSearch(), currentUserRoleName, currentUserShopId, request.getShopId());
+  }
+
+  // 3. Fetch paginated drinks list
+  private List<DrinkResult> fetchDrinks(
+      SearchDrinksRequest request, String currentUserRoleName, UUID currentUserShopId) {
 
     String sortDirection =
         request.getSortDirection() != null ? request.getSortDirection().name() : "ASC";
-
-    long totalElements =
-        getDrinksMapper.countDrinksFiltered(
-            request.trimmedSearch(), currentUserRoleName, currentUserShopId, request.getShopId());
 
     List<DrinkResult> drinks =
         getDrinksMapper.getDrinksFiltered(
@@ -47,21 +74,22 @@ public class GetDrinkServiceImpl implements IGetDrinkService {
             currentUserShopId,
             request.getShopId());
 
-    if (drinks == null) {
-      drinks = Collections.emptyList();
-    } else {
-      drinks.forEach(drink -> drink.setStatus(normalizeStatus(drink.getStatus())));
-    }
+    return drinks != null ? drinks : Collections.emptyList();
+  }
 
-    PaginationMeta pagination =
-        PaginationMeta.builder()
-            .page(request.getPage())
-            .size(request.getSize())
-            .totalElements(totalElements)
-            .totalPages(request.totalPages(totalElements))
-            .build();
+  // 4. Normalize status label for each drink
+  private void normalizeDrinkStatuses(List<DrinkResult> drinks) {
+    drinks.forEach(drink -> drink.setStatus(normalizeStatus(drink.getStatus())));
+  }
 
-    return PageResponse.of("Get drinks successfully", drinks, pagination);
+  // 5. Build pagination metadata
+  private PaginationMeta buildPaginationMeta(SearchDrinksRequest request, long totalElements) {
+    return PaginationMeta.builder()
+        .page(request.getPage())
+        .size(request.getSize())
+        .totalElements(totalElements)
+        .totalPages(request.totalPages(totalElements))
+        .build();
   }
 
   private String normalizeStatus(String rawStatus) {
