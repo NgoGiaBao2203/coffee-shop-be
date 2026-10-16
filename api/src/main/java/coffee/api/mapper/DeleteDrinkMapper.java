@@ -6,9 +6,8 @@ import org.apache.ibatis.annotations.Param;
 
 @Mapper
 public interface DeleteDrinkMapper {
-  int deleteDrink(
+  void deleteDrink(
       @Param("drinkId") UUID drinkId,
-      @Param("deletedBy") UUID deletedBy,
       @Param("currentUserRoleName") String currentUserRoleName,
       @Param("currentUserShopId") UUID currentUserShopId);
 }

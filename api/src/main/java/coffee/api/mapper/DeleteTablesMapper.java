@@ -6,8 +6,12 @@ import org.apache.ibatis.annotations.Param;
 
 @Mapper
 public interface DeleteTablesMapper {
-  void deleteTable(
+
+  int countPendingInvoicesByTable(@Param("tableId") UUID tableId);
+
+  int softDeleteTable(
       @Param("tableId") UUID tableId,
       @Param("currentUserRoleName") String currentUserRoleName,
-      @Param("currentUserShopId") UUID currentUserShopId);
+      @Param("currentUserShopId") UUID currentUserShopId,
+      @Param("deletedBy") UUID deletedBy);
 }

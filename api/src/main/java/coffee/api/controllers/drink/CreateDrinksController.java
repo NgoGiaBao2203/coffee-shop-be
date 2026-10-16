@@ -30,11 +30,7 @@ public class CreateDrinksController {
       @RequestPart(value = "image", required = false) MultipartFile imageFile) {
 
     createDrinkService.process(
-        request,
-        imageFile,
-        customUserDetail.getUserId(),
-        customUserDetail.getShopId(),
-        customUserDetail.getRoleName());
+        request, imageFile, customUserDetail.getShopId(), customUserDetail.getRoleName());
 
     return ResponseEntity.ok()
         .body(CreateDrinkResponse.of(ResponseCode.SUCCESS, "Drink created successfully"));
