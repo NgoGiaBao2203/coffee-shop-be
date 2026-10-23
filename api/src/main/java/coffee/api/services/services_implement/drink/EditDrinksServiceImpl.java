@@ -2,7 +2,6 @@ package coffee.api.services.services_implement.drink;
 
 import coffee.api.dto.request.drink.EditDrinksRequest;
 import coffee.api.exceptions.DataNotFoundException;
-import coffee.api.mapper.CommonMapper;
 import coffee.api.exceptions.InvalidRequestException;
 import coffee.api.mapper.UpdateDrinkMapper;
 import coffee.api.services.services_implement.drink.common.DrinkValidator;
@@ -25,18 +24,13 @@ public class EditDrinksServiceImpl implements IEditDrinksService {
   private final DrinkValidator drinkValidator;
 
   @Override
-  @Transactional
+  @Transactional(rollbackFor = Exception.class)
   public void process(
       EditDrinksRequest request,
       MultipartFile imageFile,
+      UUID currentUserId,
       String currentUserRoleName,
       UUID currentUserShopId) {
-    Boolean isDrinkExisted =
-        commonMapper.checkDrinkExisted(
-            request.getDrinkId(), currentUserRoleName, currentUserShopId);
-
-    if (Boolean.FALSE.equals(isDrinkExisted)) {
-      throw new DataNotFoundException("Data not found", request.getDrinkId());
 
     // 1. Verify request and drink ID
     validateRequest(request);
@@ -95,11 +89,6 @@ public class EditDrinksServiceImpl implements IEditDrinksService {
     if (drinkShopId == null) {
       throw new DataNotFoundException("Data not found", drinkId);
     }
-
-    // Determine the image URL to use
-    String imageUrlToUpdate = request.getImageUrl();
-
-    // If a new image file is uploaded, store it and handle old image deletion
     return drinkShopId;
   }
 
@@ -119,13 +108,7 @@ public class EditDrinksServiceImpl implements IEditDrinksService {
       UUID drinkShopId) {
 
     if (imageFile != null && !imageFile.isEmpty()) {
-      // Get the current drink's image URL for deletion
       String oldImageUrl =
-          editDrinkMapper.getDrinkImageUrl(
-              request.getDrinkId(), currentUserRoleName, currentUserShopId);
-
-      // Store the new image
-      imageUrlToUpdate = fileStorageService.storeDrinkImage(imageFile);
           updateDrinkMapper.getDrinkImageUrl(drinkId, currentUserRoleName, drinkShopId);
       return handleUploadedImageWithSync(imageFile, oldImageUrl);
     }
@@ -140,30 +123,6 @@ public class EditDrinksServiceImpl implements IEditDrinksService {
   private String handleUploadedImageWithSync(MultipartFile imageFile, String oldImageUrl) {
     final String newStoredImageUrl = fileStorageService.storeDrinkImage(imageFile);
 
-      // Delete the old image if it exists
-      if (oldImageUrl != null && !oldImageUrl.trim().isEmpty()) {
-        fileStorageService.deleteDrinkImage(oldImageUrl);
-      }
-    } else {
-      // No new image uploaded, keep the current image
-      if (imageUrlToUpdate == null || imageUrlToUpdate.trim().isEmpty()) {
-        String currentImageUrl =
-            editDrinkMapper.getDrinkImageUrl(
-                request.getDrinkId(), currentUserRoleName, currentUserShopId);
-        imageUrlToUpdate = currentImageUrl;
-      }
-    }
-
-    editDrinkMapper.updateDrink(
-        request.getDrinkId(),
-        request.getDrinkName(),
-        imageUrlToUpdate,
-        request.getStatus(),
-        request.getDrinkCategoryId(),
-        request.getPrice(),
-        request.getSize(),
-        currentUserShopId,
-        currentUserRoleName);
     if (TransactionSynchronizationManager.isSynchronizationActive()) {
       TransactionSynchronizationManager.registerSynchronization(
           new TransactionSynchronization() {

@@ -9,6 +9,7 @@ import coffee.api.services.services_interface.drink.IDeleteDrinkService;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -18,6 +19,7 @@ public class DeleteDrinkServiceImpl implements IDeleteDrinkService {
   private final DrinkValidator drinkValidator;
 
   @Override
+  @Transactional(rollbackFor = Exception.class)
   public void process(
       DeleteDrinksRequest request,
       UUID currentUserId,

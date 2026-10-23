@@ -2,29 +2,31 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="coffee.api.mapper.GetDrinksMapper">
 
-  <!-- Result map to map SQL columns to DrinkResult DTO fields -->
   <resultMap id="DrinkResultMap" type="coffee.api.dto.result.DrinkResult">
     <id property="drinkId" column="drink_id" javaType="java.util.UUID"/>
     <result property="shopId" column="shop_id" javaType="java.util.UUID"/>
     <result property="drinkCategoryId" column="drink_category_id" javaType="java.util.UUID"/>
+    <result property="categoryName" column="category_name"/>
     <result property="drinkName" column="drink_name"/>
     <result property="imageUrl" column="image_url"/>
     <result property="status" column="status"/>
     <result property="isDeleted" column="is_deleted"/>
   </resultMap>
 
-  <!-- Reusable SQL fragment for filtering conditions based on search query and role-based permissions -->
   <sql id="filterConditions">
     <where>
-      d.is_deleted = false AND dc.is_deleted = false
+      d.is_deleted = false
+      AND d.deleted_at IS NULL
+      AND dc.is_deleted = false
+      AND dc.deleted_at IS NULL
 
- <!-- Restrict access by shopId if the current user is not an OWNER -->
+      <!-- Restrict access by shopId if the current user is not an OWNER -->
       <choose>
         <when test="currentUserRoleName != 'OWNER'">
           AND d.shop_id = #{currentUserShopId}
         </when>
-        <when test="branchShopId != null">
-          AND d.shop_id = #{branchShopId}
+        <when test="shopId != null">
+          AND d.shop_id = #{shopId}
         </when>
       </choose>
 
@@ -35,12 +37,12 @@
     </where>
   </sql>
 
-  <!-- Query paginated list of drink items -->
   <select id="getDrinksFiltered" resultMap="DrinkResultMap">
     SELECT
     d.drink_id,
     d.shop_id,
     d.drink_category_id,
+    dc.category_name,
     d.drink_name,
     d.image_url,
     d.status,
@@ -48,14 +50,22 @@
     FROM drinks AS d
     JOIN drink_categories AS dc ON d.drink_category_id = dc.drink_category_id
     <include refid="filterConditions"/>
-    ORDER BY d.drink_id
-    <if test="sortDirection != null and sortDirection != ''">
-      ${sortDirection}
-    </if>
+    ORDER BY
+    <choose>
+      <when test="sortBy == 'shopId'">d.shop_id</when>
+      <when test="sortBy == 'drinkCategoryId'">d.drink_category_id</when>
+      <when test="sortBy == 'drinkName'">d.drink_name</when>
+      <when test="sortBy == 'status'">d.status</when>
+      <when test="sortBy == 'isDeleted'">d.is_deleted</when>
+      <otherwise>d.drink_id</otherwise>
+    </choose>
+    <choose>
+      <when test="sortDirection != null and sortDirection.equalsIgnoreCase('DESC')">DESC</when>
+      <otherwise>ASC</otherwise>
+    </choose>
     LIMIT #{size} OFFSET #{offset}
   </select>
 
-  <!-- Count total unique drinks matching filter conditions for pagination metadata -->
   <select id="countDrinksFiltered" resultType="long">
     SELECT count(DISTINCT d.drink_id)
     FROM drinks AS d

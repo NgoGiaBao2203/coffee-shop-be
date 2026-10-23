@@ -26,6 +26,7 @@
     SELECT image_url
     FROM drinks
     WHERE drink_id = #{drinkId}
+    AND deleted_at IS NULL
     AND is_deleted = FALSE
 
     <choose>
@@ -52,8 +53,6 @@
 
   <!-- 4. Update drink without altering its parent shop -->
   <update id="updateDrink">
-    <!-- Update table drinks -->
-    WITH updated_drink AS (
     UPDATE drinks
     <set>
       drink_name = #{drinkName},
@@ -84,13 +83,6 @@
         AND 1 = 0
       </otherwise>
     </choose>
-    RETURNING drink_id
-    )
-    <!-- Update table drink_details -->
-    UPDATE drink_details
-    SET price = #{price}
-    WHERE drink_id IN (SELECT drink_id FROM updated_drink)
-    AND size = #{size};
   </update>
 
 </mapper>

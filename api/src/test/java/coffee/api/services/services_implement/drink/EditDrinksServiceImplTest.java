@@ -1,12 +1,14 @@
 package coffee.api.services.services_implement.drink;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import coffee.api.dto.request.drink.EditDrinksRequest;
+import coffee.api.enums.Roles;
+import coffee.api.enums.ValidationMessage;
 import coffee.api.exceptions.DataNotFoundException;
+import coffee.api.exceptions.InvalidRequestException;
 import coffee.api.mapper.CommonMapper;
 import coffee.api.mapper.UpdateDrinkMapper;
 import coffee.api.services.services_implement.drink.common.DrinkValidator;
@@ -29,18 +31,17 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @ExtendWith(MockitoExtension.class)
-public class EditDrinksServiceImplTest {
+class EditDrinksServiceImplTest {
 
   @Mock private CommonMapper commonMapper;
-
   @Mock private UpdateDrinkMapper editDrinkMapper;
-
   @Mock private IFileStorageService fileStorageService;
 
   private EditDrinksServiceImpl editDrinksService;
 
+  private Validator validator;
   private EditDrinksRequest validRequest;
-  private String currentUserRoleName;
+  private UUID currentUserId;
   private UUID currentUserShopId;
   private UUID drinkShopId;
   private UUID drinkId;
@@ -63,9 +64,9 @@ public class EditDrinksServiceImplTest {
     drinkCategoryId = UUID.fromString("11111111-0000-0000-0000-000000000001");
 
     validRequest = new EditDrinksRequest();
-    validRequest.setDrinkId(UUID.fromString("d1000000-0000-0000-0000-000000000001"));
-    validRequest.setDrinkName("Cà Phê Sữa");
-    validRequest.setImageUrl("https://example.com/cf-sua.jpg");
+    validRequest.setDrinkId(drinkId);
+    validRequest.setDrinkCategoryId(drinkCategoryId);
+    validRequest.setDrinkName("Cà Phê Muối Đặc Biệt");
     validRequest.setStatus(1);
     validRequest.setImageUrl("https://example.com/drinks/old_image.png");
 
@@ -80,7 +81,7 @@ public class EditDrinksServiceImplTest {
   }
 
   // =========================================================================
-  // SUCCESS / NORMAL CASES
+  // SERVICE PROCESS - NORMAL & BUSINESS CASES
   // =========================================================================
 
   @Test
@@ -129,8 +130,8 @@ public class EditDrinksServiceImplTest {
             editDrinksService.process(
                 validRequest, null, currentUserId, Roles.MANAGER.getValue(), currentUserShopId));
 
-    // Assert
-    verify(editDrinkMapper, times(1))
+    verify(commonMapper).checkShopIdIsExisted(currentUserId, currentUserShopId);
+    verify(editDrinkMapper)
         .updateDrink(
             eq(drinkId),
             eq("Cà Phê Muối Đặc Biệt"),
@@ -148,8 +149,7 @@ public class EditDrinksServiceImplTest {
     String oldImageUrl = "https://example.com/drinks/old_image.png";
     String newUploadedUrl = "https://example.com/drinks/new_image.png";
 
-    when(commonMapper.checkDrinkExisted(
-            validRequest.getDrinkId(), currentUserRoleName, currentUserShopId))
+    when(commonMapper.checkDrinkExisted(drinkId, Roles.OWNER.getValue(), currentUserShopId))
         .thenReturn(true);
     when(editDrinkMapper.getShopIdByDrinkId(drinkId)).thenReturn(drinkShopId);
     when(commonMapper.checkCategoryExistsInShop(drinkCategoryId, drinkShopId)).thenReturn(true);
@@ -157,7 +157,7 @@ public class EditDrinksServiceImplTest {
         .thenReturn(false);
     when(editDrinkMapper.getDrinkImageUrl(drinkId, Roles.OWNER.getValue(), drinkShopId))
         .thenReturn(oldImageUrl);
-    when(fileStorageService.storeDrinkImage(mockFile)).thenReturn(newStoredUrl);
+    when(fileStorageService.storeDrinkImage(newImageFile)).thenReturn(newUploadedUrl);
 
     assertDoesNotThrow(
         () ->
@@ -199,8 +199,7 @@ public class EditDrinksServiceImplTest {
         new MockMultipartFile("image", "new_drink.jpg", "image/jpeg", "fake-image".getBytes());
     String newUploadedUrl = "https://example.com/drinks/new_image.png";
 
-    when(commonMapper.checkDrinkExisted(
-            validRequest.getDrinkId(), currentUserRoleName, currentUserShopId))
+    when(commonMapper.checkDrinkExisted(drinkId, Roles.OWNER.getValue(), currentUserShopId))
         .thenReturn(true);
     when(editDrinkMapper.getShopIdByDrinkId(drinkId)).thenReturn(drinkShopId);
     when(commonMapper.checkCategoryExistsInShop(drinkCategoryId, drinkShopId)).thenReturn(true);
@@ -242,7 +241,7 @@ public class EditDrinksServiceImplTest {
         .thenReturn(false);
     when(editDrinkMapper.getDrinkImageUrl(drinkId, Roles.OWNER.getValue(), drinkShopId))
         .thenReturn(null);
-    when(fileStorageService.storeDrinkImage(mockFile)).thenReturn(newStoredUrl);
+    when(fileStorageService.storeDrinkImage(newImageFile)).thenReturn(newUploadedUrl);
 
     assertDoesNotThrow(
         () ->
@@ -259,17 +258,6 @@ public class EditDrinksServiceImplTest {
     syncs.forEach(TransactionSynchronization::afterCommit);
 
     verify(fileStorageService, never()).deleteDrinkImage(anyString());
-    verify(editDrinkMapper, times(1))
-        .updateDrink(
-            validRequest.getDrinkId(),
-            validRequest.getDrinkName(),
-            newStoredUrl,
-            validRequest.getStatus(),
-            validRequest.getDrinkCategoryId(),
-            validRequest.getPrice(),
-            validRequest.getSize(),
-            currentUserShopId,
-            currentUserRoleName);
   }
 
   @Test
@@ -316,8 +304,7 @@ public class EditDrinksServiceImplTest {
     String oldImageUrl = "https://example.com/drinks/old_image.png";
     String newUploadedUrl = "https://example.com/drinks/new_image.png";
 
-    when(commonMapper.checkDrinkExisted(
-            validRequest.getDrinkId(), currentUserRoleName, currentUserShopId))
+    when(commonMapper.checkDrinkExisted(drinkId, Roles.OWNER.getValue(), currentUserShopId))
         .thenReturn(true);
     when(editDrinkMapper.getShopIdByDrinkId(drinkId)).thenReturn(drinkShopId);
     when(commonMapper.checkCategoryExistsInShop(drinkCategoryId, drinkShopId)).thenReturn(true);
@@ -364,11 +351,16 @@ public class EditDrinksServiceImplTest {
         .thenReturn(oldImageUrl);
     when(fileStorageService.storeDrinkImage(newImageFile)).thenReturn(newUploadedUrl);
 
-    // Act
-    editDrinksService.process(validRequest, mockFile, currentUserRoleName, currentUserShopId);
+    assertDoesNotThrow(
+        () ->
+            editDrinksService.process(
+                validRequest,
+                newImageFile,
+                currentUserId,
+                Roles.OWNER.getValue(),
+                currentUserShopId));
 
-    // Assert
-    verify(fileStorageService, times(1)).storeDrinkImage(mockFile);
+    verify(fileStorageService).storeDrinkImage(newImageFile);
     verify(fileStorageService, never()).deleteDrinkImage(anyString());
   }
 
@@ -439,13 +431,11 @@ public class EditDrinksServiceImplTest {
   }
 
   @Test
-  void process_Success_WhenNoImageFileAndRequestImageUrlIsNull_TC008() {
-    // Arrange: Fallback to existing image in database when request has no imageUrl
+  void process_Success_WhenNoNewImageAndImageUrlIsNull_RetrievesCurrentImageUrl_TC005A() {
     validRequest.setImageUrl(null);
-    String existingImageUrl = "https://example.com/existing-image.jpg";
+    String currentDbImageUrl = "https://example.com/drinks/current_db_image.png";
 
-    when(commonMapper.checkDrinkExisted(
-            validRequest.getDrinkId(), currentUserRoleName, currentUserShopId))
+    when(commonMapper.checkDrinkExisted(drinkId, Roles.OWNER.getValue(), currentUserShopId))
         .thenReturn(true);
     when(editDrinkMapper.getShopIdByDrinkId(drinkId)).thenReturn(drinkShopId);
     when(commonMapper.checkCategoryExistsInShop(drinkCategoryId, drinkShopId)).thenReturn(true);
@@ -454,8 +444,10 @@ public class EditDrinksServiceImplTest {
     when(editDrinkMapper.getDrinkImageUrl(drinkId, Roles.OWNER.getValue(), drinkShopId))
         .thenReturn(currentDbImageUrl);
 
-    // Act
-    editDrinksService.process(validRequest, null, currentUserRoleName, currentUserShopId);
+    assertDoesNotThrow(
+        () ->
+            editDrinksService.process(
+                validRequest, null, currentUserId, Roles.OWNER.getValue(), currentUserShopId));
 
     verify(editDrinkMapper).getDrinkImageUrl(drinkId, Roles.OWNER.getValue(), drinkShopId);
     verify(editDrinkMapper)
@@ -470,13 +462,10 @@ public class EditDrinksServiceImplTest {
   }
 
   @Test
-  void process_Success_WhenNoImageFileAndRequestImageUrlIsBlank_TC009() {
-    // Arrange: Triggers imageUrlToUpdate.trim().isEmpty()
-    validRequest.setImageUrl("   ");
-    String existingImageUrl = "https://example.com/existing-image.jpg";
+  void process_Success_WhenDrinkNameIsNull_DefaultsToEmptyString_TC006() {
+    validRequest.setDrinkName(null);
 
-    when(commonMapper.checkDrinkExisted(
-            validRequest.getDrinkId(), currentUserRoleName, currentUserShopId))
+    when(commonMapper.checkDrinkExisted(drinkId, Roles.OWNER.getValue(), currentUserShopId))
         .thenReturn(true);
     when(editDrinkMapper.getShopIdByDrinkId(drinkId)).thenReturn(drinkShopId);
     when(commonMapper.checkCategoryExistsInShop(drinkCategoryId, drinkShopId)).thenReturn(true);
@@ -487,10 +476,9 @@ public class EditDrinksServiceImplTest {
             editDrinksService.process(
                 validRequest, null, currentUserId, Roles.OWNER.getValue(), currentUserShopId));
 
-    // Assert
-    verify(editDrinkMapper, times(1))
-        .getDrinkImageUrl(validRequest.getDrinkId(), currentUserRoleName, currentUserShopId);
-    verify(editDrinkMapper, times(1))
+    assertEquals("", validRequest.getDrinkName());
+    verify(editDrinkMapper).checkDrinkNameExistedForEdit(drinkId, "");
+    verify(editDrinkMapper)
         .updateDrink(
             eq(drinkId),
             eq(""),
@@ -502,7 +490,7 @@ public class EditDrinksServiceImplTest {
   }
 
   // =========================================================================
-  // ABNORMAL CASES
+  // SERVICE PROCESS - ABNORMAL / EXCEPTION CASES
   // =========================================================================
 
   @Test
@@ -647,7 +635,7 @@ public class EditDrinksServiceImplTest {
             InvalidRequestException.class,
             () ->
                 editDrinksService.process(
-                    validRequest, null, currentUserRoleName, currentUserShopId));
+                    validRequest, null, currentUserId, Roles.OWNER.getValue(), currentUserShopId));
 
     assertEquals("Category does not belong to the drink's shop", exception.getMessage());
     verify(editDrinkMapper, never()).checkDrinkNameExistedForEdit(any(), anyString());
@@ -665,10 +653,10 @@ public class EditDrinksServiceImplTest {
 
     InvalidRequestException exception =
         assertThrows(
-            RuntimeException.class,
+            InvalidRequestException.class,
             () ->
                 editDrinksService.process(
-                    validRequest, null, currentUserRoleName, currentUserShopId));
+                    validRequest, null, currentUserId, Roles.OWNER.getValue(), currentUserShopId));
 
     assertEquals("Drink name is existed", exception.getMessage());
     verify(editDrinkMapper, never()).updateDrink(any(), any(), any(), any(), any(), any(), any());

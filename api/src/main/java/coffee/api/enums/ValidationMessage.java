@@ -4,6 +4,8 @@ public enum ValidationMessage {
   // ── Generic ──────────────────────────────────────────────────────
   FIELD_REQUIRED(Msg.FIELD_REQUIRED),
   SPECIAL_CHARACTERS(Msg.SPECIAL_CHARACTERS),
+  PRICE_MIN(Msg.PRICE_MIN),
+  STATUS_INVALID(Msg.STATUS_INVALID),
 
   // ── User fields ──────────────────────────────────────────────────
   PASSWORD_MIN_LENGTH(Msg.PASSWORD_MIN_LENGTH),
@@ -37,6 +39,8 @@ public enum ValidationMessage {
     public static final String SPECIAL_CHARACTERS = "EV007";
     public static final String PHONE_NUMBER_INVALID = "EV008";
     public static final String PHONE_INVALID_LENGTH = "EV009";
+    public static final String PRICE_MIN = "EV010";
+    public static final String STATUS_INVALID = "EV011";
 
     private Msg(String code) {}
 

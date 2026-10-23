@@ -10,6 +10,7 @@ public interface DeleteDrinkMapper {
 
   int deleteDrink(
       @Param("drinkId") UUID drinkId,
+      @Param("deletedBy") UUID deletedBy,
       @Param("currentUserRoleName") String currentUserRoleName,
       @Param("currentUserShopId") UUID currentUserShopId);
 }
