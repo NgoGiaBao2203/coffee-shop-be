@@ -1,4 +1,4 @@
-package coffee.api.dto.response.table;
+package coffee.api.dto.response.drink_detail;
 
 import coffee.api.dto.response.base_response.BaseApiResponse;
 import coffee.api.enums.ResponseCode;
@@ -14,9 +14,10 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @JsonPropertyOrder({"code", "message", "errorDetails", "traceId"})
-public class CreateTablesResponse extends BaseApiResponse {
-  public static CreateTablesResponse of(ResponseCode responseCode, String message) {
-    return CreateTablesResponse.builder()
+public class EditDrinkDetailResponse extends BaseApiResponse {
+
+  public static EditDrinkDetailResponse of(ResponseCode responseCode, String message) {
+    return EditDrinkDetailResponse.builder()
         .code(responseCode.getCode())
         .message(message)
         .traceId(MdcUtil.getTraceId())

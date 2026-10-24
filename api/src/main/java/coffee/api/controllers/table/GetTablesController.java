@@ -16,18 +16,17 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 public class GetTablesController {
-
   private final IGetTablesService getTablesService;
 
   @PostMapping("tables")
   @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'STAFF')")
   public PageResponse<TableResult> getTablesList(
       @AuthenticationPrincipal CustomUserDetail customUserDetail,
-      @RequestBody @Valid SearchTablesRequest request) {
+      @RequestBody(required = false) @Valid SearchTablesRequest request) {
+    if (request == null) {
+      request = new SearchTablesRequest();
+    }
     return getTablesService.process(
-        request,
-        customUserDetail.getRoleName(),
-        customUserDetail.getShopId(),
-        customUserDetail.getUserId());
+        request, customUserDetail.getRoleName(), customUserDetail.getUserId());
   }
 }

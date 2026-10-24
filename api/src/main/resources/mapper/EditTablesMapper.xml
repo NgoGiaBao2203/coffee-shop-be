@@ -11,10 +11,9 @@
     table_number = #{request.tableNumber},
     description = #{request.description},
     status = COALESCE(#{request.status}, status),
-    updated_at = CURRENT_TIMESTAMP
+    is_deleted = false
     WHERE table_id = #{request.tableId}
-    AND shop_id = #{request.shopId}
-    AND is_deleted = false
+
     <choose>
       <!-- OWNER can update any table -->
       <when test="currentUserRoleName == 'OWNER'">
@@ -25,9 +24,6 @@
       <when test="currentUserRoleName == 'MANAGER'">
         AND shop_id = #{currentUserShopId}
       </when>
-      <otherwise>
-        AND 1 = 0
-      </otherwise>
     </choose>
   </update>
 

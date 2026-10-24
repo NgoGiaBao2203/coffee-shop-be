@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="coffee.api.mapper.CreateDrinkDetailMapper">
+
+  <!-- Check active drink visibility and active size uniqueness before insert -->
+  <select id="checkDrinkAccessible" resultType="boolean">
+    SELECT EXISTS (
+      SELECT 1
+      FROM drinks d
+      WHERE d.drink_id = #{drinkId}
+      AND d.deleted_at IS NULL
+      AND d.is_deleted = FALSE
+      <if test="currentUserRoleName != 'OWNER'">
+        AND d.shop_id = #{currentUserShopId}
+      </if>
+    )
+  </select>
+
+  <insert id="insertDrinkDetail">
+    INSERT INTO drink_details (
+      drink_detail_id,
+      drink_id,
+      size,
+      price
+    ) VALUES (
+      #{drinkDetailId},
+      #{drinkId},
+      #{size},
+      #{price}
+    )
+  </insert>
+
+</mapper>

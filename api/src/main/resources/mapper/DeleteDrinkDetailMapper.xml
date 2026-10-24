@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="coffee.api.mapper.DeleteDrinkDetailMapper">
+
+  <!-- Count active variants before allowing one to be removed -->
+  <select id="countActiveDrinkDetails" resultType="int">
+    SELECT COUNT(*)
+    FROM drink_details
+    WHERE drink_id = #{drinkId}
+    AND deleted_at IS NULL
+  </select>
+
+  <!-- Soft-delete an active variant while preserving invoice references -->
+  <update id="softDeleteDrinkDetail">
+    UPDATE drink_details dd
+    SET deleted_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh',
+    deleted_by = #{deletedBy}
+    FROM drinks d
+    WHERE dd.drink_detail_id = #{drinkDetailId}
+    AND d.drink_id = dd.drink_id
+    AND dd.deleted_at IS NULL
+    AND d.deleted_at IS NULL
+    AND d.is_deleted = FALSE
+    <if test="currentUserRoleName != 'OWNER'">
+      AND d.shop_id = #{currentUserShopId}
+    </if>
+  </update>
+
+</mapper>

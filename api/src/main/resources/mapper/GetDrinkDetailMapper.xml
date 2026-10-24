@@ -48,4 +48,21 @@
     </if>
   </select>
 
+  <select id="getDrinkDetailVariantById" resultType="coffee.api.dto.result.DrinkDetailResult">
+    SELECT
+      dd.drink_detail_id AS drinkDetailId,
+      dd.drink_id AS drinkId,
+      dd.size,
+      dd.price
+    FROM drink_details dd
+    JOIN drinks d ON d.drink_id = dd.drink_id
+    WHERE dd.drink_detail_id = #{drinkDetailId}
+    AND dd.deleted_at IS NULL
+    AND d.deleted_at IS NULL
+    AND d.is_deleted = FALSE
+    <if test="currentUserRoleName != 'OWNER'">
+      AND d.shop_id = #{currentUserShopId}
+    </if>
+  </select>
+
 </mapper>
