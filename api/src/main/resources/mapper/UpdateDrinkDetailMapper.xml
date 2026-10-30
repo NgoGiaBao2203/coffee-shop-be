@@ -16,6 +16,7 @@
     AND dd.deleted_at IS NULL
     AND d.deleted_at IS NULL
     AND d.is_deleted = FALSE
+    AND d.status = 1
     <if test="currentUserRoleName != 'OWNER'">
       AND d.shop_id = #{currentUserShopId}
     </if>

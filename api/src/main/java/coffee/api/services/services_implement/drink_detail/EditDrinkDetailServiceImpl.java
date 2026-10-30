@@ -35,6 +35,8 @@ public class EditDrinkDetailServiceImpl implements IEditDrinkDetailService {
     DrinkDetailResult existingDetail =
         drinkDetailValidator.validateDrinkDetailExists(
             request.getDrinkDetailId(), currentUserRoleName, currentUserShopId);
+    drinkDetailValidator.validateDrinkExists(
+        existingDetail.getDrinkId(), currentUserRoleName, currentUserShopId);
 
     // 3. Validate price and prevent duplicate active sizes
     drinkDetailValidator.validatePrice(request.getPrice());

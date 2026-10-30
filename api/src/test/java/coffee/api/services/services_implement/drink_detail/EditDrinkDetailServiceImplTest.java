@@ -98,6 +98,8 @@ class EditDrinkDetailServiceImplTest {
 
     verify(drinkDetailValidator).validateDrinkDetailExists(drinkDetailId, ownerRole, null);
 
+    verify(drinkDetailValidator).validateDrinkExists(drinkId, ownerRole, null);
+
     verify(drinkDetailValidator).validatePrice(validRequest.getPrice());
 
     verify(drinkDetailValidator).validateAndFormatSize("M");
@@ -230,7 +232,26 @@ class EditDrinkDetailServiceImplTest {
   }
 
   @Test
-  void process_ThrowsInvalidRequestException_WhenPriceIsInvalid_TC008() {
+  void process_ThrowsDataNotFoundException_WhenParentDrinkIsInactive_TC008() {
+    when(drinkDetailValidator.validateDrinkDetailExists(drinkDetailId, ownerRole, null))
+        .thenReturn(createExistingDrinkDetail());
+    doThrow(new DataNotFoundException("Drink not found", drinkId))
+        .when(drinkDetailValidator)
+        .validateDrinkExists(drinkId, ownerRole, null);
+
+    DataNotFoundException exception =
+        assertThrows(
+            DataNotFoundException.class,
+            () -> service.process(validRequest, userId, ownerRole, null));
+
+    assertEquals("Drink not found", exception.getMessage());
+    assertEquals(drinkId, exception.getId());
+    verify(drinkDetailValidator, never()).validatePrice(any());
+    verifyNoInteractions(updateDrinkDetailMapper);
+  }
+
+  @Test
+  void process_ThrowsInvalidRequestException_WhenPriceIsInvalid_TC009() {
     // Arrange
     validRequest.setPrice(BigDecimal.ZERO);
 
@@ -252,7 +273,7 @@ class EditDrinkDetailServiceImplTest {
   }
 
   @Test
-  void process_ThrowsInvalidRequestException_WhenSizeIsInvalid_TC009() {
+  void process_ThrowsInvalidRequestException_WhenSizeIsInvalid_TC010() {
     // Arrange
     validRequest.setSize("XXXL");
 
@@ -273,7 +294,7 @@ class EditDrinkDetailServiceImplTest {
   }
 
   @Test
-  void process_ThrowsInvalidRequestException_WhenDuplicateSizeExists_TC010() {
+  void process_ThrowsInvalidRequestException_WhenDuplicateSizeExists_TC011() {
     // Arrange
     when(drinkDetailValidator.validateDrinkDetailExists(drinkDetailId, ownerRole, null))
         .thenReturn(createExistingDrinkDetail());
@@ -300,7 +321,7 @@ class EditDrinkDetailServiceImplTest {
   // =========================================================================
 
   @Test
-  void process_ThrowsDataNotFoundException_WhenUpdateAffectsZeroRows_TC011() {
+  void process_ThrowsDataNotFoundException_WhenUpdateAffectsZeroRows_TC012() {
     // Arrange
     when(drinkDetailValidator.validateDrinkDetailExists(drinkDetailId, ownerRole, null))
         .thenReturn(createExistingDrinkDetail());
@@ -323,7 +344,7 @@ class EditDrinkDetailServiceImplTest {
   }
 
   @Test
-  void process_Success_WhenUpdateAffectsMoreThanOneRow_TC012() {
+  void process_Success_WhenUpdateAffectsMoreThanOneRow_TC013() {
     // The current implementation rejects only affectedRows == 0.
 
     // Arrange
@@ -341,7 +362,7 @@ class EditDrinkDetailServiceImplTest {
   }
 
   @Test
-  void process_PropagatesDataAccessException_WhenUpdateFails_TC013() {
+  void process_PropagatesDataAccessException_WhenUpdateFails_TC014() {
     // Arrange
     when(drinkDetailValidator.validateDrinkDetailExists(drinkDetailId, ownerRole, null))
         .thenReturn(createExistingDrinkDetail());
@@ -366,7 +387,7 @@ class EditDrinkDetailServiceImplTest {
   // =========================================================================
 
   @Test
-  void request_ValidationSuccess_WhenAllFieldsAreValid_TC014() {
+  void request_ValidationSuccess_WhenAllFieldsAreValid_TC015() {
     Set<ConstraintViolation<EditDrinkDetailRequest>> violations =
         requestValidator.validate(validRequest);
 
@@ -374,7 +395,7 @@ class EditDrinkDetailServiceImplTest {
   }
 
   @Test
-  void request_ValidationSuccess_ForAllSupportedSizes_TC015() {
+  void request_ValidationSuccess_ForAllSupportedSizes_TC016() {
     for (String size : new String[] {"S", "M", "L"}) {
 
       validRequest.setSize(size);
@@ -387,7 +408,7 @@ class EditDrinkDetailServiceImplTest {
   }
 
   @Test
-  void request_ValidationFails_WhenDrinkDetailIdIsNull_TC016() {
+  void request_ValidationFails_WhenDrinkDetailIdIsNull_TC017() {
     validRequest.setDrinkDetailId(null);
 
     Set<ConstraintViolation<EditDrinkDetailRequest>> violations =
@@ -398,7 +419,7 @@ class EditDrinkDetailServiceImplTest {
   }
 
   @Test
-  void request_ValidationFails_WhenSizeIsNull_TC017() {
+  void request_ValidationFails_WhenSizeIsNull_TC018() {
     validRequest.setSize(null);
 
     Set<ConstraintViolation<EditDrinkDetailRequest>> violations =
@@ -408,7 +429,7 @@ class EditDrinkDetailServiceImplTest {
   }
 
   @Test
-  void request_ValidationFails_WhenSizeIsBlank_TC018() {
+  void request_ValidationFails_WhenSizeIsBlank_TC019() {
     validRequest.setSize("   ");
 
     Set<ConstraintViolation<EditDrinkDetailRequest>> violations =
@@ -418,7 +439,7 @@ class EditDrinkDetailServiceImplTest {
   }
 
   @Test
-  void request_ValidationFails_WhenSizeIsLowercase_TC019() {
+  void request_ValidationFails_WhenSizeIsLowercase_TC020() {
     validRequest.setSize("m");
 
     Set<ConstraintViolation<EditDrinkDetailRequest>> violations =
@@ -429,7 +450,7 @@ class EditDrinkDetailServiceImplTest {
   }
 
   @Test
-  void request_ValidationFails_WhenSizeIsUnsupported_TC020() {
+  void request_ValidationFails_WhenSizeIsUnsupported_TC021() {
     for (String size : new String[] {"XL", "XXL", "XXXL"}) {
       validRequest.setSize(size);
 
@@ -442,7 +463,7 @@ class EditDrinkDetailServiceImplTest {
   }
 
   @Test
-  void request_ValidationFails_WhenPriceIsNull_TC021() {
+  void request_ValidationFails_WhenPriceIsNull_TC022() {
     validRequest.setPrice(null);
 
     Set<ConstraintViolation<EditDrinkDetailRequest>> violations =
@@ -452,7 +473,7 @@ class EditDrinkDetailServiceImplTest {
   }
 
   @Test
-  void request_ValidationFails_WhenPriceIsZero_TC022() {
+  void request_ValidationFails_WhenPriceIsZero_TC023() {
     validRequest.setPrice(BigDecimal.ZERO);
 
     Set<ConstraintViolation<EditDrinkDetailRequest>> violations =
@@ -462,7 +483,7 @@ class EditDrinkDetailServiceImplTest {
   }
 
   @Test
-  void request_ValidationFails_WhenPriceIsNegative_TC023() {
+  void request_ValidationFails_WhenPriceIsNegative_TC024() {
     validRequest.setPrice(new BigDecimal("-1.00"));
 
     Set<ConstraintViolation<EditDrinkDetailRequest>> violations =
@@ -472,7 +493,7 @@ class EditDrinkDetailServiceImplTest {
   }
 
   @Test
-  void request_ValidationFails_WhenPriceHasMoreThanTwoDecimalPlaces_TC024() {
+  void request_ValidationFails_WhenPriceHasMoreThanTwoDecimalPlaces_TC025() {
     validRequest.setPrice(new BigDecimal("30000.123"));
 
     Set<ConstraintViolation<EditDrinkDetailRequest>> violations =
@@ -482,7 +503,7 @@ class EditDrinkDetailServiceImplTest {
   }
 
   @Test
-  void request_ValidationFails_WhenPriceExceedsSixteenIntegerDigits_TC025() {
+  void request_ValidationFails_WhenPriceExceedsSixteenIntegerDigits_TC026() {
     validRequest.setPrice(new BigDecimal("12345678901234567"));
 
     Set<ConstraintViolation<EditDrinkDetailRequest>> violations =
@@ -492,7 +513,7 @@ class EditDrinkDetailServiceImplTest {
   }
 
   @Test
-  void request_ValidationSuccess_WhenPriceUsesMaximumAllowedDigits_TC026() {
+  void request_ValidationSuccess_WhenPriceUsesMaximumAllowedDigits_TC027() {
     validRequest.setPrice(new BigDecimal("9999999999999999.99"));
 
     Set<ConstraintViolation<EditDrinkDetailRequest>> violations =
