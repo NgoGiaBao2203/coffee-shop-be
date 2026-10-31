@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="coffee.api.mapper.UpdateDrinkDetailMapper">
+
+  <!-- Update an active variant only when its parent drink is visible to the current user -->
+  <update id="updateDrinkDetail">
+    UPDATE drink_details dd
+    SET size = #{size},
+    price = #{price}
+    FROM drinks d
+    WHERE dd.drink_detail_id = #{drinkDetailId}
+    AND d.drink_id = dd.drink_id
+    AND dd.deleted_at IS NULL
+    AND d.deleted_at IS NULL
+    AND d.is_deleted = FALSE
+    AND d.status = 1
+    <if test="currentUserRoleName != 'OWNER'">
+      AND d.shop_id = #{currentUserShopId}
+    </if>
+  </update>
+
+</mapper>

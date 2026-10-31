@@ -224,7 +224,24 @@
     )
   </select>
 
-  <!-- 15. Check if table belongs to a specific shop -->
+  <!-- 15. Check if drink detail exists in drink -->
+  <select id="checkDrinkDetailSizeExisted" resultType="boolean">
+    SELECT EXISTS (
+    SELECT 1
+    FROM drink_details dd
+    JOIN drinks d ON d.drink_id = dd.drink_id
+    WHERE dd.drink_id = #{drinkId}
+    AND UPPER(TRIM(dd.size)) = #{size}
+    AND dd.deleted_at IS NULL
+    AND d.deleted_at IS NULL
+    AND d.is_deleted = FALSE
+    <if test="excludedDrinkDetailId != null">
+      AND dd.drink_detail_id != #{excludedDrinkDetailId}
+    </if>
+    )
+  </select>
+
+  <!-- 16. Check if table belongs to a specific shop -->
   <select id="checkTableExistsInShop" resultType="boolean">
     SELECT EXISTS (
     SELECT 1

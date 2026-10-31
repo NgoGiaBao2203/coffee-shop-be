@@ -18,15 +18,19 @@ import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
 import java.util.Set;
 import java.util.UUID;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataAccessException;
 
 @ExtendWith(MockitoExtension.class)
-public class DeleteTablesServiceImplTest {
+class DeleteTablesServiceImplTest {
 
   @Mock private CommonMapper commonMapper;
 
@@ -34,27 +38,35 @@ public class DeleteTablesServiceImplTest {
 
   private DeleteTablesServiceImpl deleteTablesService;
 
-  private Validator validator;
+  private static ValidatorFactory validatorFactory;
+  private static Validator validator;
   private DeleteTablesRequest validRequest;
   private UUID currentUserShopId;
   private UUID currentUserId;
   private String managerRole;
   private String ownerRole;
 
+  @BeforeAll
+  static void initValidator() {
+    validatorFactory = Validation.buildDefaultValidatorFactory();
+    validator = validatorFactory.getValidator();
+  }
+
+  @AfterAll
+  static void closeValidator() {
+    validatorFactory.close();
+  }
+
   @BeforeEach
   void setUp() {
-    try (ValidatorFactory factory = Validation.buildDefaultValidatorFactory()) {
-      validator = factory.getValidator();
-    }
-
     TableValidator tableValidator = new TableValidator(commonMapper);
     deleteTablesService = new DeleteTablesServiceImpl(deleteTablesMapper, tableValidator);
 
-    currentUserShopId = UUID.randomUUID();
-    currentUserId = UUID.randomUUID();
+    currentUserShopId = UUID.fromString("00000000-0000-0000-0000-000000000601");
+    currentUserId = UUID.fromString("00000000-0000-0000-0000-000000000602");
 
     validRequest = new DeleteTablesRequest();
-    validRequest.setTableId(UUID.randomUUID());
+    validRequest.setTableId(UUID.fromString("00000000-0000-0000-0000-000000000603"));
     validRequest.setShopId(currentUserShopId);
 
     managerRole = Roles.MANAGER.getValue();
@@ -82,11 +94,11 @@ public class DeleteTablesServiceImplTest {
             deleteTablesService.process(
                 validRequest, managerRole, currentUserId, currentUserShopId));
 
-    verify(commonMapper, times(1)).checkShopIdIsExisted(currentUserId, currentUserShopId);
-    verify(commonMapper, times(1))
+    verify(commonMapper).checkShopIdIsExisted(currentUserId, currentUserShopId);
+    verify(commonMapper)
         .checkTableExisted(validRequest.getTableId(), managerRole, currentUserShopId);
-    verify(deleteTablesMapper, times(1)).countPendingInvoicesByTable(validRequest.getTableId());
-    verify(deleteTablesMapper, times(1))
+    verify(deleteTablesMapper).countPendingInvoicesByTable(validRequest.getTableId());
+    verify(deleteTablesMapper)
         .softDeleteTable(validRequest.getTableId(), managerRole, currentUserShopId, currentUserId);
   }
 
@@ -106,10 +118,9 @@ public class DeleteTablesServiceImplTest {
             deleteTablesService.process(validRequest, ownerRole, currentUserId, currentUserShopId));
 
     verify(commonMapper, never()).checkShopIdIsExisted(any(), any());
-    verify(commonMapper, times(1))
-        .checkTableExisted(validRequest.getTableId(), ownerRole, currentUserShopId);
-    verify(deleteTablesMapper, times(1)).countPendingInvoicesByTable(validRequest.getTableId());
-    verify(deleteTablesMapper, times(1))
+    verify(commonMapper).checkTableExisted(validRequest.getTableId(), ownerRole, currentUserShopId);
+    verify(deleteTablesMapper).countPendingInvoicesByTable(validRequest.getTableId());
+    verify(deleteTablesMapper)
         .softDeleteTable(validRequest.getTableId(), ownerRole, currentUserShopId, currentUserId);
   }
 
@@ -128,10 +139,14 @@ public class DeleteTablesServiceImplTest {
         () -> deleteTablesService.process(validRequest, ownerRole, currentUserId, null));
 
     verify(commonMapper, never()).checkShopIdIsExisted(any(), any());
-    verify(commonMapper, times(1)).checkTableExisted(validRequest.getTableId(), ownerRole, null);
-    verify(deleteTablesMapper, times(1))
+    verify(commonMapper).checkTableExisted(validRequest.getTableId(), ownerRole, null);
+    verify(deleteTablesMapper)
         .softDeleteTable(validRequest.getTableId(), ownerRole, null, currentUserId);
   }
+
+  // =========================================================================
+  // SERVICE PROCESS - ABNORMAL / PERMISSION & BUSINESS CASES
+  // =========================================================================
 
   @Test
   void process_ThrowsDataNotFoundException_WhenUserRoleIsStaff_TC004() {
@@ -153,10 +168,6 @@ public class DeleteTablesServiceImplTest {
     verify(deleteTablesMapper, never()).countPendingInvoicesByTable(any());
     verifyNoMoreInteractions(deleteTablesMapper);
   }
-
-  // =========================================================================
-  // SERVICE PROCESS - ABNORMAL / EXCEPTION CASES
-  // =========================================================================
 
   @Test
   void process_ThrowsInvalidRequestException_WhenRequestIsNull_TC005() {
@@ -219,7 +230,7 @@ public class DeleteTablesServiceImplTest {
 
     assertEquals("You do not have permission to access this shop branch", exception.getMessage());
 
-    verify(commonMapper, times(1)).checkShopIdIsExisted(currentUserId, currentUserShopId);
+    verify(commonMapper).checkShopIdIsExisted(currentUserId, currentUserShopId);
     verify(commonMapper, never()).checkTableExisted(any(), any(), any());
     verifyNoInteractions(deleteTablesMapper);
   }
@@ -242,8 +253,8 @@ public class DeleteTablesServiceImplTest {
     assertEquals("Data not found", exception.getMessage());
     assertEquals(validRequest.getTableId(), exception.getId());
 
-    verify(commonMapper, times(1)).checkShopIdIsExisted(currentUserId, currentUserShopId);
-    verify(commonMapper, times(1))
+    verify(commonMapper).checkShopIdIsExisted(currentUserId, currentUserShopId);
+    verify(commonMapper)
         .checkTableExisted(validRequest.getTableId(), managerRole, currentUserShopId);
     verifyNoInteractions(deleteTablesMapper);
   }
@@ -266,61 +277,12 @@ public class DeleteTablesServiceImplTest {
 
     assertEquals("Can not delete table with pending invoices", exception.getMessage());
 
-    verify(deleteTablesMapper, times(1)).countPendingInvoicesByTable(validRequest.getTableId());
+    verify(deleteTablesMapper).countPendingInvoicesByTable(validRequest.getTableId());
     verify(deleteTablesMapper, never()).softDeleteTable(any(), any(), any(), any());
   }
 
   @Test
-  void process_ThrowsDataAccessException_WhenCountingPendingInvoicesFails_TC011() {
-    // Arrange
-    when(commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId)).thenReturn(true);
-    when(commonMapper.checkTableExisted(validRequest.getTableId(), managerRole, currentUserShopId))
-        .thenReturn(true);
-    doThrow(new DataAccessException("Database timeout during invoice check") {})
-        .when(deleteTablesMapper)
-        .countPendingInvoicesByTable(validRequest.getTableId());
-
-    // Act & Assert
-    DataAccessException exception =
-        assertThrows(
-            DataAccessException.class,
-            () ->
-                deleteTablesService.process(
-                    validRequest, managerRole, currentUserId, currentUserShopId));
-
-    assertEquals("Database timeout during invoice check", exception.getMessage());
-    verify(deleteTablesMapper, never()).softDeleteTable(any(), any(), any(), any());
-  }
-
-  @Test
-  void process_ThrowsDataAccessException_WhenDatabaseFailsDuringSoftDelete_TC012() {
-    // Arrange
-    when(commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId)).thenReturn(true);
-    when(commonMapper.checkTableExisted(validRequest.getTableId(), managerRole, currentUserShopId))
-        .thenReturn(true);
-    when(deleteTablesMapper.countPendingInvoicesByTable(validRequest.getTableId())).thenReturn(0);
-
-    doThrow(new DataAccessException("Database timeout during soft deletion") {})
-        .when(deleteTablesMapper)
-        .softDeleteTable(validRequest.getTableId(), managerRole, currentUserShopId, currentUserId);
-
-    // Act & Assert
-    DataAccessException exception =
-        assertThrows(
-            DataAccessException.class,
-            () ->
-                deleteTablesService.process(
-                    validRequest, managerRole, currentUserId, currentUserShopId));
-
-    assertEquals("Database timeout during soft deletion", exception.getMessage());
-
-    verify(deleteTablesMapper, times(1)).countPendingInvoicesByTable(validRequest.getTableId());
-    verify(deleteTablesMapper, times(1))
-        .softDeleteTable(validRequest.getTableId(), managerRole, currentUserShopId, currentUserId);
-  }
-
-  @Test
-  void process_ThrowsDataNotFoundException_WhenTableDeleteAffectsNoRows_TC013() {
+  void process_ThrowsDataNotFoundException_WhenTableDeleteAffectsNoRows_TC011() {
     // Arrange
     when(commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId)).thenReturn(true);
     when(commonMapper.checkTableExisted(validRequest.getTableId(), managerRole, currentUserShopId))
@@ -342,41 +304,133 @@ public class DeleteTablesServiceImplTest {
         "Table has already been deleted or modified by another request", exception.getMessage());
     assertEquals(validRequest.getTableId(), exception.getId());
 
-    verify(deleteTablesMapper, times(1)).countPendingInvoicesByTable(validRequest.getTableId());
-    verify(deleteTablesMapper, times(1))
+    verify(deleteTablesMapper).countPendingInvoicesByTable(validRequest.getTableId());
+    verify(deleteTablesMapper)
         .softDeleteTable(validRequest.getTableId(), managerRole, currentUserShopId, currentUserId);
   }
 
+  @Test
+  void process_RejectsEvenOnePendingInvoice_TC012() {
+    UUID tableId = validRequest.getTableId();
+    when(commonMapper.checkTableExisted(tableId, ownerRole, currentUserShopId)).thenReturn(true);
+    when(deleteTablesMapper.countPendingInvoicesByTable(tableId)).thenReturn(1);
+
+    var error =
+        assertThrows(
+            InvalidRequestException.class,
+            () ->
+                deleteTablesService.process(
+                    validRequest, ownerRole, currentUserId, currentUserShopId));
+
+    assertEquals("Can not delete table with pending invoices", error.getMessage());
+    verify(deleteTablesMapper, never()).softDeleteTable(any(), any(), any(), any());
+  }
+
   // =========================================================================
-  // REQUEST BEAN VALIDATION
+  // SERVICE PROCESS - ABNORMAL / DATABASE ERRORS
   // =========================================================================
 
   @Test
-  void requestValidation_Success_WhenAllFieldsAreValid_TC014() {
+  void process_ThrowsDataAccessException_WhenCountingPendingInvoicesFails_TC013() {
+    // Arrange
+    when(commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId)).thenReturn(true);
+    when(commonMapper.checkTableExisted(validRequest.getTableId(), managerRole, currentUserShopId))
+        .thenReturn(true);
+    doThrow(new DataAccessException("Database timeout during invoice check") {})
+        .when(deleteTablesMapper)
+        .countPendingInvoicesByTable(validRequest.getTableId());
+
+    // Act & Assert
+    DataAccessException exception =
+        assertThrows(
+            DataAccessException.class,
+            () ->
+                deleteTablesService.process(
+                    validRequest, managerRole, currentUserId, currentUserShopId));
+
+    assertEquals("Database timeout during invoice check", exception.getMessage());
+    verify(deleteTablesMapper, never()).softDeleteTable(any(), any(), any(), any());
+  }
+
+  @Test
+  void process_ThrowsDataAccessException_WhenDatabaseFailsDuringSoftDelete_TC014() {
+    // Arrange
+    when(commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId)).thenReturn(true);
+    when(commonMapper.checkTableExisted(validRequest.getTableId(), managerRole, currentUserShopId))
+        .thenReturn(true);
+    when(deleteTablesMapper.countPendingInvoicesByTable(validRequest.getTableId())).thenReturn(0);
+
+    doThrow(new DataAccessException("Database timeout during soft deletion") {})
+        .when(deleteTablesMapper)
+        .softDeleteTable(validRequest.getTableId(), managerRole, currentUserShopId, currentUserId);
+
+    // Act & Assert
+    DataAccessException exception =
+        assertThrows(
+            DataAccessException.class,
+            () ->
+                deleteTablesService.process(
+                    validRequest, managerRole, currentUserId, currentUserShopId));
+
+    assertEquals("Database timeout during soft deletion", exception.getMessage());
+
+    verify(deleteTablesMapper).countPendingInvoicesByTable(validRequest.getTableId());
+    verify(deleteTablesMapper)
+        .softDeleteTable(validRequest.getTableId(), managerRole, currentUserShopId, currentUserId);
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {0, 1})
+  void process_StopsBeforeInvoiceQueryWhenAccessQueryFails_TC015(int failureStage) {
+    UUID tableId = validRequest.getTableId();
+    DataAccessException failure = new DataAccessException("Access query failed") {};
+    if (failureStage == 0) {
+      when(commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId)).thenThrow(failure);
+    } else {
+      when(commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId)).thenReturn(true);
+      when(commonMapper.checkTableExisted(tableId, managerRole, currentUserShopId))
+          .thenThrow(failure);
+    }
+
+    var error =
+        assertThrows(
+            DataAccessException.class,
+            () ->
+                deleteTablesService.process(
+                    validRequest, managerRole, currentUserId, currentUserShopId));
+
+    assertEquals("Access query failed", error.getMessage());
+    verifyNoInteractions(deleteTablesMapper);
+  }
+
+  // =========================================================================
+  // REQUEST BEAN VALIDATION - NORMAL CASES
+  // =========================================================================
+
+  @Test
+  void requestValidation_Success_WhenAllFieldsAreValid_TC016() {
     Set<ConstraintViolation<DeleteTablesRequest>> violations = validator.validate(validRequest);
     assertEquals(0, violations.size());
   }
 
+  // =========================================================================
+  // REQUEST BEAN VALIDATION - ABNORMAL CASES
+  // =========================================================================
+
   @Test
-  void requestValidation_Fails_WhenTableIdIsNull_TC015() {
+  void requestValidation_Fails_WhenTableIdIsNull_TC017() {
     validRequest.setTableId(null);
-    Set<ConstraintViolation<DeleteTablesRequest>> violations = validator.validate(validRequest);
-
-    assertEquals(1, violations.size());
-    assertEquals(ValidationMessage.Msg.FIELD_REQUIRED, violations.iterator().next().getMessage());
+    assertSingleViolation("tableId");
   }
 
   @Test
-  void requestValidation_Fails_WhenShopIdIsNull_TC016() {
+  void requestValidation_Fails_WhenShopIdIsNull_TC018() {
     validRequest.setShopId(null);
-    Set<ConstraintViolation<DeleteTablesRequest>> violations = validator.validate(validRequest);
-
-    assertEquals(1, violations.size());
-    assertEquals(ValidationMessage.Msg.FIELD_REQUIRED, violations.iterator().next().getMessage());
+    assertSingleViolation("shopId");
   }
 
   @Test
-  void requestValidation_Fails_WhenAllFieldsAreNull_TC017() {
+  void requestValidation_Fails_WhenAllFieldsAreNull_TC019() {
     DeleteTablesRequest emptyRequest = new DeleteTablesRequest();
     Set<ConstraintViolation<DeleteTablesRequest>> violations = validator.validate(emptyRequest);
 
@@ -386,7 +440,18 @@ public class DeleteTablesServiceImplTest {
             .map(v -> v.getPropertyPath().toString())
             .collect(java.util.stream.Collectors.toSet());
 
-    assertTrue(violatedFields.contains("tableId"));
-    assertTrue(violatedFields.contains("shopId"));
+    assertEquals(Set.of("tableId", "shopId"), violatedFields);
+  }
+
+  // =========================================================================
+  // HELPER STUB, VALIDATION & TEST DATA METHODS
+  // =========================================================================
+
+  private void assertSingleViolation(String field) {
+    var violations = validator.validate(validRequest);
+    assertEquals(1, violations.size(), violations.toString());
+    var violation = violations.iterator().next();
+    assertEquals(field, violation.getPropertyPath().toString());
+    assertEquals(ValidationMessage.Msg.FIELD_REQUIRED, violation.getMessage());
   }
 }
