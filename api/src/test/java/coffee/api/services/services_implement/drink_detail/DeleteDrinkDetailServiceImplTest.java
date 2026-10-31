@@ -6,401 +6,271 @@ import static org.mockito.Mockito.*;
 
 import coffee.api.dto.request.drink_detail.DeleteDrinkDetailRequest;
 import coffee.api.dto.result.DrinkDetailResult;
-import coffee.api.enums.Roles;
 import coffee.api.enums.ValidationMessage;
 import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.exceptions.InvalidRequestException;
+import coffee.api.mapper.CommonMapper;
+import coffee.api.mapper.CreateDrinkDetailMapper;
 import coffee.api.mapper.DeleteDrinkDetailMapper;
+import coffee.api.mapper.GetDrinkDetailMapper;
 import coffee.api.services.services_implement.drink_detail.common.DrinkDetailValidator;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataAccessException;
 
 @ExtendWith(MockitoExtension.class)
 class DeleteDrinkDetailServiceImplTest {
+  private static final UUID DRINK_ID = UUID.fromString("150e940d-8363-4dff-9b2e-3e8291dab04f");
+  private static final UUID DETAIL_ID = UUID.fromString("a8861994-e947-425c-a6bb-686f28d7ba63");
+  private static final UUID USER_ID = UUID.fromString("a1000000-0000-0000-0000-000000000001");
+  private static final UUID SHOP_ID = UUID.fromString("b1000000-0000-0000-0000-000000000001");
 
-  @Mock private DeleteDrinkDetailMapper deleteDrinkDetailMapper;
+  @Mock private CreateDrinkDetailMapper createMapper;
+  @Mock private GetDrinkDetailMapper getMapper;
+  @Mock private CommonMapper commonMapper;
+  @Mock private DeleteDrinkDetailMapper deleteMapper;
+  private DeleteDrinkDetailServiceImpl service;
+  private DeleteDrinkDetailRequest request;
+  private DrinkDetailResult existing;
+  private static ValidatorFactory validatorFactory;
+  private static Validator requestValidator;
 
-  @Mock private DrinkDetailValidator drinkDetailValidator;
+  @BeforeAll
+  static void initValidator() {
+    validatorFactory = Validation.buildDefaultValidatorFactory();
+    requestValidator = validatorFactory.getValidator();
+  }
 
-  @InjectMocks private DeleteDrinkDetailServiceImpl service;
-
-  private Validator requestValidator;
-
-  private UUID drinkDetailId;
-  private UUID drinkId;
-  private UUID userId;
-  private UUID shopId;
-
-  private String ownerRole;
-  private String managerRole;
-
-  private DeleteDrinkDetailRequest validRequest;
+  @AfterAll
+  static void closeValidator() {
+    validatorFactory.close();
+  }
 
   @BeforeEach
   void setUp() {
-    try (ValidatorFactory factory = Validation.buildDefaultValidatorFactory()) {
-      requestValidator = factory.getValidator();
+    service =
+        new DeleteDrinkDetailServiceImpl(
+            deleteMapper, new DrinkDetailValidator(createMapper, getMapper, commonMapper));
+    request = new DeleteDrinkDetailRequest();
+    request.setDrinkDetailId(DETAIL_ID);
+    existing = new DrinkDetailResult();
+    existing.setDrinkDetailId(DETAIL_ID);
+    existing.setDrinkId(DRINK_ID);
+    existing.setSize("M");
+  }
+
+  // =========================================================================
+  // SERVICE PROCESS - NORMAL & BUSINESS CASES
+  // =========================================================================
+
+  @ParameterizedTest
+  @ValueSource(strings = {"OWNER", "MANAGER"})
+  void process_DeletesAccessibleDetailWhileOtherSizesRemain_TC001(String role) {
+    stubAccessibleDetail(role, SHOP_ID);
+    when(deleteMapper.countActiveDrinkDetails(DRINK_ID)).thenReturn(2);
+    when(deleteMapper.softDeleteDrinkDetail(DETAIL_ID, USER_ID, role, SHOP_ID)).thenReturn(1);
+
+    service.process(request, USER_ID, role, SHOP_ID);
+
+    var order = inOrder(getMapper, deleteMapper);
+    order.verify(getMapper).getDrinkDetailVariantById(DETAIL_ID, SHOP_ID, role);
+    order.verify(deleteMapper).countActiveDrinkDetails(DRINK_ID);
+    order.verify(deleteMapper).softDeleteDrinkDetail(DETAIL_ID, USER_ID, role, SHOP_ID);
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {2, 3})
+  void process_AllowsOwnerWithoutShopWhenAtLeastTwoSizesExist_TC002(int activeSizes) {
+    stubAccessibleDetail("OWNER", null);
+    when(deleteMapper.countActiveDrinkDetails(DRINK_ID)).thenReturn(activeSizes);
+    when(deleteMapper.softDeleteDrinkDetail(DETAIL_ID, USER_ID, "OWNER", null)).thenReturn(1);
+
+    service.process(request, USER_ID, "OWNER", null);
+
+    verify(commonMapper, never()).checkShopIdIsExisted(any(), any());
+    verify(deleteMapper).softDeleteDrinkDetail(DETAIL_ID, USER_ID, "OWNER", null);
+  }
+
+  @Test
+  void process_CurrentBehaviorAcceptsDeleteCountGreaterThanOne_TC003() {
+    stubAccessibleDetail("OWNER", null);
+    when(deleteMapper.countActiveDrinkDetails(DRINK_ID)).thenReturn(2);
+    when(deleteMapper.softDeleteDrinkDetail(DETAIL_ID, USER_ID, "OWNER", null)).thenReturn(2);
+
+    service.process(request, USER_ID, "OWNER", null);
+
+    verify(deleteMapper).softDeleteDrinkDetail(DETAIL_ID, USER_ID, "OWNER", null);
+  }
+
+  // =========================================================================
+  // SERVICE PROCESS - ABNORMAL / REQUEST & PERMISSION CASES
+  // =========================================================================
+
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void process_RejectsMissingRequestOrDetailId_TC004(boolean missingRequest) {
+    request.setDrinkDetailId(null);
+    DeleteDrinkDetailRequest input = missingRequest ? null : request;
+
+    var error =
+        assertThrows(
+            InvalidRequestException.class, () -> service.process(input, USER_ID, "OWNER", null));
+
+    assertEquals("Drink detail ID is required", error.getMessage());
+    verifyNoInteractions(commonMapper, getMapper, deleteMapper);
+  }
+
+  @Test
+  void process_RejectsManagerWithoutAssignedShop_TC005() {
+    var error =
+        assertThrows(
+            InvalidRequestException.class,
+            () -> service.process(request, USER_ID, "MANAGER", null));
+
+    assertEquals("User is not assigned to any shop", error.getMessage());
+    verifyNoInteractions(commonMapper, getMapper, deleteMapper);
+  }
+
+  @Test
+  void process_RejectsInactiveMembership_TC006() {
+    when(commonMapper.checkShopIdIsExisted(USER_ID, SHOP_ID)).thenReturn(false);
+
+    var error =
+        assertThrows(
+            InvalidRequestException.class,
+            () -> service.process(request, USER_ID, "MANAGER", SHOP_ID));
+
+    assertEquals("You do not have permission to access this shop", error.getMessage());
+    verifyNoInteractions(getMapper, deleteMapper);
+  }
+
+  @Test
+  void process_RejectsMissingOrInaccessibleDetail_TC007() {
+    when(getMapper.getDrinkDetailVariantById(DETAIL_ID, null, "OWNER")).thenReturn(null);
+
+    var error =
+        assertThrows(
+            DataNotFoundException.class, () -> service.process(request, USER_ID, "OWNER", null));
+
+    assertEquals("Drink detail not found", error.getMessage());
+    assertEquals(DETAIL_ID, error.getId());
+    verifyNoInteractions(deleteMapper);
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {-1, 0, 1})
+  void process_RejectsRemovingTheLastActiveSize_TC008(int activeSizes) {
+    stubAccessibleDetail("OWNER", null);
+    when(deleteMapper.countActiveDrinkDetails(DRINK_ID)).thenReturn(activeSizes);
+
+    var error =
+        assertThrows(
+            InvalidRequestException.class, () -> service.process(request, USER_ID, "OWNER", null));
+
+    assertEquals("A drink must have at least one active size", error.getMessage());
+    verify(deleteMapper, never()).softDeleteDrinkDetail(any(), any(), any(), any());
+  }
+
+  @Test
+  void process_RejectsConcurrentDeletionOrModification_TC009() {
+    stubAccessibleDetail("OWNER", null);
+    when(deleteMapper.countActiveDrinkDetails(DRINK_ID)).thenReturn(2);
+    when(deleteMapper.softDeleteDrinkDetail(DETAIL_ID, USER_ID, "OWNER", null)).thenReturn(0);
+
+    var error =
+        assertThrows(
+            DataNotFoundException.class, () -> service.process(request, USER_ID, "OWNER", null));
+
+    assertEquals("Drink detail has already been deleted or modified", error.getMessage());
+    assertEquals(DETAIL_ID, error.getId());
+  }
+
+  // =========================================================================
+  // SERVICE PROCESS - ABNORMAL / DATABASE ERRORS
+  // =========================================================================
+
+  @ParameterizedTest
+  @CsvSource({"0, 0", "1, 0", "2, 0", "3, 1"})
+  void process_PropagatesFailureAtEachDatabaseStage_TC010(int stage, long expectedDeleteCalls) {
+    String role = stage == 0 ? "MANAGER" : "OWNER";
+    DataAccessException failure = new DataAccessException("Database failure") {};
+    if (stage > 1)
+      when(getMapper.getDrinkDetailVariantById(DETAIL_ID, SHOP_ID, role)).thenReturn(existing);
+    if (stage > 2) when(deleteMapper.countActiveDrinkDetails(DRINK_ID)).thenReturn(2);
+    switch (stage) {
+      case 0 -> when(commonMapper.checkShopIdIsExisted(USER_ID, SHOP_ID)).thenThrow(failure);
+      case 1 ->
+          when(getMapper.getDrinkDetailVariantById(DETAIL_ID, SHOP_ID, role)).thenThrow(failure);
+      case 2 -> when(deleteMapper.countActiveDrinkDetails(DRINK_ID)).thenThrow(failure);
+      case 3 ->
+          when(deleteMapper.softDeleteDrinkDetail(any(), any(), any(), any())).thenThrow(failure);
+      default -> throw new IllegalArgumentException("Unexpected database stage");
     }
 
-    drinkDetailId = UUID.fromString("a8861994-e947-425c-a6bb-686f28d7ba63");
-
-    drinkId = UUID.fromString("150e940d-8363-4dff-9b2e-3e8291dab04f");
-
-    userId = UUID.fromString("a1000000-0000-0000-0000-000000000001");
-
-    shopId = UUID.fromString("b1000000-0000-0000-0000-000000000001");
-
-    ownerRole = Roles.OWNER.getValue();
-    managerRole = Roles.MANAGER.getValue();
-
-    validRequest = new DeleteDrinkDetailRequest();
-    validRequest.setDrinkDetailId(drinkDetailId);
-  }
-
-  // =========================================================================
-  // SERVICE PROCESS - SUCCESS CASES
-  // =========================================================================
-
-  @Test
-  void process_Success_WhenManagerDeletesDrinkDetail_TC001() {
-    // Arrange
-    DrinkDetailResult existingDetail = createExistingDrinkDetail();
-
-    when(drinkDetailValidator.validateDrinkDetailExists(drinkDetailId, managerRole, shopId))
-        .thenReturn(existingDetail);
-
-    when(deleteDrinkDetailMapper.countActiveDrinkDetails(drinkId)).thenReturn(2);
-
-    when(deleteDrinkDetailMapper.softDeleteDrinkDetail(drinkDetailId, userId, managerRole, shopId))
-        .thenReturn(1);
-
-    // Act
-    assertDoesNotThrow(() -> service.process(validRequest, userId, managerRole, shopId));
-
-    // Assert
-    verify(drinkDetailValidator).verifyShopAssignment(userId, managerRole, shopId);
-
-    verify(drinkDetailValidator).validateDrinkDetailExists(drinkDetailId, managerRole, shopId);
-
-    verify(deleteDrinkDetailMapper).countActiveDrinkDetails(drinkId);
-
-    verify(deleteDrinkDetailMapper)
-        .softDeleteDrinkDetail(drinkDetailId, userId, managerRole, shopId);
-  }
-
-  @Test
-  void process_Success_WhenOwnerDeletesDrinkDetailWithoutAssignedShop_TC002() {
-    // Arrange
-    DrinkDetailResult existingDetail = createExistingDrinkDetail();
-
-    when(drinkDetailValidator.validateDrinkDetailExists(drinkDetailId, ownerRole, null))
-        .thenReturn(existingDetail);
-
-    when(deleteDrinkDetailMapper.countActiveDrinkDetails(drinkId)).thenReturn(3);
-
-    when(deleteDrinkDetailMapper.softDeleteDrinkDetail(drinkDetailId, userId, ownerRole, null))
-        .thenReturn(1);
-
-    // Act
-    assertDoesNotThrow(() -> service.process(validRequest, userId, ownerRole, null));
-
-    // Assert
-    verify(drinkDetailValidator).verifyShopAssignment(userId, ownerRole, null);
-
-    verify(deleteDrinkDetailMapper).softDeleteDrinkDetail(drinkDetailId, userId, ownerRole, null);
-  }
-
-  @Test
-  void process_Success_WhenExactlyTwoActiveSizesExist_TC003() {
-    // Arrange
-    when(drinkDetailValidator.validateDrinkDetailExists(drinkDetailId, ownerRole, null))
-        .thenReturn(createExistingDrinkDetail());
-
-    when(deleteDrinkDetailMapper.countActiveDrinkDetails(drinkId)).thenReturn(2);
-
-    when(deleteDrinkDetailMapper.softDeleteDrinkDetail(drinkDetailId, userId, ownerRole, null))
-        .thenReturn(1);
-
-    // Act & Assert
-    assertDoesNotThrow(() -> service.process(validRequest, userId, ownerRole, null));
-  }
-
-  // =========================================================================
-  // SERVICE PROCESS - REQUEST VALIDATION CASES
-  // =========================================================================
-
-  @Test
-  void process_ThrowsInvalidRequestException_WhenRequestIsNull_TC004() {
-    // Act & Assert
-    InvalidRequestException exception =
+    var error =
         assertThrows(
-            InvalidRequestException.class, () -> service.process(null, userId, ownerRole, null));
+            DataAccessException.class, () -> service.process(request, USER_ID, role, SHOP_ID));
 
-    assertEquals("Drink detail ID is required", exception.getMessage());
-
-    verifyNoInteractions(drinkDetailValidator);
-    verifyNoInteractions(deleteDrinkDetailMapper);
-  }
-
-  @Test
-  void process_ThrowsInvalidRequestException_WhenDrinkDetailIdIsNull_TC005() {
-    // Arrange
-    validRequest.setDrinkDetailId(null);
-
-    // Act & Assert
-    InvalidRequestException exception =
-        assertThrows(
-            InvalidRequestException.class,
-            () -> service.process(validRequest, userId, ownerRole, null));
-
-    assertEquals("Drink detail ID is required", exception.getMessage());
-
-    verifyNoInteractions(drinkDetailValidator);
-    verifyNoInteractions(deleteDrinkDetailMapper);
+    assertEquals("Database failure", error.getMessage());
+    assertEquals(
+        expectedDeleteCalls,
+        mockingDetails(deleteMapper).getInvocations().stream()
+            .filter(invocation -> invocation.getMethod().getName().equals("softDeleteDrinkDetail"))
+            .count());
   }
 
   // =========================================================================
-  // SERVICE PROCESS - VALIDATOR FAILURE CASES
+  // REQUEST BEAN VALIDATION - NORMAL & ABNORMAL CASES
   // =========================================================================
 
   @Test
-  void process_ThrowsInvalidRequestException_WhenShopAssignmentFails_TC006() {
-    // Arrange
-    doThrow(new InvalidRequestException("You do not have permission to access this shop"))
-        .when(drinkDetailValidator)
-        .verifyShopAssignment(userId, managerRole, shopId);
-
-    // Act & Assert
-    InvalidRequestException exception =
-        assertThrows(
-            InvalidRequestException.class,
-            () -> service.process(validRequest, userId, managerRole, shopId));
-
-    assertEquals("You do not have permission to access this shop", exception.getMessage());
-
-    verify(drinkDetailValidator, never()).validateDrinkDetailExists(any(), any(), any());
-
-    verifyNoInteractions(deleteDrinkDetailMapper);
+  void requestValidation_AcceptsValidDetailId_TC011() {
+    assertViolations(request, Map.of());
   }
 
   @Test
-  void process_ThrowsDataNotFoundException_WhenDrinkDetailDoesNotExist_TC007() {
-    // Arrange
-    when(drinkDetailValidator.validateDrinkDetailExists(drinkDetailId, ownerRole, null))
-        .thenThrow(new DataNotFoundException("Drink detail not found", drinkDetailId));
+  void requestValidation_RejectsMissingDetailId_TC012() {
+    request.setDrinkDetailId(null);
 
-    // Act & Assert
-    DataNotFoundException exception =
-        assertThrows(
-            DataNotFoundException.class,
-            () -> service.process(validRequest, userId, ownerRole, null));
-
-    assertEquals("Drink detail not found", exception.getMessage());
-
-    assertEquals(drinkDetailId, exception.getId());
-
-    verify(deleteDrinkDetailMapper, never()).countActiveDrinkDetails(any());
-
-    verify(deleteDrinkDetailMapper, never()).softDeleteDrinkDetail(any(), any(), any(), any());
+    assertViolations(
+        request, Map.of("drinkDetailId", Set.of(ValidationMessage.Msg.FIELD_REQUIRED)));
   }
 
   // =========================================================================
-  // SERVICE PROCESS - ACTIVE SIZE BUSINESS RULE CASES
+  // HELPER STUB & VALIDATION METHODS
   // =========================================================================
 
-  @Test
-  void process_ThrowsInvalidRequestException_WhenOnlyOneActiveSizeExists_TC008() {
-    // Arrange
-    when(drinkDetailValidator.validateDrinkDetailExists(drinkDetailId, ownerRole, null))
-        .thenReturn(createExistingDrinkDetail());
-
-    when(deleteDrinkDetailMapper.countActiveDrinkDetails(drinkId)).thenReturn(1);
-
-    // Act & Assert
-    InvalidRequestException exception =
-        assertThrows(
-            InvalidRequestException.class,
-            () -> service.process(validRequest, userId, ownerRole, null));
-
-    assertEquals("A drink must have at least one active size", exception.getMessage());
-
-    verify(deleteDrinkDetailMapper, never()).softDeleteDrinkDetail(any(), any(), any(), any());
+  private void stubAccessibleDetail(String role, UUID assignedShop) {
+    if ("MANAGER".equals(role))
+      when(commonMapper.checkShopIdIsExisted(USER_ID, assignedShop)).thenReturn(true);
+    when(getMapper.getDrinkDetailVariantById(DETAIL_ID, assignedShop, role)).thenReturn(existing);
   }
 
-  @Test
-  void process_ThrowsInvalidRequestException_WhenNoActiveSizesExist_TC009() {
-    // Arrange
-    when(drinkDetailValidator.validateDrinkDetailExists(drinkDetailId, ownerRole, null))
-        .thenReturn(createExistingDrinkDetail());
-
-    when(deleteDrinkDetailMapper.countActiveDrinkDetails(drinkId)).thenReturn(0);
-
-    // Act & Assert
-    InvalidRequestException exception =
-        assertThrows(
-            InvalidRequestException.class,
-            () -> service.process(validRequest, userId, ownerRole, null));
-
-    assertEquals("A drink must have at least one active size", exception.getMessage());
-
-    verify(deleteDrinkDetailMapper, never()).softDeleteDrinkDetail(any(), any(), any(), any());
-  }
-
-  @Test
-  void process_ThrowsInvalidRequestException_WhenActiveSizeCountIsNegative_TC010() {
-    // Defensive case for unexpected database results.
-
-    // Arrange
-    when(drinkDetailValidator.validateDrinkDetailExists(drinkDetailId, ownerRole, null))
-        .thenReturn(createExistingDrinkDetail());
-
-    when(deleteDrinkDetailMapper.countActiveDrinkDetails(drinkId)).thenReturn(-1);
-
-    // Act & Assert
-    assertThrows(
-        InvalidRequestException.class,
-        () -> service.process(validRequest, userId, ownerRole, null));
-
-    verify(deleteDrinkDetailMapper, never()).softDeleteDrinkDetail(any(), any(), any(), any());
-  }
-
-  // =========================================================================
-  // SERVICE PROCESS - DELETE RESULT CASES
-  // =========================================================================
-
-  @Test
-  void process_ThrowsDataNotFoundException_WhenDeleteAffectsZeroRows_TC011() {
-    // Arrange
-    when(drinkDetailValidator.validateDrinkDetailExists(drinkDetailId, ownerRole, null))
-        .thenReturn(createExistingDrinkDetail());
-
-    when(deleteDrinkDetailMapper.countActiveDrinkDetails(drinkId)).thenReturn(2);
-
-    when(deleteDrinkDetailMapper.softDeleteDrinkDetail(drinkDetailId, userId, ownerRole, null))
-        .thenReturn(0);
-
-    // Act & Assert
-    DataNotFoundException exception =
-        assertThrows(
-            DataNotFoundException.class,
-            () -> service.process(validRequest, userId, ownerRole, null));
-
-    assertEquals("Drink detail has already been deleted or modified", exception.getMessage());
-
-    assertEquals(drinkDetailId, exception.getId());
-  }
-
-  @Test
-  void process_Success_WhenDeleteAffectsMoreThanOneRow_TC012() {
-    // The current implementation rejects only affectedRows == 0.
-
-    // Arrange
-    when(drinkDetailValidator.validateDrinkDetailExists(drinkDetailId, ownerRole, null))
-        .thenReturn(createExistingDrinkDetail());
-
-    when(deleteDrinkDetailMapper.countActiveDrinkDetails(drinkId)).thenReturn(2);
-
-    when(deleteDrinkDetailMapper.softDeleteDrinkDetail(drinkDetailId, userId, ownerRole, null))
-        .thenReturn(2);
-
-    // Act & Assert
-    assertDoesNotThrow(() -> service.process(validRequest, userId, ownerRole, null));
-  }
-
-  // =========================================================================
-  // SERVICE PROCESS - DATABASE EXCEPTION CASES
-  // =========================================================================
-
-  @Test
-  void process_PropagatesDataAccessException_WhenCountingActiveSizesFails_TC013() {
-    // Arrange
-    when(drinkDetailValidator.validateDrinkDetailExists(drinkDetailId, ownerRole, null))
-        .thenReturn(createExistingDrinkDetail());
-
-    when(deleteDrinkDetailMapper.countActiveDrinkDetails(drinkId))
-        .thenThrow(new DataAccessException("Count active drink details failed") {});
-
-    // Act & Assert
-    DataAccessException exception =
-        assertThrows(
-            DataAccessException.class,
-            () -> service.process(validRequest, userId, ownerRole, null));
-
-    assertEquals("Count active drink details failed", exception.getMessage());
-
-    verify(deleteDrinkDetailMapper, never()).softDeleteDrinkDetail(any(), any(), any(), any());
-  }
-
-  @Test
-  void process_PropagatesDataAccessException_WhenSoftDeleteFails_TC014() {
-    // Arrange
-    when(drinkDetailValidator.validateDrinkDetailExists(drinkDetailId, ownerRole, null))
-        .thenReturn(createExistingDrinkDetail());
-
-    when(deleteDrinkDetailMapper.countActiveDrinkDetails(drinkId)).thenReturn(2);
-
-    when(deleteDrinkDetailMapper.softDeleteDrinkDetail(drinkDetailId, userId, ownerRole, null))
-        .thenThrow(new DataAccessException("Soft delete drink detail failed") {});
-
-    // Act & Assert
-    DataAccessException exception =
-        assertThrows(
-            DataAccessException.class,
-            () -> service.process(validRequest, userId, ownerRole, null));
-
-    assertEquals("Soft delete drink detail failed", exception.getMessage());
-  }
-
-  // =========================================================================
-  // REQUEST BEAN VALIDATION CASES
-  // =========================================================================
-
-  @Test
-  void request_ValidationSuccess_WhenDrinkDetailIdIsValid_TC015() {
-    // Act
-    Set<ConstraintViolation<DeleteDrinkDetailRequest>> violations =
-        requestValidator.validate(validRequest);
-
-    // Assert
-    assertTrue(violations.isEmpty());
-  }
-
-  @Test
-  void request_ValidationFails_WhenDrinkDetailIdIsNull_TC016() {
-    // Arrange
-    validRequest.setDrinkDetailId(null);
-
-    // Act
-    Set<ConstraintViolation<DeleteDrinkDetailRequest>> violations =
-        requestValidator.validate(validRequest);
-
-    // Assert
-    assertTrue(
+  private void assertViolations(Object request, Map<String, Set<String>> expected) {
+    var violations = requestValidator.validate(request);
+    assertEquals(expected.values().stream().mapToInt(Set::size).sum(), violations.size());
+    assertEquals(
+        expected,
         violations.stream()
-            .anyMatch(
-                violation ->
-                    "drinkDetailId".equals(violation.getPropertyPath().toString())
-                        && ValidationMessage.Msg.FIELD_REQUIRED.equals(violation.getMessage())));
-  }
-
-  private DrinkDetailResult createExistingDrinkDetail() {
-    DrinkDetailResult result = new DrinkDetailResult();
-
-    result.setDrinkDetailId(drinkDetailId);
-    result.setDrinkId(drinkId);
-    result.setSize("M");
-
-    return result;
+            .collect(
+                Collectors.groupingBy(
+                    violation -> violation.getPropertyPath().toString(),
+                    Collectors.mapping(ConstraintViolation::getMessage, Collectors.toSet()))));
   }
 }

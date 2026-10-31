@@ -5,378 +5,248 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import coffee.api.dto.result.DrinkResult;
-import coffee.api.enums.Roles;
 import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.exceptions.InvalidRequestException;
+import coffee.api.mapper.CommonMapper;
+import coffee.api.mapper.CreateDrinkDetailMapper;
 import coffee.api.mapper.GetDrinkDetailMapper;
 import coffee.api.services.services_implement.drink_detail.common.DrinkDetailValidator;
 import java.math.BigDecimal;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataAccessException;
 
 @ExtendWith(MockitoExtension.class)
 class GetDrinkDetailServiceImplTest {
+  private static final UUID DRINK_ID = UUID.fromString("150e940d-8363-4dff-9b2e-3e8291dab04f");
+  private static final UUID DETAIL_ID = UUID.fromString("a8861994-e947-425c-a6bb-686f28d7ba63");
+  private static final UUID USER_ID = UUID.fromString("a1000000-0000-0000-0000-000000000001");
+  private static final UUID SHOP_ID = UUID.fromString("b1000000-0000-0000-0000-000000000001");
 
-  @Mock private GetDrinkDetailMapper getDrinkDetailMapper;
-
-  @Mock private DrinkDetailValidator drinkDetailValidator;
-
-  @InjectMocks private GetDrinkDetailServiceImpl service;
-
-  private UUID drinkId;
-  private UUID userId;
-  private UUID shopId;
-
-  private String ownerRole;
-  private String managerRole;
-  private String staffRole;
-
-  private DrinkResult sampleDrink;
+  @Mock private CreateDrinkDetailMapper createMapper;
+  @Mock private GetDrinkDetailMapper getMapper;
+  @Mock private CommonMapper commonMapper;
+  private GetDrinkDetailServiceImpl service;
+  private DrinkResult drink;
 
   @BeforeEach
   void setUp() {
-    drinkId = UUID.fromString("150e940d-8363-4dff-9b2e-3e8291dab04f");
-
-    userId = UUID.fromString("a1000000-0000-0000-0000-000000000001");
-
-    shopId = UUID.fromString("b1000000-0000-0000-0000-000000000001");
-
-    ownerRole = Roles.OWNER.getValue();
-    managerRole = Roles.MANAGER.getValue();
-    staffRole = Roles.STAFF.getValue();
-
-    DrinkResult.DrinkVariantResult variant = new DrinkResult.DrinkVariantResult();
-
-    variant.setDrinkDetailId(UUID.fromString("a8861994-e947-425c-a6bb-686f28d7ba63"));
-
-    variant.setSize("M");
-    variant.setPrice(new BigDecimal("30000.00"));
-
-    sampleDrink = new DrinkResult();
-
-    sampleDrink.setDrinkId(drinkId);
-    sampleDrink.setShopId(shopId);
-
-    sampleDrink.setDrinkCategoryId(UUID.fromString("11111111-0000-0000-0000-000000000001"));
-
-    sampleDrink.setCategoryName("Cà Phê");
-    sampleDrink.setDrinkName("Cà Phê Sữa Đá");
-    sampleDrink.setImageUrl("https://example.com/images/ca-phe-sua-da.jpg");
-
-    sampleDrink.setStatus("ACTIVE");
-    sampleDrink.setIsDeleted(false);
-    sampleDrink.setVariants(List.of(variant));
+    service =
+        new GetDrinkDetailServiceImpl(
+            getMapper, new DrinkDetailValidator(createMapper, getMapper, commonMapper));
+    drink = new DrinkResult();
+    drink.setDrinkId(DRINK_ID);
+    drink.setShopId(SHOP_ID);
+    drink.setDrinkName("Cà Phê Sữa Đá");
+    drink.setCategoryName("Cà phê");
+    drink.setImageUrl("/images/coffee.png");
+    drink.setIsDeleted(false);
+    drink.setStatus("1");
+    drink.setVariants(List.of(variant(DETAIL_ID, "M", "30000.00")));
   }
 
   // =========================================================================
-  // SERVICE PROCESS - SUCCESS CASES
+  // SERVICE PROCESS - NORMAL & BUSINESS CASES
   // =========================================================================
 
-  @Test
-  void process_Success_WhenManagerGetsDrinkDetail_TC001() {
-    // Arrange
-    when(getDrinkDetailMapper.getDrinkDetailById(drinkId, shopId, managerRole))
-        .thenReturn(sampleDrink);
+  @ParameterizedTest
+  @ValueSource(strings = {"OWNER", "MANAGER", "STAFF"})
+  void process_ReturnsAccessibleDrinkAndPreservesVariantData_TC001(String role) {
+    if ("MANAGER".equals(role))
+      when(commonMapper.checkShopIdIsExisted(USER_ID, SHOP_ID)).thenReturn(true);
+    when(getMapper.getDrinkDetailById(DRINK_ID, SHOP_ID, role)).thenReturn(drink);
 
-    // Act
-    DrinkResult result = service.process(drinkId, userId, managerRole, shopId);
+    DrinkResult result = service.process(DRINK_ID, USER_ID, role, SHOP_ID);
 
-    // Assert
-    assertNotNull(result);
-    assertEquals(drinkId, result.getDrinkId());
+    assertEquals(DRINK_ID, result.getDrinkId());
+    assertEquals(SHOP_ID, result.getShopId());
     assertEquals("Cà Phê Sữa Đá", result.getDrinkName());
+    assertEquals("Cà phê", result.getCategoryName());
+    assertEquals("/images/coffee.png", result.getImageUrl());
+    assertEquals(Boolean.FALSE, result.getIsDeleted());
     assertEquals("Đang bán", result.getStatus());
-
-    assertNotNull(result.getVariants());
     assertEquals(1, result.getVariants().size());
-
-    verify(drinkDetailValidator).verifyShopAssignment(userId, managerRole, shopId);
-
-    verify(getDrinkDetailMapper).getDrinkDetailById(drinkId, shopId, managerRole);
+    assertEquals(DETAIL_ID, result.getVariants().getFirst().getDrinkDetailId());
+    assertEquals("M", result.getVariants().getFirst().getSize());
+    assertEquals(new BigDecimal("30000.00"), result.getVariants().getFirst().getPrice());
+    verify(getMapper).getDrinkDetailById(DRINK_ID, SHOP_ID, role);
   }
 
   @Test
-  void process_Success_WhenStaffGetsDrinkDetail_TC002() {
-    // Arrange
-    when(getDrinkDetailMapper.getDrinkDetailById(drinkId, shopId, staffRole))
-        .thenReturn(sampleDrink);
+  void process_AllowsOwnerWithoutAssignedShop_TC002() {
+    when(getMapper.getDrinkDetailById(DRINK_ID, null, "OWNER")).thenReturn(drink);
 
-    // Act
-    DrinkResult result = service.process(drinkId, userId, staffRole, shopId);
+    var result = service.process(DRINK_ID, USER_ID, "OWNER", null);
 
-    // Assert
-    assertNotNull(result);
-    assertEquals(drinkId, result.getDrinkId());
-
-    verify(drinkDetailValidator).verifyShopAssignment(userId, staffRole, shopId);
-  }
-
-  @Test
-  void process_Success_WhenOwnerHasNoAssignedShop_TC003() {
-    // Arrange
-    when(getDrinkDetailMapper.getDrinkDetailById(drinkId, null, ownerRole)).thenReturn(sampleDrink);
-
-    // Act
-    DrinkResult result = service.process(drinkId, userId, ownerRole, null);
-
-    // Assert
-    assertNotNull(result);
-
-    verify(drinkDetailValidator).verifyShopAssignment(userId, ownerRole, null);
-  }
-
-  // =========================================================================
-  // STATUS NORMALIZATION CASES
-  // =========================================================================
-
-  @Test
-  void process_NormalizesNumericActiveStatus_TC004() {
-    sampleDrink.setStatus("1");
-
-    when(getDrinkDetailMapper.getDrinkDetailById(drinkId, shopId, managerRole))
-        .thenReturn(sampleDrink);
-
-    DrinkResult result = service.process(drinkId, userId, managerRole, shopId);
-
+    assertEquals(DRINK_ID, result.getDrinkId());
     assertEquals("Đang bán", result.getStatus());
+    verifyNoInteractions(commonMapper);
+  }
+
+  @ParameterizedTest
+  @MethodSource("statusCases")
+  void process_NormalizesAllSupportedAndUnknownStatuses_TC003(
+      String storedStatus, String expectedStatus) {
+    drink.setStatus(storedStatus);
+    when(getMapper.getDrinkDetailById(DRINK_ID, null, "OWNER")).thenReturn(drink);
+
+    var result = service.process(DRINK_ID, USER_ID, "OWNER", null);
+
+    assertEquals(expectedStatus, result.getStatus());
   }
 
   @Test
-  void process_NormalizesTextActiveStatus_TC005() {
-    sampleDrink.setStatus("ACTIVE");
+  void process_PreservesNullVariantList_TC004() {
+    drink.setVariants(null);
+    when(getMapper.getDrinkDetailById(DRINK_ID, null, "OWNER")).thenReturn(drink);
 
-    when(getDrinkDetailMapper.getDrinkDetailById(drinkId, shopId, managerRole))
-        .thenReturn(sampleDrink);
-
-    DrinkResult result = service.process(drinkId, userId, managerRole, shopId);
-
-    assertEquals("Đang bán", result.getStatus());
-  }
-
-  @Test
-  void process_NormalizesNumericInactiveStatus_TC006() {
-    sampleDrink.setStatus("0");
-
-    when(getDrinkDetailMapper.getDrinkDetailById(drinkId, shopId, managerRole))
-        .thenReturn(sampleDrink);
-
-    DrinkResult result = service.process(drinkId, userId, managerRole, shopId);
-
-    assertEquals("Ngừng bán", result.getStatus());
-  }
-
-  @Test
-  void process_NormalizesTextInactiveStatus_TC007() {
-    sampleDrink.setStatus("INACTIVE");
-
-    when(getDrinkDetailMapper.getDrinkDetailById(drinkId, shopId, managerRole))
-        .thenReturn(sampleDrink);
-
-    DrinkResult result = service.process(drinkId, userId, managerRole, shopId);
-
-    assertEquals("Ngừng bán", result.getStatus());
-  }
-
-  @Test
-  void process_NormalizesNullStatus_TC008() {
-    sampleDrink.setStatus(null);
-
-    when(getDrinkDetailMapper.getDrinkDetailById(drinkId, shopId, managerRole))
-        .thenReturn(sampleDrink);
-
-    DrinkResult result = service.process(drinkId, userId, managerRole, shopId);
-
-    assertEquals("UNKNOWN", result.getStatus());
-  }
-
-  @Test
-  void process_NormalizesUnsupportedStatus_TC009() {
-    sampleDrink.setStatus("OTHER");
-
-    when(getDrinkDetailMapper.getDrinkDetailById(drinkId, shopId, managerRole))
-        .thenReturn(sampleDrink);
-
-    DrinkResult result = service.process(drinkId, userId, managerRole, shopId);
-
-    assertEquals("Không xác định", result.getStatus());
-  }
-
-  @Test
-  void process_NormalizesEmptyStatus_TC010() {
-    sampleDrink.setStatus("");
-
-    when(getDrinkDetailMapper.getDrinkDetailById(drinkId, shopId, managerRole))
-        .thenReturn(sampleDrink);
-
-    DrinkResult result = service.process(drinkId, userId, managerRole, shopId);
-
-    assertEquals("Không xác định", result.getStatus());
-  }
-
-  // =========================================================================
-  // VARIANT CASES
-  // =========================================================================
-
-  @Test
-  void process_Success_WhenVariantsAreNull_TC011() {
-    sampleDrink.setVariants(null);
-
-    when(getDrinkDetailMapper.getDrinkDetailById(drinkId, shopId, managerRole))
-        .thenReturn(sampleDrink);
-
-    DrinkResult result = service.process(drinkId, userId, managerRole, shopId);
+    var result = service.process(DRINK_ID, USER_ID, "OWNER", null);
 
     assertNull(result.getVariants());
   }
 
   @Test
-  void process_Success_WhenVariantsAreEmpty_TC012() {
-    sampleDrink.setVariants(Collections.emptyList());
+  void process_PreservesEmptyVariantList_TC005() {
+    drink.setVariants(List.of());
+    when(getMapper.getDrinkDetailById(DRINK_ID, null, "OWNER")).thenReturn(drink);
 
-    when(getDrinkDetailMapper.getDrinkDetailById(drinkId, shopId, managerRole))
-        .thenReturn(sampleDrink);
+    var result = service.process(DRINK_ID, USER_ID, "OWNER", null);
 
-    DrinkResult result = service.process(drinkId, userId, managerRole, shopId);
-
-    assertNotNull(result.getVariants());
-    assertTrue(result.getVariants().isEmpty());
+    assertEquals(List.of(), result.getVariants());
   }
 
   @Test
-  void process_Success_WhenDrinkHasMultipleVariants_TC013() {
-    // Arrange
-    DrinkResult.DrinkVariantResult variantM = new DrinkResult.DrinkVariantResult();
+  void process_PreservesMultipleVariantIdsSizesAndPrices_TC006() {
+    UUID secondId = UUID.fromString("b8861994-e947-425c-a6bb-686f28d7ba64");
+    drink.setVariants(
+        List.of(variant(DETAIL_ID, "M", "30000.00"), variant(secondId, "L", "35000.00")));
+    when(getMapper.getDrinkDetailById(DRINK_ID, null, "OWNER")).thenReturn(drink);
 
-    variantM.setDrinkDetailId(UUID.fromString("a8861994-e947-425c-a6bb-686f28d7ba63"));
+    var result = service.process(DRINK_ID, USER_ID, "OWNER", null);
 
-    variantM.setSize("M");
-    variantM.setPrice(new BigDecimal("30000.00"));
-
-    DrinkResult.DrinkVariantResult variantL = new DrinkResult.DrinkVariantResult();
-
-    variantL.setDrinkDetailId(UUID.fromString("b8861994-e947-425c-a6bb-686f28d7ba64"));
-
-    variantL.setSize("L");
-    variantL.setPrice(new BigDecimal("35000.00"));
-
-    sampleDrink.setVariants(List.of(variantM, variantL));
-
-    when(getDrinkDetailMapper.getDrinkDetailById(drinkId, shopId, managerRole))
-        .thenReturn(sampleDrink);
-
-    // Act
-    DrinkResult result = service.process(drinkId, userId, managerRole, shopId);
-
-    // Assert
-    assertEquals(2, result.getVariants().size());
-
-    assertEquals("M", result.getVariants().get(0).getSize());
-
-    assertEquals(new BigDecimal("30000.00"), result.getVariants().get(0).getPrice());
-
-    assertEquals("L", result.getVariants().get(1).getSize());
+    assertEquals(
+        List.of(DETAIL_ID, secondId),
+        result.getVariants().stream()
+            .map(DrinkResult.DrinkVariantResult::getDrinkDetailId)
+            .toList());
+    assertEquals(
+        List.of("M", "L"),
+        result.getVariants().stream().map(DrinkResult.DrinkVariantResult::getSize).toList());
+    assertEquals(
+        List.of(new BigDecimal("30000.00"), new BigDecimal("35000.00")),
+        result.getVariants().stream().map(DrinkResult.DrinkVariantResult::getPrice).toList());
   }
 
   // =========================================================================
-  // SERVICE PROCESS - ABNORMAL / EXCEPTION CASES
+  // SERVICE PROCESS - ABNORMAL / REQUEST & PERMISSION CASES
   // =========================================================================
 
   @Test
-  void process_ThrowsInvalidRequestException_WhenDrinkIdIsNull_TC014() {
-    // Act & Assert
-    InvalidRequestException exception =
+  void process_RejectsMissingDrinkIdBeforeQueryingDatabase_TC007() {
+    var error =
         assertThrows(
-            InvalidRequestException.class, () -> service.process(null, userId, ownerRole, null));
+            InvalidRequestException.class, () -> service.process(null, USER_ID, "OWNER", null));
 
-    assertEquals("Drink ID is required", exception.getMessage());
+    assertEquals("Drink ID is required", error.getMessage());
+    verifyNoInteractions(commonMapper, getMapper);
+  }
 
-    verifyNoInteractions(drinkDetailValidator);
-    verifyNoInteractions(getDrinkDetailMapper);
+  @ParameterizedTest
+  @ValueSource(strings = {"MANAGER", "STAFF"})
+  void process_RejectsNonOwnerWithoutAssignedShop_TC008(String role) {
+    var error =
+        assertThrows(
+            InvalidRequestException.class, () -> service.process(DRINK_ID, USER_ID, role, null));
+
+    assertEquals("User is not assigned to any shop", error.getMessage());
+    verifyNoInteractions(commonMapper, getMapper);
   }
 
   @Test
-  void process_ThrowsInvalidRequestException_WhenManagerHasNoShop_TC015() {
-    // Arrange
-    doThrow(new InvalidRequestException("User is not assigned to any shop"))
-        .when(drinkDetailValidator)
-        .verifyShopAssignment(userId, managerRole, null);
+  void process_RejectsManagerWithoutActiveMembership_TC009() {
+    when(commonMapper.checkShopIdIsExisted(USER_ID, SHOP_ID)).thenReturn(false);
 
-    // Act & Assert
-    InvalidRequestException exception =
+    var error =
         assertThrows(
             InvalidRequestException.class,
-            () -> service.process(drinkId, userId, managerRole, null));
+            () -> service.process(DRINK_ID, USER_ID, "MANAGER", SHOP_ID));
 
-    assertEquals("User is not assigned to any shop", exception.getMessage());
-
-    verify(getDrinkDetailMapper, never()).getDrinkDetailById(any(), any(), any());
+    assertEquals("You do not have permission to access this shop", error.getMessage());
+    verifyNoInteractions(getMapper);
   }
 
   @Test
-  void process_ThrowsInvalidRequestException_WhenStaffHasNoShop_TC016() {
-    // Arrange
-    doThrow(new InvalidRequestException("User is not assigned to any shop"))
-        .when(drinkDetailValidator)
-        .verifyShopAssignment(userId, staffRole, null);
+  void process_RejectsMissingOrInaccessibleDrink_TC010() {
+    when(getMapper.getDrinkDetailById(DRINK_ID, null, "OWNER")).thenReturn(null);
 
-    // Act & Assert
-    assertThrows(
-        InvalidRequestException.class, () -> service.process(drinkId, userId, staffRole, null));
-
-    verify(getDrinkDetailMapper, never()).getDrinkDetailById(any(), any(), any());
-  }
-
-  @Test
-  void process_ThrowsInvalidRequestException_WhenManagerMembershipIsInactive_TC017() {
-    // Arrange
-    doThrow(new InvalidRequestException("You do not have permission to access this shop"))
-        .when(drinkDetailValidator)
-        .verifyShopAssignment(userId, managerRole, shopId);
-
-    // Act & Assert
-    assertThrows(
-        InvalidRequestException.class, () -> service.process(drinkId, userId, managerRole, shopId));
-
-    verify(getDrinkDetailMapper, never()).getDrinkDetailById(any(), any(), any());
-  }
-
-  @Test
-  void process_ThrowsDataNotFoundException_WhenDrinkDoesNotExist_TC018() {
-    // Arrange
-    when(getDrinkDetailMapper.getDrinkDetailById(drinkId, shopId, managerRole)).thenReturn(null);
-
-    // Act & Assert
-    DataNotFoundException exception =
+    var error =
         assertThrows(
-            DataNotFoundException.class,
-            () -> service.process(drinkId, userId, managerRole, shopId));
+            DataNotFoundException.class, () -> service.process(DRINK_ID, USER_ID, "OWNER", null));
 
-    assertEquals("Drink not found with id: " + drinkId, exception.getMessage());
+    assertEquals("Drink not found with id: " + DRINK_ID, error.getMessage());
+    assertEquals(DRINK_ID, error.getId());
+  }
 
-    assertEquals(drinkId, exception.getId());
+  // =========================================================================
+  // SERVICE PROCESS - ABNORMAL / DATABASE ERRORS
+  // =========================================================================
+
+  @Test
+  void process_PropagatesMembershipQueryFailureBeforeFetchingDrink_TC011() {
+    when(commonMapper.checkShopIdIsExisted(USER_ID, SHOP_ID))
+        .thenThrow(new DataAccessException("Membership query failed") {});
+
+    var error =
+        assertThrows(
+            DataAccessException.class,
+            () -> service.process(DRINK_ID, USER_ID, "MANAGER", SHOP_ID));
+
+    assertEquals("Membership query failed", error.getMessage());
+    verifyNoInteractions(getMapper);
   }
 
   @Test
-  void process_PropagatesDataAccessException_WhenDatabaseFails_TC019() {
-    // Arrange
-    when(getDrinkDetailMapper.getDrinkDetailById(drinkId, shopId, managerRole))
-        .thenThrow(new DataAccessException("Database query error") {});
+  void process_PropagatesDrinkQueryFailure_TC012() {
+    when(getMapper.getDrinkDetailById(DRINK_ID, null, "OWNER"))
+        .thenThrow(new DataAccessException("Drink query failed") {});
 
-    // Act & Assert
-    DataAccessException exception =
+    var error =
         assertThrows(
-            DataAccessException.class, () -> service.process(drinkId, userId, managerRole, shopId));
+            DataAccessException.class, () -> service.process(DRINK_ID, USER_ID, "OWNER", null));
 
-    assertEquals("Database query error", exception.getMessage());
+    assertEquals("Drink query failed", error.getMessage());
+  }
 
-    verify(drinkDetailValidator).verifyShopAssignment(userId, managerRole, shopId);
+  // =========================================================================
+  // HELPER STUB & TEST DATA METHODS
+  // =========================================================================
+
+  private DrinkResult.DrinkVariantResult variant(UUID id, String size, String price) {
+    var variant = new DrinkResult.DrinkVariantResult();
+    variant.setDrinkDetailId(id);
+    variant.setSize(size);
+    variant.setPrice(new BigDecimal(price));
+    return variant;
+  }
+
+  static Stream<Arguments> statusCases() {
+    return Stream.of(
+        Arguments.of("1", "Đang bán"),
+        Arguments.of("ACTIVE", "Đang bán"),
+        Arguments.of("0", "Ngừng bán"),
+        Arguments.of("INACTIVE", "Ngừng bán"),
+        Arguments.of((String) null, "UNKNOWN"),
+        Arguments.of("OTHER", "Không xác định"),
+        Arguments.of("", "Không xác định"));
   }
 }
