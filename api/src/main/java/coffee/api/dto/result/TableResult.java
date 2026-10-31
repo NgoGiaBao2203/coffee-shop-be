@@ -1,27 +1,27 @@
 package coffee.api.dto.result;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class TableResult {
-  @JsonProperty("table_id")
   private UUID tableId;
-
-  @JsonProperty("table_number")
+  private UUID shopId;
+  private String shopName;
   private Integer tableNumber;
-
-  @JsonProperty("description")
   private String description;
-
-  @JsonProperty("status")
   private Integer status;
-
-  @JsonProperty("status_name")
   private String statusName;
+
+  // Audit timestamps - strictly nullified for STAFF
+  private String createdAt;
+  private String updatedAt;
 }

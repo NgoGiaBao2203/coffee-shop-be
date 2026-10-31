@@ -57,6 +57,8 @@ public interface CommonMapper {
       @Param("currentUserRoleName") String currentUserRoleName,
       @Param("currentUserShopId") UUID currentUserShopId);
 
+  Boolean checkTableExistsInShop(@Param("tableId") UUID tableId, @Param("shopId") UUID shopId);
+
   Boolean checkTableNumberExisted(
       @Param("tableId") UUID tableId,
       @Param("tableNumber") Integer tableNumber,

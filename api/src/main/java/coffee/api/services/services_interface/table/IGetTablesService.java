@@ -7,5 +7,8 @@ import java.util.UUID;
 
 public interface IGetTablesService {
   PageResponse<TableResult> process(
-      SearchTablesRequest request, String currentUserRoleName, UUID currentUserId);
+      SearchTablesRequest request,
+      String currentUserRoleName,
+      UUID currentUserShopId,
+      UUID currentUserId);
 }

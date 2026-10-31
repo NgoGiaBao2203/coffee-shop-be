@@ -1,46 +1,49 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE mapper
-  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="coffee.api.mapper.GetTablesMapper">
 
-  <!-- Reusable Result Map -->
   <resultMap id="TableResultMap" type="coffee.api.dto.result.TableResult">
     <id property="tableId" column="table_id"/>
+    <result property="shopId" column="shop_id"/>
+    <result property="shopName" column="shop_name"/>
     <result property="tableNumber" column="table_number"/>
     <result property="description" column="description"/>
     <result property="status" column="status"/>
+    <result property="createdAt" column="created_at"/>
+    <result property="updatedAt" column="updated_at"/>
   </resultMap>
 
-  <!-- Reusable SQL Fragment for filtering -->
   <sql id="tablesFilterCondition">
-    <!-- Exclude soft-deleted tables -->
     st.is_deleted = false
+    AND st.deleted_at IS NULL
+    AND s.deleted_at IS NULL
 
-    <!-- Role-based shop constraint -->
     <choose>
-      <!-- OWNER: Can view all tables from all shops -->
+      <!-- OWNER: Can view all tables or filter by shopId -->
       <when test="currentUserRoleName == 'OWNER'">
-        <!-- No shop restriction for OWNER -->
+        <if test="shopId != null">
+          AND st.shop_id = #{shopId}
+        </if>
       </when>
 
-      <!-- MANAGER/STAFF: Only tables from shops where user has access -->
+      <!-- MANAGER and STAFF: Strictly restricted to their assigned shop -->
+      <when test="currentUserRoleName == 'MANAGER' or currentUserRoleName == 'STAFF'">
+        AND st.shop_id = #{currentUserShopId}
+      </when>
+
       <otherwise>
-        AND st.shop_id IN (
-          SELECT ps.shop_id
-          FROM profile_shops ps
-          WHERE ps.profile_id = #{currentUserId}
-        )
+        AND 1 = 0
       </otherwise>
     </choose>
 
-    <!-- Status filter -->
+    <!-- Filter by status -->
     <if test="status != null">
       AND st.status = #{status}
     </if>
 
-    <!-- Text Search Constraints -->
+    <!-- Search by table number or description -->
     <if test="search != null and search != ''">
       AND (
         CAST(st.table_number AS VARCHAR) ILIKE CONCAT('%', #{search}, '%')
@@ -49,14 +52,18 @@
     </if>
   </sql>
 
-  <!-- 1. Fetch filtered and paginated tables -->
   <select id="getTablesFiltered" resultMap="TableResultMap">
     SELECT
       st.table_id,
+      st.shop_id,
+      s.shop_name,
       st.table_number,
       st.description,
-      st.status
+      st.status,
+      TO_CHAR(st.created_at, 'YYYY-MM-DD"T"HH24:MI:SS') AS created_at,
+      TO_CHAR(st.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS') AS updated_at
     FROM shop_tables st
+    JOIN shops s ON s.shop_id = st.shop_id
     <where>
       <include refid="tablesFilterCondition"/>
     </where>
@@ -78,10 +85,10 @@
     LIMIT #{size} OFFSET #{offset}
   </select>
 
-  <!-- 2. Count total matches -->
   <select id="countTablesFiltered" resultType="long">
     SELECT COUNT(*)
     FROM shop_tables st
+    JOIN shops s ON s.shop_id = st.shop_id
     <where>
       <include refid="tablesFilterCondition"/>
     </where>

@@ -1,61 +1,70 @@
 package coffee.api.services.services_implement.table;
 
 import coffee.api.dto.request.table.CreateTablesRequest;
-import coffee.api.enums.Roles;
-import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.exceptions.InvalidRequestException;
 import coffee.api.mapper.CommonMapper;
 import coffee.api.mapper.CreateTablesMapper;
+import coffee.api.services.services_implement.table.common.TableValidator;
 import coffee.api.services.services_interface.table.ICreateTablesService;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 public class CreateTablesServiceImpl implements ICreateTablesService {
+
   private final CommonMapper commonMapper;
   private final CreateTablesMapper createTablesMapper;
+  private final TableValidator tableValidator;
 
   @Override
+  @Transactional(rollbackFor = Exception.class)
   public void process(
-      CreateTablesRequest request, String currentUserRoleName, UUID currentUserShopId) {
-    // Validate role - only OWNER and MANAGER can create tables
-    if (!Roles.OWNER.getValue().equals(currentUserRoleName)
-        && !Roles.MANAGER.getValue().equals(currentUserRoleName)) {
-      throw new InvalidRequestException("Only OWNER and MANAGER can create tables");
-    }
+      CreateTablesRequest request,
+      UUID currentUserId,
+      String currentUserRoleName,
+      UUID currentUserShopId) {
 
-    // Validate shop ID for MANAGER
-    if (Roles.MANAGER.getValue().equals(currentUserRoleName)) {
-      if (!currentUserShopId.equals(request.getShopId())) {
-        throw new InvalidRequestException("Shop Ids are not match profile");
-      }
-    }
+    // 1 & 2. Verify request and table number validity
+    validateRequest(request);
 
-    // Check if shop exists
-    Boolean isShopExisted = commonMapper.checkShopExisted(request.getShopId());
-    if (!isShopExisted) {
-      throw new DataNotFoundException("Data not found", request.getShopId());
-    }
+    // 3. Verify shop exists
+    tableValidator.validateShopExists(request.getShopId());
 
-    // Check if table number already exists in the shop
-    Boolean isTableNumberExisted =
-        createTablesMapper.checkTableNumberExisted(request.getShopId(), request.getTableNumber());
+    // 4. Verify authorization and active assignment for MANAGER
+    tableValidator.verifyManagerAuthorization(
+        currentUserId, currentUserRoleName, currentUserShopId, request.getShopId());
+
+    // 5. Trim description and sanitize input
+    request.setDescription(tableValidator.sanitizeDescription(request.getDescription()));
+
+    // 6. Verify table number uniqueness in shop
+    verifyTableNumberUniqueness(
+        request.getTableNumber(), request.getShopId(), currentUserRoleName, currentUserShopId);
+
+    // 7. Insert new table record
+    createTablesMapper.createTable(request, currentUserRoleName, currentUserShopId);
+  }
+
+  private void validateRequest(CreateTablesRequest request) {
+    if (request == null || request.getShopId() == null) {
+      throw new InvalidRequestException("Shop ID is required");
+    }
+    if (request.getTableNumber() == null || request.getTableNumber() <= 0) {
+      throw new InvalidRequestException("Table number must be greater than 0");
+    }
+  }
+
+  private void verifyTableNumberUniqueness(
+      Integer tableNumber, UUID shopId, String currentUserRoleName, UUID currentUserShopId) {
+
+    boolean isTableNumberExisted =
+        commonMapper.checkTableNumberExisted(
+            null, tableNumber, shopId, currentUserRoleName, currentUserShopId);
     if (isTableNumberExisted) {
       throw new InvalidRequestException("Table number already exists in this shop");
     }
-
-    // Validate status
-    if (request.getStatus() == null || request.getStatus() < 1 || request.getStatus() > 3) {
-      throw new InvalidRequestException(
-          "Status must be 1 (available), 2 (occupied), or 3 (reserved)");
-    }
-
-    createTablesMapper.createTable(
-        request.getTableNumber(),
-        request.getDescription(),
-        request.getStatus(),
-        request.getShopId());
   }
 }

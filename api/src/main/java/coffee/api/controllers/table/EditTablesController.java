@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class EditTablesController {
   private final IEditTablesService editTablesService;
 
-  @PutMapping("table/update")
+  @PutMapping("table/edit")
   @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
   public ResponseEntity<EditTablesResponse> editTable(
       @AuthenticationPrincipal CustomUserDetail customUserDetail,
