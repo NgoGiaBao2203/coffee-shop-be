@@ -5,6 +5,24 @@
 
 <mapper namespace="coffee.api.mapper.EditTablesMapper">
 
+  <!-- Shared conditions for active unpaid invoices -->
+  <sql id="activePendingInvoiceConditions">
+    AND inv.status = 0
+    AND inv.deleted_at IS NULL
+    AND inv.is_deleted = FALSE
+  </sql>
+
+  <!-- 1. Check whether the table has active unpaid invoices -->
+  <select id="hasPendingInvoicesByTable" resultType="boolean">
+    SELECT EXISTS (
+      SELECT 1
+      FROM invoices inv
+      WHERE inv.table_id = #{tableId}
+      <include refid="activePendingInvoiceConditions"/>
+    )
+  </select>
+
+  <!-- 2. Block available or reserved status while unpaid invoices exist -->
   <update id="updateTable">
     UPDATE shop_tables
     SET
@@ -15,6 +33,15 @@
     WHERE table_id = #{request.tableId}
     AND shop_id = #{request.shopId}
     AND is_deleted = false
+    AND (
+      #{request.status} = 2
+      OR NOT EXISTS (
+        SELECT 1
+        FROM invoices inv
+        WHERE inv.table_id = shop_tables.table_id
+        <include refid="activePendingInvoiceConditions"/>
+      )
+    )
     <choose>
       <!-- OWNER can update any table -->
       <when test="currentUserRoleName == 'OWNER'">

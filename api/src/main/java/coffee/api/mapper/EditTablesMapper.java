@@ -7,6 +7,8 @@ import org.apache.ibatis.annotations.Param;
 
 @Mapper
 public interface EditTablesMapper {
+  boolean hasPendingInvoicesByTable(@Param("tableId") UUID tableId);
+
   int updateTable(
       @Param("request") EditTablesRequest request,
       @Param("currentUserRoleName") String currentUserRoleName,

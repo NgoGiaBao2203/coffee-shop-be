@@ -161,7 +161,63 @@ class EditTablesServiceImplTest {
   }
 
   @Test
-  void process_Success_TrimsDescriptionCorrectly_TC003() {
+  void process_Success_WhenTableIsSetToOccupiedWithPendingInvoices_TC003() {
+    validRequest.setStatus(2);
+    when(commonMapper.checkShopExisted(validRequest.getShopId())).thenReturn(true);
+    when(commonMapper.checkTableExisted(validRequest.getTableId(), ownerRole, currentUserShopId))
+        .thenReturn(true);
+    when(commonMapper.checkTableExistsInShop(validRequest.getTableId(), validRequest.getShopId()))
+        .thenReturn(true);
+    when(commonMapper.checkTableNumberExisted(
+            validRequest.getTableId(),
+            validRequest.getTableNumber(),
+            validRequest.getShopId(),
+            ownerRole,
+            currentUserShopId))
+        .thenReturn(false);
+    when(editTablesMapper.updateTable(validRequest, ownerRole, currentUserShopId)).thenReturn(1);
+
+    assertDoesNotThrow(
+        () -> editTablesService.process(validRequest, ownerRole, currentUserId, currentUserShopId));
+
+    verify(editTablesMapper).updateTable(validRequest, ownerRole, currentUserShopId);
+    verify(editTablesMapper, never()).hasPendingInvoicesByTable(any());
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {1, 3})
+  void process_ThrowsInvalidRequestException_WhenPendingInvoicePreventsTableStatusChange_TC004(
+      int status) {
+    validRequest.setStatus(status);
+    when(commonMapper.checkShopExisted(validRequest.getShopId())).thenReturn(true);
+    when(commonMapper.checkTableExisted(validRequest.getTableId(), ownerRole, currentUserShopId))
+        .thenReturn(true);
+    when(commonMapper.checkTableExistsInShop(validRequest.getTableId(), validRequest.getShopId()))
+        .thenReturn(true);
+    when(commonMapper.checkTableNumberExisted(
+            validRequest.getTableId(),
+            validRequest.getTableNumber(),
+            validRequest.getShopId(),
+            ownerRole,
+            currentUserShopId))
+        .thenReturn(false);
+    when(editTablesMapper.updateTable(validRequest, ownerRole, currentUserShopId)).thenReturn(0);
+    when(editTablesMapper.hasPendingInvoicesByTable(validRequest.getTableId())).thenReturn(true);
+
+    InvalidRequestException exception =
+        assertThrows(
+            InvalidRequestException.class,
+            () ->
+                editTablesService.process(
+                    validRequest, ownerRole, currentUserId, currentUserShopId));
+
+    assertEquals(
+        "Can not change table status while pending invoices exist", exception.getMessage());
+    verify(editTablesMapper).hasPendingInvoicesByTable(validRequest.getTableId());
+  }
+
+  @Test
+  void process_Success_TrimsDescriptionCorrectly_TC005() {
     validRequest.setDescription("   Bàn VIP gần cửa sổ   ");
 
     when(commonMapper.checkShopExisted(validRequest.getShopId())).thenReturn(true);
@@ -188,7 +244,7 @@ class EditTablesServiceImplTest {
   }
 
   @Test
-  void process_Success_WhenDescriptionIsNull_TC004() {
+  void process_Success_WhenDescriptionIsNull_TC006() {
     validRequest.setDescription(null);
 
     when(commonMapper.checkShopExisted(validRequest.getShopId())).thenReturn(true);
@@ -217,7 +273,7 @@ class EditTablesServiceImplTest {
   @ParameterizedTest
   @NullSource
   @ValueSource(strings = {"", "   ", "\t"})
-  void process_NormalizesBlankDescriptionBeforeSaving_TC005(String description) {
+  void process_NormalizesBlankDescriptionBeforeSaving_TC007(String description) {
     validRequest.setDescription(description);
     when(commonMapper.checkShopExisted(validRequest.getShopId())).thenReturn(true);
     when(commonMapper.checkTableExisted(validRequest.getTableId(), ownerRole, currentUserShopId))
@@ -237,7 +293,7 @@ class EditTablesServiceImplTest {
   // =========================================================================
 
   @Test
-  void process_ThrowsInvalidRequestException_WhenRequestIsNull_TC006() {
+  void process_ThrowsInvalidRequestException_WhenRequestIsNull_TC008() {
     InvalidRequestException exception =
         assertThrows(
             InvalidRequestException.class,
@@ -249,7 +305,7 @@ class EditTablesServiceImplTest {
   }
 
   @Test
-  void process_ThrowsInvalidRequestException_WhenShopIdIsNull_TC007() {
+  void process_ThrowsInvalidRequestException_WhenShopIdIsNull_TC009() {
     validRequest.setShopId(null);
 
     InvalidRequestException exception =
@@ -265,7 +321,7 @@ class EditTablesServiceImplTest {
   }
 
   @Test
-  void process_ThrowsInvalidRequestException_WhenTableIdIsNull_TC008() {
+  void process_ThrowsInvalidRequestException_WhenTableIdIsNull_TC010() {
     validRequest.setTableId(null);
 
     InvalidRequestException exception =
@@ -281,7 +337,7 @@ class EditTablesServiceImplTest {
   }
 
   @Test
-  void process_ThrowsInvalidRequestException_WhenTableNumberIsNull_TC009() {
+  void process_ThrowsInvalidRequestException_WhenTableNumberIsNull_TC011() {
     validRequest.setTableNumber(null);
 
     InvalidRequestException exception =
@@ -298,7 +354,7 @@ class EditTablesServiceImplTest {
 
   @ParameterizedTest
   @ValueSource(ints = {0, -1})
-  void process_ThrowsInvalidRequestException_WhenTableNumberIsZeroOrNegative_TC010(
+  void process_ThrowsInvalidRequestException_WhenTableNumberIsZeroOrNegative_TC012(
       int tableNumber) {
     validRequest.setTableNumber(tableNumber);
 
@@ -314,7 +370,7 @@ class EditTablesServiceImplTest {
   }
 
   @Test
-  void process_ThrowsDataNotFoundException_WhenShopDoesNotExist_TC011() {
+  void process_ThrowsDataNotFoundException_WhenShopDoesNotExist_TC013() {
     when(commonMapper.checkShopExisted(validRequest.getShopId())).thenReturn(false);
 
     DataNotFoundException exception =
@@ -335,7 +391,7 @@ class EditTablesServiceImplTest {
   }
 
   @Test
-  void process_ThrowsInvalidRequestException_WhenManagerIsNotAssignedToAnyShop_TC012() {
+  void process_ThrowsInvalidRequestException_WhenManagerIsNotAssignedToAnyShop_TC014() {
     when(commonMapper.checkShopExisted(validRequest.getShopId())).thenReturn(true);
 
     InvalidRequestException exception =
@@ -351,7 +407,7 @@ class EditTablesServiceImplTest {
   }
 
   @Test
-  void process_ThrowsInvalidRequestException_WhenManagerShopIdMismatchesRequestShopId_TC013() {
+  void process_ThrowsInvalidRequestException_WhenManagerShopIdMismatchesRequestShopId_TC015() {
     UUID differentShopId = UUID.fromString("00000000-0000-0000-0000-000000000705");
     validRequest.setShopId(differentShopId);
 
@@ -373,7 +429,7 @@ class EditTablesServiceImplTest {
   }
 
   @Test
-  void process_ThrowsInvalidRequestException_WhenManagerShopMembershipInactive_TC014() {
+  void process_ThrowsInvalidRequestException_WhenManagerShopMembershipInactive_TC016() {
     when(commonMapper.checkShopExisted(validRequest.getShopId())).thenReturn(true);
     when(commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId)).thenReturn(false);
 
@@ -393,7 +449,7 @@ class EditTablesServiceImplTest {
   }
 
   @Test
-  void process_ThrowsDataNotFoundException_WhenTableDoesNotExist_TC015() {
+  void process_ThrowsDataNotFoundException_WhenTableDoesNotExist_TC017() {
     when(commonMapper.checkShopExisted(validRequest.getShopId())).thenReturn(true);
     when(commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId)).thenReturn(true);
     when(commonMapper.checkTableExisted(validRequest.getTableId(), managerRole, currentUserShopId))
@@ -419,7 +475,7 @@ class EditTablesServiceImplTest {
   }
 
   @Test
-  void process_ThrowsInvalidRequestException_WhenTableDoesNotBelongToShopBranch_TC016() {
+  void process_ThrowsInvalidRequestException_WhenTableDoesNotBelongToShopBranch_TC018() {
     when(commonMapper.checkShopExisted(validRequest.getShopId())).thenReturn(true);
     when(commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId)).thenReturn(true);
     when(commonMapper.checkTableExisted(validRequest.getTableId(), managerRole, currentUserShopId))
@@ -447,7 +503,7 @@ class EditTablesServiceImplTest {
   }
 
   @Test
-  void process_ThrowsInvalidRequestWithErrorDetailsException_WhenTableNumberAlreadyExists_TC017() {
+  void process_ThrowsInvalidRequestWithErrorDetailsException_WhenTableNumberAlreadyExists_TC019() {
     when(commonMapper.checkShopExisted(validRequest.getShopId())).thenReturn(true);
     when(commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId)).thenReturn(true);
     when(commonMapper.checkTableExisted(validRequest.getTableId(), managerRole, currentUserShopId))
@@ -480,7 +536,7 @@ class EditTablesServiceImplTest {
   }
 
   @Test
-  void process_ThrowsDataNotFoundException_WhenAffectedRowsIsZero_TC018() {
+  void process_ThrowsDataNotFoundException_WhenAffectedRowsIsZero_TC020() {
     when(commonMapper.checkShopExisted(validRequest.getShopId())).thenReturn(true);
     when(commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId)).thenReturn(true);
     when(commonMapper.checkTableExisted(validRequest.getTableId(), managerRole, currentUserShopId))
@@ -515,7 +571,7 @@ class EditTablesServiceImplTest {
   // =========================================================================
 
   @Test
-  void process_ThrowsDataAccessException_WhenDatabaseUpdateFails_TC019() {
+  void process_ThrowsDataAccessException_WhenDatabaseUpdateFails_TC021() {
     when(commonMapper.checkShopExisted(validRequest.getShopId())).thenReturn(true);
     when(commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId)).thenReturn(true);
     when(commonMapper.checkTableExisted(validRequest.getTableId(), managerRole, currentUserShopId))
@@ -548,7 +604,7 @@ class EditTablesServiceImplTest {
 
   @ParameterizedTest
   @ValueSource(ints = {0, 1, 2, 3, 4})
-  void process_StopsBeforeUpdateWhenValidationQueryFails_TC020(int failureStage) {
+  void process_StopsBeforeUpdateWhenValidationQueryFails_TC022(int failureStage) {
     UUID shopId = validRequest.getShopId();
     UUID tableId = validRequest.getTableId();
     DataAccessException failure = new DataAccessException("Validation query failed") {};
@@ -592,20 +648,20 @@ class EditTablesServiceImplTest {
   // =========================================================================
 
   @Test
-  void requestValidation_Success_WhenAllFieldsAreValid_TC021() {
+  void requestValidation_Success_WhenAllFieldsAreValid_TC023() {
     Set<ConstraintViolation<EditTablesRequest>> violations = validator.validate(validRequest);
     assertEquals(0, violations.size());
   }
 
   @Test
-  void requestValidation_Success_WhenDescriptionIsNull_TC022() {
+  void requestValidation_Success_WhenDescriptionIsNull_TC024() {
     validRequest.setDescription(null);
     Set<ConstraintViolation<EditTablesRequest>> violations = validator.validate(validRequest);
     assertEquals(0, violations.size());
   }
 
   @Test
-  void requestValidation_Success_WhenDescriptionContainsVietnameseAndAllowedCharacters_TC023() {
+  void requestValidation_Success_WhenDescriptionContainsVietnameseAndAllowedCharacters_TC025() {
     validRequest.setDescription("Bàn VIP (Cửa Sổ) & Ban Công - Tầng 2, Khu B. 'Espresso'");
     Set<ConstraintViolation<EditTablesRequest>> violations = validator.validate(validRequest);
     assertEquals(0, violations.size());
@@ -613,7 +669,7 @@ class EditTablesServiceImplTest {
 
   @ParameterizedTest
   @ValueSource(ints = {1, 2, 3})
-  void requestValidation_Success_WhenStatusIsWithinRange_TC024(int status) {
+  void requestValidation_Success_WhenStatusIsWithinRange_TC026(int status) {
     validRequest.setStatus(status);
 
     assertEquals(0, validator.validate(validRequest).size());
@@ -621,14 +677,14 @@ class EditTablesServiceImplTest {
 
   @ParameterizedTest
   @ValueSource(ints = {1, 9999})
-  void requestValidation_Success_WhenTableNumberIsBoundaryValue_TC025(int tableNumber) {
+  void requestValidation_Success_WhenTableNumberIsBoundaryValue_TC027(int tableNumber) {
     validRequest.setTableNumber(tableNumber);
 
     assertEquals(0, validator.validate(validRequest).size());
   }
 
   @Test
-  void requestValidation_AcceptsMaximumDescriptionLength_TC026() {
+  void requestValidation_AcceptsMaximumDescriptionLength_TC028() {
     validRequest.setDescription("A".repeat(255));
 
     assertEquals(0, validator.validate(validRequest).size());
@@ -639,20 +695,20 @@ class EditTablesServiceImplTest {
   // =========================================================================
 
   @Test
-  void requestValidation_Fails_WhenTableIdIsNull_TC027() {
+  void requestValidation_Fails_WhenTableIdIsNull_TC029() {
     validRequest.setTableId(null);
     assertSingleViolation("tableId", ValidationMessage.Msg.FIELD_REQUIRED);
   }
 
   @Test
-  void requestValidation_Fails_WhenShopIdIsNull_TC028() {
+  void requestValidation_Fails_WhenShopIdIsNull_TC030() {
     validRequest.setShopId(null);
     assertSingleViolation("shopId", ValidationMessage.Msg.FIELD_REQUIRED);
   }
 
   @ParameterizedTest
   @MethodSource("invalidTableNumberCases")
-  void requestValidation_RejectsInvalidTableNumber_TC029(Integer value, String expectedMessage) {
+  void requestValidation_RejectsInvalidTableNumber_TC031(Integer value, String expectedMessage) {
     validRequest.setTableNumber(value);
 
     assertSingleViolation("tableNumber", expectedMessage);
@@ -660,7 +716,7 @@ class EditTablesServiceImplTest {
 
   @ParameterizedTest
   @MethodSource("invalidStatusCases")
-  void requestValidation_RejectsInvalidStatus_TC030(Integer value, String expectedMessage) {
+  void requestValidation_RejectsInvalidStatus_TC032(Integer value, String expectedMessage) {
     validRequest.setStatus(value);
 
     assertSingleViolation("status", expectedMessage);
@@ -668,14 +724,14 @@ class EditTablesServiceImplTest {
 
   @ParameterizedTest
   @MethodSource("invalidDescriptionCases")
-  void requestValidation_RejectsInvalidDescription_TC031(String value, String expectedMessage) {
+  void requestValidation_RejectsInvalidDescription_TC033(String value, String expectedMessage) {
     validRequest.setDescription(value);
 
     assertSingleViolation("description", expectedMessage);
   }
 
   @Test
-  void requestValidation_Fails_WhenAllFieldsAreNull_TC032() {
+  void requestValidation_Fails_WhenAllFieldsAreNull_TC034() {
     EditTablesRequest emptyRequest = new EditTablesRequest();
     emptyRequest.setTableId(null);
     emptyRequest.setShopId(null);
