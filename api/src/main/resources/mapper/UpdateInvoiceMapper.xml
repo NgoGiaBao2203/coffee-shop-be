@@ -2,83 +2,36 @@
 <!DOCTYPE mapper
   PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-
 <mapper namespace="coffee.api.mapper.UpdateInvoiceMapper">
 
+  <!-- 1. Lock invoice so edits, payment and cancellation cannot overwrite each other -->
   <select id="findInvoiceById" resultType="coffee.api.dto.result.InvoiceResult">
-    SELECT
-    i.invoice_id AS invoiceId,
-    i.shop_id AS shopId,
-    i.table_number AS tableNumber,
-    i.total_amount AS totalAmount,
-    i.status::text AS status,
-    i.is_deleted AS isDeleted,
-    i.created_at AS createdAt,
-    i.update_at AS updateAt
-    FROM invoices i
-    WHERE i.invoice_id = #{invoiceId}
-    AND i.is_deleted = FALSE
+    <include refid="coffee.api.mapper.CommonMapper.lockInvoiceSql"/>
   </select>
 
-  <select id="isInvoiceCreatedBy" resultType="boolean">
-    SELECT EXISTS (
-      SELECT 1
-      FROM invoices
-      WHERE invoice_id = #{invoiceId}
-      AND profile_id = #{profileId}
-      AND is_deleted = FALSE
-    )
+  <!-- 2. Validate and lock the current occupied table -->
+  <select id="lockOccupiedTable" resultType="java.util.UUID">
+    <include refid="coffee.api.mapper.CommonMapper.lockOccupiedInvoiceTableSql"/>
   </select>
 
+  <!-- 3. Only an active unpaid invoice in the validated shop can be edited -->
   <update id="updateInvoice">
-    <!-- Update invoices table with role checking and status constraint -->
     UPDATE invoices
-    <set>
-      table_number = #{tableNumber},
-      total_amount = #{totalAmount},
-      update_at = NOW()
-    </set>
+    SET table_id = #{tableId}, total_amount = #{totalAmount}, update_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh'
     WHERE invoice_id = #{invoiceId}
+    AND shop_id = #{shopId}
+    AND deleted_at IS NULL
     AND is_deleted = FALSE
     AND status = 0
-
-    <choose>
-      <when test="currentUserRoleName == 'OWNER'">
-        <!-- OWNER can update invoices in every shop. -->
-      </when>
-      <when test="currentUserRoleName == 'MANAGER' or currentUserRoleName == 'STAFF'">
-        AND shop_id = #{currentUserShopId}
-      </when>
-      <otherwise>
-        AND 1 = 0
-      </otherwise>
-    </choose>
   </update>
 
+  <!-- 4. Release the old table after the invoice has moved -->
+  <update id="releaseTable">
+    <include refid="coffee.api.mapper.CommonMapper.releaseInvoiceTableSql"/>
+  </update>
+
+  <!-- 5. Replace the details within the same transaction -->
   <delete id="deleteInvoiceDetails">
-    DELETE FROM invoice_details
-    WHERE invoice_id = #{invoiceId}
+    DELETE FROM invoice_details WHERE invoice_id = #{invoiceId}
   </delete>
-
-  <insert id="batchInsertInvoiceDetails">
-    INSERT INTO invoice_details (
-    invoice_detail_id,
-    invoice_id,
-    drink_detail_id,
-    quantity,
-    unit_price,
-    note
-    ) VALUES
-    <foreach collection="items" item="item" separator=",">
-      (
-      gen_random_uuid(),
-      #{invoiceId},
-      #{item.drinkDetailId},
-      #{item.quantity},
-      #{item.unitPrice},
-      #{item.note}
-      )
-    </foreach>
-  </insert>
-
 </mapper>

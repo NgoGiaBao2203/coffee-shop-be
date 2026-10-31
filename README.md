@@ -1,4 +1,3 @@
-
 # Coffee Shop — Backend
 
 Spring Boot + Java REST API for the Coffee Shop management system, covering shops, staff, drinks, categories, tables, invoices, and revenue reports.
@@ -227,14 +226,14 @@ See [Supabase Storage Setup](api/SUPABASE_STORAGE_SETUP.md) for additional stora
 
 The REST API uses the `/api` servlet prefix. Requests and responses use JSON, except drink image uploads, which use `multipart/form-data`. The table below lists the current HTTP methods and endpoint paths; search endpoints such as `/api/drinks` accept a JSON search body through `POST`.
 
-| Operation               | Example                                         | Request format                                                      |
-| ----------------------- | ----------------------------------------------- | ------------------------------------------------------------------- |
-| Retrieve shops          | `GET /api/shops`                                | No request body; `OWNER` role                                       |
-| Search drinks           | `POST /api/drinks`                              | JSON search DTO                                                     |
-| Retrieve drink details  | `GET /api/drink/detail/{drinkId}`               | Path parameter                                                      |
-| Create / edit a drink   | `POST /api/drink/create`, `PUT /api/drink/edit` | `multipart/form-data`: JSON part `data`, optional file part `image` |
-| Create an invoice       | `POST /api/invoice/create`                      | JSON request DTO                                                    |
-| Pay / cancel an invoice | `PUT /api/invoice/status`                       | JSON request DTO                                                    |
+| Operation               | Example                                           | Request format                                                      |
+| ----------------------- | ------------------------------------------------- | ------------------------------------------------------------------- |
+| Retrieve shops          | `GET /api/shops`                                  | No request body; `OWNER` role                                       |
+| Search drinks           | `POST /api/drinks`                                | JSON search DTO                                                     |
+| Retrieve drink details  | `GET /api/drink/detail/{drinkId}`                 | Path parameter                                                      |
+| Create / edit a drink   | `POST /api/drink/create`, `PUT /api/drink/edit`   | `multipart/form-data`: JSON part `data`, optional file part `image` |
+| Create an invoice       | `POST /api/invoice/create`                        | JSON request DTO                                                    |
+| Pay / cancel an invoice | `PUT /api/invoice/status` | JSON request DTO                                                    |
 
 ---
 

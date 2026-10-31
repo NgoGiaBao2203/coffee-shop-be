@@ -5,13 +5,64 @@
 
 <mapper namespace="coffee.api.mapper.CreateInvoiceMapper">
 
-  <!-- Insert parent invoice -->
+  <!-- 1. Get current prices for active drink details in shop -->
+  <select id="getSellableDrinkPrices" resultType="coffee.api.dto.result.DrinkDetailPriceResult">
+    SELECT dd.drink_detail_id AS drinkDetailId, dd.price
+    FROM drink_details dd
+    INNER JOIN drinks d ON d.drink_id = dd.drink_id
+    INNER JOIN drink_categories dc ON dc.drink_category_id = d.drink_category_id
+    WHERE dd.drink_detail_id IN
+    <foreach collection="drinkDetailIds" item="drinkDetailId" open="(" separator="," close=")">
+      #{drinkDetailId}
+    </foreach>
+    AND dd.price >= 0
+    AND dd.deleted_at IS NULL
+    AND d.deleted_at IS NULL
+    AND d.is_deleted = FALSE
+    AND d.status = 1
+    AND d.shop_id = #{shopId}
+    AND dc.deleted_at IS NULL
+    AND dc.is_deleted = FALSE
+    AND dc.shop_id = #{shopId}
+  </select>
+
+  <!-- 2. Check if available table belongs to shop -->
+  <select id="checkTableAvailableInShop" resultType="boolean">
+    SELECT EXISTS (
+    SELECT 1 FROM shop_tables
+    WHERE table_id = #{tableId}
+    AND shop_id = #{shopId}
+    AND deleted_at IS NULL
+    AND is_deleted = FALSE
+    AND status = 1
+    )
+  </select>
+
+  <!-- Claim only an available table. The update also serializes competing requests. -->
+  <update id="occupyTable">
+    UPDATE shop_tables
+    SET status = 2, updated_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh'
+    WHERE table_id = #{tableId}
+    AND shop_id = #{shopId}
+    AND deleted_at IS NULL
+    AND is_deleted = FALSE
+    AND status = 1
+    AND NOT EXISTS (
+      SELECT 1 FROM invoices i
+      WHERE i.table_id = #{tableId}
+      AND i.status = 0
+      AND i.deleted_at IS NULL
+      AND i.is_deleted = FALSE
+    )
+  </update>
+
+  <!-- 3. Insert parent invoice -->
   <insert id="insertInvoice">
     INSERT INTO invoices (
     invoice_id,
     shop_id,
     profile_id,
-    table_number,
+    table_id,
     total_amount,
     status,
     created_at,
@@ -20,7 +71,7 @@
     #{invoiceId},
     #{shopId},
     #{profileId},
-    #{tableNumber},
+    #{tableId},
     #{totalAmount},
     #{status},
     NOW(),
@@ -28,7 +79,7 @@
     )
   </insert>
 
-  <!-- Batch insert invoice items -->
+  <!-- 4. Batch insert invoice items -->
   <insert id="insertInvoiceDetails">
     INSERT INTO invoice_details (
     invoice_detail_id,

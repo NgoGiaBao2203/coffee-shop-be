@@ -1,5 +1,6 @@
 package coffee.api.dto.result;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -11,6 +12,8 @@ public class InvoiceResult {
 
   private UUID invoiceId;
   private UUID shopId;
+  private UUID tableId;
+  @JsonIgnore private UUID profileId;
   private String shopName;
   private String staffName;
   private Integer tableNumber;
@@ -25,6 +28,7 @@ public class InvoiceResult {
   @Data
   public static class InvoiceItemResult {
     private UUID invoiceDetailId;
+    private UUID drinkDetailId;
     private UUID drinkId;
     private String drinkName;
     private String size;

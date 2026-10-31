@@ -15,10 +15,12 @@ public class EditInvoiceRequest {
   private UUID invoiceId;
 
   @NotNull(message = ValidationMessage.Msg.FIELD_REQUIRED)
-  private Integer tableNumber;
+  private UUID shopId;
 
   @NotNull(message = ValidationMessage.Msg.FIELD_REQUIRED)
+  private UUID tableId;
+
   @NotEmpty(message = ValidationMessage.Msg.FIELD_REQUIRED)
   @Valid
-  private List<EditInvoiceItemRequest> items;
+  private List<@NotNull(message = ValidationMessage.Msg.FIELD_REQUIRED) InvoiceItemRequest> items;
 }

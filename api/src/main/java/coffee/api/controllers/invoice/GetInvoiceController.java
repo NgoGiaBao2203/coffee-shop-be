@@ -26,6 +26,9 @@ public class GetInvoiceController {
       @RequestBody @Valid SearchInvoiceRequest request) {
 
     return getInvoiceService.process(
-        request, customUserDetail.getRoleName(), customUserDetail.getShopId());
+        request,
+        customUserDetail.getRoleName(),
+        customUserDetail.getShopId(),
+        customUserDetail.getUserId());
   }
 }

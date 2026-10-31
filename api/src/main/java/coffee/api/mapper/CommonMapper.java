@@ -1,11 +1,20 @@
 package coffee.api.mapper;
 
+import coffee.api.dto.result.InvoiceResult;
 import java.util.UUID;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 @Mapper
 public interface CommonMapper {
+
+  InvoiceResult lockInvoice(@Param("invoiceId") UUID invoiceId);
+
+  UUID lockOccupiedInvoiceTable(@Param("tableId") UUID tableId, @Param("shopId") UUID shopId);
+
+  boolean hasUnpaidTableInvoices(@Param("tableId") UUID tableId);
+
+  int releaseInvoiceTable(@Param("tableId") UUID tableId, @Param("shopId") UUID shopId);
 
   boolean checkDrinkNameExisted(
       @Param("drinkId") UUID drinkId,

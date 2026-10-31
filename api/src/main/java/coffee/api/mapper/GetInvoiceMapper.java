@@ -14,7 +14,7 @@ public interface GetInvoiceMapper {
       @Param("sortBy") String sortBy,
       @Param("sortDirection") String sortDirection,
       @Param("size") int size,
-      @Param("offset") int offset,
+      @Param("offset") long offset,
       @Param("currentUserRoleName") String currentUserRoleName,
       @Param("currentUserShopId") UUID currentUserShopId,
       @Param("shopId") UUID shopId,

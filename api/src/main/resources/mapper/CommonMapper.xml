@@ -224,7 +224,74 @@
     )
   </select>
 
-  <!-- 15. Check if drink detail exists in drink -->
+
+  <!-- 15. Shared SQL to lock an active invoice -->
+  <sql id="lockInvoiceSql">
+    SELECT i.invoice_id AS invoiceId, i.shop_id AS shopId,
+      i.table_id AS tableId, i.profile_id AS profileId,
+      i.total_amount AS totalAmount, i.status::text AS status,
+      i.is_deleted AS isDeleted, i.created_at AS createdAt, i.update_at AS updateAt
+    FROM invoices i
+    WHERE i.invoice_id = #{invoiceId}
+    AND i.deleted_at IS NULL
+    AND i.is_deleted = FALSE
+    FOR UPDATE
+  </sql>
+  <!-- 16. Shared SQL to lock an occupied table in the invoice shop -->
+  <sql id="lockOccupiedInvoiceTableSql">
+    SELECT table_id FROM shop_tables
+    WHERE table_id = #{tableId}
+    AND shop_id = #{shopId}
+    AND deleted_at IS NULL
+    AND is_deleted = FALSE
+    AND status = 2
+    FOR UPDATE
+  </sql>
+  <!-- 17. Shared SQL to release a table without unpaid invoices -->
+  <sql id="releaseInvoiceTableSql">
+    UPDATE shop_tables
+    SET status = 1, updated_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh'
+    WHERE table_id = #{tableId}
+    AND shop_id = #{shopId}
+    AND deleted_at IS NULL
+    AND is_deleted = FALSE
+    AND status = 2
+    AND NOT EXISTS (
+      <include refid="coffee.api.mapper.CommonMapper.activeUnpaidTableInvoicesSql"/>
+    )
+  </sql>
+
+  <!-- 18. Lock invoice before changing its status -->
+  <select id="lockInvoice" resultType="coffee.api.dto.result.InvoiceResult">
+    <include refid="lockInvoiceSql"/>
+  </select>
+
+  <!-- 19. Lock the occupied table before updating its invoice -->
+  <select id="lockOccupiedInvoiceTable" resultType="java.util.UUID">
+    <include refid="lockOccupiedInvoiceTableSql"/>
+  </select>
+
+  <!-- 20. Release the table after the invoice is paid or cancelled -->
+  <update id="releaseInvoiceTable">
+    <include refid="releaseInvoiceTableSql"/>
+  </update>
+
+  <!-- 21. Shared SQL for active unpaid invoices on the table -->
+  <sql id="activeUnpaidTableInvoicesSql">
+    SELECT 1 FROM invoices i
+    WHERE i.table_id = #{tableId}
+    AND i.deleted_at IS NULL
+    AND i.is_deleted = FALSE
+    AND i.status = 0
+  </sql>
+
+  <!-- 22. Keep the table occupied when another unpaid invoice remains -->
+  <select id="hasUnpaidTableInvoices" resultType="boolean">
+    SELECT EXISTS (
+      <include refid="coffee.api.mapper.CommonMapper.activeUnpaidTableInvoicesSql"/>
+    )
+  </select>
+  <!-- 23. Check if drink detail exists in drink -->
   <select id="checkDrinkDetailSizeExisted" resultType="boolean">
     SELECT EXISTS (
     SELECT 1
@@ -241,7 +308,7 @@
     )
   </select>
 
-  <!-- 16. Check if table belongs to a specific shop -->
+  <!-- 24. Check if table belongs to a specific shop -->
   <select id="checkTableExistsInShop" resultType="boolean">
     SELECT EXISTS (
     SELECT 1

@@ -5,10 +5,11 @@
 
 <mapper namespace="coffee.api.mapper.GetInvoiceMapper">
 
-  <!-- Result Map matching InvoiceResult and nested items -->
+  <!-- 1. Map invoice fields to InvoiceResult -->
   <resultMap id="InvoiceResultMap" type="coffee.api.dto.result.InvoiceResult">
     <id property="invoiceId" column="invoice_id" javaType="java.util.UUID"/>
     <result property="shopId" column="shop_id" javaType="java.util.UUID"/>
+    <result property="tableId" column="table_id" javaType="java.util.UUID"/>
     <result property="shopName" column="shop_name"/>
     <result property="staffName" column="staff_name"/>
     <result property="tableNumber" column="table_number"/>
@@ -18,9 +19,10 @@
     <result property="updateAt" column="update_at"/>
     <result property="isDeleted" column="is_deleted"/>
 
-    <!-- Nested collection for invoice details -->
+    <!-- 2. Map invoice detail rows to the items collection -->
     <collection property="items" ofType="coffee.api.dto.result.InvoiceResult$InvoiceItemResult">
       <id property="invoiceDetailId" column="invoice_detail_id" javaType="java.util.UUID"/>
+      <result property="drinkDetailId" column="drink_detail_id" javaType="java.util.UUID"/>
       <result property="drinkId" column="drink_id" javaType="java.util.UUID"/>
       <result property="drinkName" column="drink_name"/>
       <result property="size" column="size"/>
@@ -31,91 +33,57 @@
     </collection>
   </resultMap>
 
-  <!-- Reusable Filter Condition Fragment -->
+  <!-- 3. Share active invoice and shop filters between count and list queries -->
   <sql id="invoiceFilterCondition">
-    i.is_deleted = FALSE
+    i.deleted_at IS NULL
+    AND i.is_deleted = FALSE
+    AND s.deleted_at IS NULL
     AND s.is_deleted = FALSE
 
-    <!-- Scoping: MANAGER / STAFF only see invoices from their assigned shop -->
+    <!-- 4. Restrict MANAGER and STAFF to their assigned shop -->
     <if test="currentUserRoleName != 'OWNER'">
       AND i.shop_id = #{currentUserShopId}
     </if>
 
-    <!-- Filter by shopId -->
+    <!-- 5. Filter invoices by the requested shop -->
     <if test="shopId != null">
       AND i.shop_id = #{shopId}
     </if>
 
-    <!-- Filter by status -->
+    <!-- 6. Apply the optional invoice status filter -->
     <if test="status != null">
       AND i.status = #{status}
     </if>
 
-    <!-- Text Search Condition -->
+    <!-- 7. Search invoice ID, shop name, staff name and table number -->
     <if test="search != null and search != ''">
       AND (
       i.invoice_id::text ILIKE CONCAT('%', #{search}, '%')
       OR s.shop_name ILIKE CONCAT('%', #{search}, '%')
       OR p.full_name ILIKE CONCAT('%', #{search}, '%')
-      OR i.table_number::text ILIKE CONCAT('%', #{search}, '%')
+      OR st.table_number::text ILIKE CONCAT('%', #{search}, '%')
       )
     </if>
   </sql>
 
-  <!-- Method: countInvoicesFiltered -->
+  <!-- 8. Count matching invoices before pagination -->
   <select id="countInvoicesFiltered" resultType="long">
     SELECT COUNT(1)
     FROM invoices i
     JOIN shops s ON i.shop_id = s.shop_id
     LEFT JOIN profiles p ON i.profile_id = p.profile_id
+    LEFT JOIN shop_tables st ON st.table_id = i.table_id
     <where>
       <include refid="invoiceFilterCondition"/>
     </where>
   </select>
 
-  <!-- Method: getInvoicesFiltered -->
+  <!-- 9. Fetch invoices and their details -->
   <select id="getInvoicesFiltered" resultMap="InvoiceResultMap">
-    WITH paginated_invoices AS (
-    SELECT
-    i.invoice_id,
-    i.shop_id,
-    s.shop_name,
-    p.full_name AS staff_name,
-    i.table_number,
-    i.total_amount,
-    i.status::text AS status,
-    i.created_at,
-    i.update_at,
-    i.is_deleted
-    FROM invoices i
-    JOIN shops s ON i.shop_id = s.shop_id
-    LEFT JOIN profiles p ON i.profile_id = p.profile_id
-    <where>
-      <include refid="invoiceFilterCondition"/>
-    </where>
-
-    ORDER BY
-    <choose>
-      <when test="sortBy == 'invoiceId'">i.invoice_id</when>
-      <when test="sortBy == 'shopName'">s.shop_name</when>
-      <when test="sortBy == 'staffName'">p.full_name</when>
-      <when test="sortBy == 'tableNumber'">i.table_number</when>
-      <when test="sortBy == 'totalAmount'">i.total_amount</when>
-      <when test="sortBy == 'status'">i.status</when>
-      <when test="sortBy == 'updateAt'">i.update_at</when>
-      <when test="sortBy == 'isDeleted'">i.is_deleted</when>
-      <otherwise>i.created_at</otherwise>
-    </choose>
-    <choose>
-      <when test="sortDirection != null and sortDirection.toUpperCase() == 'ASC'">ASC</when>
-      <otherwise>DESC</otherwise>
-    </choose>
-
-    LIMIT #{size} OFFSET #{offset}
-    )
     SELECT
     pi.invoice_id,
     pi.shop_id,
+    pi.table_id,
     pi.shop_name,
     pi.staff_name,
     pi.table_number,
@@ -125,6 +93,7 @@
     pi.update_at,
     pi.is_deleted,
     id.invoice_detail_id,
+    id.drink_detail_id,
     dd.drink_id,
     d.drink_name,
     dd.size,
@@ -132,10 +101,53 @@
     id.unit_price,
     (id.unit_price * id.quantity) AS item_total,
     id.note
-    FROM paginated_invoices pi
+    <!-- 10. Sort and paginate invoices in a subquery before joining their detail rows -->
+    FROM (
+      SELECT
+      i.invoice_id,
+      i.shop_id,
+      i.table_id,
+      s.shop_name,
+      p.full_name AS staff_name,
+      st.table_number,
+      i.total_amount,
+      i.status::text AS status,
+      i.created_at,
+      i.update_at,
+      i.is_deleted
+      FROM invoices i
+      JOIN shops s ON i.shop_id = s.shop_id
+      LEFT JOIN profiles p ON i.profile_id = p.profile_id
+      LEFT JOIN shop_tables st ON st.table_id = i.table_id
+      <where>
+        <include refid="invoiceFilterCondition"/>
+      </where>
+
+      ORDER BY
+      <choose>
+        <when test="sortBy == 'invoiceId'">i.invoice_id</when>
+        <when test="sortBy == 'shopName'">s.shop_name</when>
+        <when test="sortBy == 'staffName'">p.full_name</when>
+        <when test="sortBy == 'tableNumber'">st.table_number</when>
+        <when test="sortBy == 'totalAmount'">i.total_amount</when>
+        <when test="sortBy == 'status'">i.status</when>
+        <when test="sortBy == 'updateAt'">i.update_at</when>
+        <when test="sortBy == 'isDeleted'">i.is_deleted</when>
+        <otherwise>i.created_at</otherwise>
+      </choose>
+      <choose>
+        <when test="sortDirection != null and sortDirection.toUpperCase() == 'ASC'">ASC</when>
+        <otherwise>DESC</otherwise>
+      </choose>
+
+      LIMIT #{size} OFFSET #{offset}
+    ) pi
+    <!-- 11. Join active invoice details and retain historical drink information -->
     LEFT JOIN invoice_details id ON pi.invoice_id = id.invoice_id
+      AND id.deleted_at IS NULL
     LEFT JOIN drink_details dd ON id.drink_detail_id = dd.drink_detail_id
     LEFT JOIN drinks d ON dd.drink_id = d.drink_id
+    <!-- 12. Preserve invoice ordering and order detail rows within each invoice -->
     ORDER BY
     <choose>
       <when test="sortBy == 'invoiceId'">pi.invoice_id</when>

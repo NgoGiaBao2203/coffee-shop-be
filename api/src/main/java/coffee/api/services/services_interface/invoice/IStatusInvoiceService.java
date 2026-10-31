@@ -1,12 +1,12 @@
 package coffee.api.services.services_interface.invoice;
 
-import coffee.api.dto.request.invoice.PayInvoiceRequest;
+import coffee.api.dto.request.invoice.StatusInvoiceRequest;
 import java.util.UUID;
 
-public interface IPayInvoiceService {
+public interface IStatusInvoiceService {
 
   void process(
-      PayInvoiceRequest request,
+      StatusInvoiceRequest request,
       String currentUserRoleName,
       UUID currentUserShopId,
       UUID currentUserId);
