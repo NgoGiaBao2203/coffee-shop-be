@@ -17,7 +17,7 @@ public class CreateDrinkDetailRequest {
   private UUID drinkId;
 
   @NotBlank(message = ValidationMessage.Msg.FIELD_REQUIRED)
-  @Pattern(regexp = "^(S|M|L)$", message = ValidationMessage.Msg.SPECIAL_CHARACTERS)
+  @Pattern(regexp = "^[SML]$", message = ValidationMessage.Msg.SPECIAL_CHARACTERS)
   private String size;
 
   @NotNull(message = ValidationMessage.Msg.FIELD_REQUIRED)
