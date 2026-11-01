@@ -47,16 +47,21 @@ public class CreateDrinkServiceImpl implements ICreateDrinkService {
     drinkValidator.validateCategoryBelongsToShopForCreate(
         request.getDrinkCategoryId(), request.getShopId());
 
-    // 4. Trim name and verify uniqueness in shop
+    // 4. Trim name and validate size
     String trimmedDrinkName = drinkValidator.validateAndFormatName(request.getDrinkName());
     request.setDrinkName(trimmedDrinkName);
-    validateDrinkNameNotDuplicated(trimmedDrinkName, request.getShopId());
-
-    // 5. Validate and format drink size
     String size = drinkValidator.validateAndFormatSize(request.getSize());
     request.setSize(size);
 
-    // 6. Resolve image upload or fallback URL
+    // 5. Same name in shop: only add a new size to the existing drink
+    UUID existingDrinkId = commonMapper.findDrinkIdByName(trimmedDrinkName, request.getShopId());
+    if (existingDrinkId != null) {
+      validateSizeNotDuplicated(existingDrinkId, size);
+      createDrinksMapper.insertDrinkDetail(existingDrinkId, size, request.getPrice());
+      return;
+    }
+
+    // 6. New drink: resolve image upload or fallback URL
     String storedImageUrl = resolveImageForCreate(imageFile, request.getImageUrl());
 
     // 7. Insert new drink and drink detail records
@@ -73,10 +78,9 @@ public class CreateDrinkServiceImpl implements ICreateDrinkService {
     }
   }
 
-  private void validateDrinkNameNotDuplicated(String drinkName, UUID shopId) {
-    boolean isDrinkExisted = commonMapper.checkDrinkNameExisted(null, drinkName, shopId);
-    if (isDrinkExisted) {
-      throw new InvalidRequestException("Drink name is existed");
+  private void validateSizeNotDuplicated(UUID drinkId, String size) {
+    if (commonMapper.checkDrinkDetailSizeExisted(drinkId, size, null)) {
+      throw new InvalidRequestException("Drink size already exists");
     }
   }
 

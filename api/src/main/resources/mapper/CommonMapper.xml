@@ -291,6 +291,17 @@
       <include refid="coffee.api.mapper.CommonMapper.activeUnpaidTableInvoicesSql"/>
     )
   </select>
+  <!-- 22.1 Find active drink id by name in shop (case-insensitive & trimmed) -->
+  <select id="findDrinkIdByName" resultType="java.util.UUID">
+    SELECT drink_id
+    FROM drinks
+    WHERE LOWER(TRIM(drink_name)) = LOWER(TRIM(#{drinkName}))
+    AND shop_id = #{shopId}
+    AND deleted_at IS NULL
+    AND is_deleted = false
+    LIMIT 1
+  </select>
+
   <!-- 23. Check if drink detail exists in drink -->
   <select id="checkDrinkDetailSizeExisted" resultType="boolean">
     SELECT EXISTS (

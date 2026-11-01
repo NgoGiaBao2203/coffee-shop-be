@@ -77,9 +77,6 @@ class CreateDrinkServiceImplTest {
     when(commonMapper.checkShopExisted(currentShopId)).thenReturn(true);
     when(commonMapper.checkShopIdIsExisted(currentUserId, currentShopId)).thenReturn(true);
     when(commonMapper.checkCategoryExistsInShop(drinkCategoryId, currentShopId)).thenReturn(true);
-    when(commonMapper.checkDrinkNameExisted(
-            isNull(), eq(validRequest.getDrinkName()), eq(currentShopId)))
-        .thenReturn(false);
 
     assertDoesNotThrow(
         () ->
@@ -89,8 +86,7 @@ class CreateDrinkServiceImplTest {
     verify(commonMapper).checkShopExisted(currentShopId);
     verify(commonMapper).checkShopIdIsExisted(currentUserId, currentShopId);
     verify(commonMapper).checkCategoryExistsInShop(drinkCategoryId, currentShopId);
-    verify(commonMapper)
-        .checkDrinkNameExisted(isNull(), eq(validRequest.getDrinkName()), eq(currentShopId));
+    verify(commonMapper).findDrinkIdByName(eq(validRequest.getDrinkName()), eq(currentShopId));
     verify(createDrinkMapper, times(1))
         .insertDrink(
             any(UUID.class),
@@ -108,9 +104,6 @@ class CreateDrinkServiceImplTest {
   void process_Success_WhenOwnerSkipsManagerChecks_TC002() {
     when(commonMapper.checkShopExisted(currentShopId)).thenReturn(true);
     when(commonMapper.checkCategoryExistsInShop(drinkCategoryId, currentShopId)).thenReturn(true);
-    when(commonMapper.checkDrinkNameExisted(
-            isNull(), eq(validRequest.getDrinkName()), eq(currentShopId)))
-        .thenReturn(false);
 
     assertDoesNotThrow(
         () ->
@@ -131,9 +124,6 @@ class CreateDrinkServiceImplTest {
     when(commonMapper.checkShopExisted(currentShopId)).thenReturn(true);
     when(commonMapper.checkShopIdIsExisted(currentUserId, currentShopId)).thenReturn(true);
     when(commonMapper.checkCategoryExistsInShop(drinkCategoryId, currentShopId)).thenReturn(true);
-    when(commonMapper.checkDrinkNameExisted(
-            isNull(), eq(validRequest.getDrinkName()), eq(currentShopId)))
-        .thenReturn(false);
     when(fileStorageService.storeDrinkImage(mockFile)).thenReturn(uploadedUrl);
 
     assertDoesNotThrow(
@@ -160,8 +150,6 @@ class CreateDrinkServiceImplTest {
     when(commonMapper.checkShopExisted(currentShopId)).thenReturn(true);
     when(commonMapper.checkShopIdIsExisted(currentUserId, currentShopId)).thenReturn(true);
     when(commonMapper.checkCategoryExistsInShop(drinkCategoryId, currentShopId)).thenReturn(true);
-    when(commonMapper.checkDrinkNameExisted(isNull(), eq("Trà Sữa Matcha"), eq(currentShopId)))
-        .thenReturn(false);
 
     assertDoesNotThrow(
         () ->
@@ -180,7 +168,6 @@ class CreateDrinkServiceImplTest {
     when(commonMapper.checkShopExisted(currentShopId)).thenReturn(true);
     when(commonMapper.checkShopIdIsExisted(currentUserId, currentShopId)).thenReturn(true);
     when(commonMapper.checkCategoryExistsInShop(drinkCategoryId, currentShopId)).thenReturn(true);
-    when(commonMapper.checkDrinkNameExisted(isNull(), eq(""), eq(currentShopId))).thenReturn(false);
 
     assertDoesNotThrow(
         () ->
@@ -188,7 +175,7 @@ class CreateDrinkServiceImplTest {
                 validRequest, null, currentUserId, currentShopId, Roles.MANAGER.getValue()));
 
     assertEquals("", validRequest.getDrinkName());
-    verify(commonMapper).checkDrinkNameExisted(isNull(), eq(""), eq(currentShopId));
+    verify(commonMapper).findDrinkIdByName(eq(validRequest.getDrinkName()), eq(currentShopId));
     verify(createDrinkMapper).insertDrink(any(UUID.class), any(), any(), eq(""), any(), any());
   }
 
@@ -199,9 +186,6 @@ class CreateDrinkServiceImplTest {
     when(commonMapper.checkShopExisted(currentShopId)).thenReturn(true);
     when(commonMapper.checkShopIdIsExisted(currentUserId, currentShopId)).thenReturn(true);
     when(commonMapper.checkCategoryExistsInShop(drinkCategoryId, currentShopId)).thenReturn(true);
-    when(commonMapper.checkDrinkNameExisted(
-            isNull(), eq(validRequest.getDrinkName()), eq(currentShopId)))
-        .thenReturn(false);
 
     assertDoesNotThrow(
         () ->
@@ -333,17 +317,41 @@ class CreateDrinkServiceImplTest {
 
     assertEquals("Data not found", exception.getMessage());
     assertEquals(drinkCategoryId, exception.getId());
-    verify(commonMapper, never()).checkDrinkNameExisted(any(), any(), any());
+    verify(commonMapper, never()).findDrinkIdByName(any(), any());
   }
 
   @Test
-  void process_ThrowsInvalidRequestException_WhenDrinkNameAlreadyExists_TC012() {
+  void process_AddsDetailOnly_WhenDrinkNameExistsWithNewSize_TC012() {
+    UUID existingDrinkId = UUID.randomUUID();
+    MockMultipartFile mockFile =
+        new MockMultipartFile("image", "drink.png", "image/png", "sample content".getBytes());
     when(commonMapper.checkShopExisted(currentShopId)).thenReturn(true);
     when(commonMapper.checkShopIdIsExisted(currentUserId, currentShopId)).thenReturn(true);
     when(commonMapper.checkCategoryExistsInShop(drinkCategoryId, currentShopId)).thenReturn(true);
-    when(commonMapper.checkDrinkNameExisted(
-            isNull(), eq(validRequest.getDrinkName()), eq(currentShopId)))
-        .thenReturn(true);
+    when(commonMapper.findDrinkIdByName(validRequest.getDrinkName(), currentShopId))
+        .thenReturn(existingDrinkId);
+    when(commonMapper.checkDrinkDetailSizeExisted(existingDrinkId, "L", null)).thenReturn(false);
+
+    assertDoesNotThrow(
+        () ->
+            createDrinkService.process(
+                validRequest, mockFile, currentUserId, currentShopId, Roles.MANAGER.getValue()));
+
+    verify(createDrinkMapper)
+        .insertDrinkDetail(eq(existingDrinkId), eq("L"), eq(new BigDecimal("52000.00")));
+    verify(createDrinkMapper, never()).insertDrink(any(), any(), any(), any(), any(), any());
+    verify(fileStorageService, never()).storeDrinkImage(any());
+  }
+
+  @Test
+  void process_ThrowsInvalidRequestException_WhenDrinkNameAndSizeAlreadyExist_TC012_1() {
+    UUID existingDrinkId = UUID.randomUUID();
+    when(commonMapper.checkShopExisted(currentShopId)).thenReturn(true);
+    when(commonMapper.checkShopIdIsExisted(currentUserId, currentShopId)).thenReturn(true);
+    when(commonMapper.checkCategoryExistsInShop(drinkCategoryId, currentShopId)).thenReturn(true);
+    when(commonMapper.findDrinkIdByName(validRequest.getDrinkName(), currentShopId))
+        .thenReturn(existingDrinkId);
+    when(commonMapper.checkDrinkDetailSizeExisted(existingDrinkId, "L", null)).thenReturn(true);
 
     InvalidRequestException exception =
         assertThrows(
@@ -352,7 +360,7 @@ class CreateDrinkServiceImplTest {
                 createDrinkService.process(
                     validRequest, null, currentUserId, currentShopId, Roles.MANAGER.getValue()));
 
-    assertEquals("Drink name is existed", exception.getMessage());
+    assertEquals("Drink size already exists", exception.getMessage());
     verifyNoInteractions(createDrinkMapper);
     verify(fileStorageService, never()).storeDrinkImage(any());
   }
@@ -363,9 +371,6 @@ class CreateDrinkServiceImplTest {
     when(commonMapper.checkShopExisted(currentShopId)).thenReturn(true);
     when(commonMapper.checkShopIdIsExisted(currentUserId, currentShopId)).thenReturn(true);
     when(commonMapper.checkCategoryExistsInShop(drinkCategoryId, currentShopId)).thenReturn(true);
-    when(commonMapper.checkDrinkNameExisted(
-            isNull(), eq(validRequest.getDrinkName()), eq(currentShopId)))
-        .thenReturn(false);
 
     InvalidRequestException exception =
         assertThrows(
@@ -384,9 +389,6 @@ class CreateDrinkServiceImplTest {
     when(commonMapper.checkShopExisted(currentShopId)).thenReturn(true);
     when(commonMapper.checkShopIdIsExisted(currentUserId, currentShopId)).thenReturn(true);
     when(commonMapper.checkCategoryExistsInShop(drinkCategoryId, currentShopId)).thenReturn(true);
-    when(commonMapper.checkDrinkNameExisted(
-            isNull(), eq(validRequest.getDrinkName()), eq(currentShopId)))
-        .thenReturn(false);
 
     InvalidRequestException exception =
         assertThrows(
@@ -404,9 +406,6 @@ class CreateDrinkServiceImplTest {
     when(commonMapper.checkShopExisted(currentShopId)).thenReturn(true);
     when(commonMapper.checkShopIdIsExisted(currentUserId, currentShopId)).thenReturn(true);
     when(commonMapper.checkCategoryExistsInShop(drinkCategoryId, currentShopId)).thenReturn(true);
-    when(commonMapper.checkDrinkNameExisted(
-            isNull(), eq(validRequest.getDrinkName()), eq(currentShopId)))
-        .thenReturn(false);
     doThrow(new DataAccessException("insert drinks failed") {})
         .when(createDrinkMapper)
         .insertDrink(any(UUID.class), any(), any(), any(), any(), any());
@@ -427,9 +426,6 @@ class CreateDrinkServiceImplTest {
     when(commonMapper.checkShopExisted(currentShopId)).thenReturn(true);
     when(commonMapper.checkShopIdIsExisted(currentUserId, currentShopId)).thenReturn(true);
     when(commonMapper.checkCategoryExistsInShop(drinkCategoryId, currentShopId)).thenReturn(true);
-    when(commonMapper.checkDrinkNameExisted(
-            isNull(), eq(validRequest.getDrinkName()), eq(currentShopId)))
-        .thenReturn(false);
     doThrow(new DataAccessException("insert drink detail failed") {})
         .when(createDrinkMapper)
         .insertDrinkDetail(any(UUID.class), anyString(), any(BigDecimal.class));

@@ -21,6 +21,8 @@ public interface CommonMapper {
       @Param("drinkName") String drinkName,
       @Param("shopId") UUID shopId);
 
+  UUID findDrinkIdByName(@Param("drinkName") String drinkName, @Param("shopId") UUID shopId);
+
   boolean checkDrinkDetailSizeExisted(
       @Param("drinkId") UUID drinkId,
       @Param("size") String size,
