@@ -21,6 +21,7 @@ public interface CreateInvoiceMapper {
 
   void insertInvoice(
       @Param("invoiceId") UUID invoiceId,
+      @Param("invoiceCode") String invoiceCode,
       @Param("shopId") UUID shopId,
       @Param("profileId") UUID profileId,
       @Param("tableId") UUID tableId,

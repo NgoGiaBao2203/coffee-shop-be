@@ -8,6 +8,9 @@ import coffee.api.mapper.CreateInvoiceMapper;
 import coffee.api.services.services_implement.invoice.common.InvoiceValidator;
 import coffee.api.services.services_interface.invoice.ICreateInvoiceService;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,6 +19,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class CreateInvoiceServiceImpl implements ICreateInvoiceService {
+
+  private static final DateTimeFormatter INVOICE_CODE_DATE =
+      DateTimeFormatter.ofPattern("yyyyMMdd");
 
   private final CreateInvoiceMapper createInvoiceMapper;
   private final InvoiceValidator invoiceValidator;
@@ -53,11 +59,24 @@ public class CreateInvoiceServiceImpl implements ICreateInvoiceService {
     UUID invoiceId = UUID.randomUUID();
 
     createInvoiceMapper.insertInvoice(
-        invoiceId, targetShopId, currentUserId, tableId, totalAmount, status);
+        invoiceId,
+        generateInvoiceCode(invoiceId),
+        targetShopId,
+        currentUserId,
+        tableId,
+        totalAmount,
+        status);
 
     createInvoiceMapper.insertInvoiceDetails(invoiceId, request.getItems());
 
     return CreateInvoiceResponse.of(ResponseCode.SUCCESS, "Create invoice successfully");
+  }
+
+  /** Build a code like INV-20260101-1A2B3C4D from the creation date and the invoice id. */
+  private String generateInvoiceCode(UUID invoiceId) {
+    String datePart = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")).format(INVOICE_CODE_DATE);
+    String suffix = invoiceId.toString().replace("-", "").substring(0, 8).toUpperCase();
+    return "INV-" + datePart + "-" + suffix;
   }
 
   /** Only allow unpaid or paid status when creating an invoice. */

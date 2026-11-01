@@ -8,6 +8,7 @@
   <!-- 1. Map invoice fields to InvoiceResult -->
   <resultMap id="InvoiceResultMap" type="coffee.api.dto.result.InvoiceResult">
     <id property="invoiceId" column="invoice_id" javaType="java.util.UUID"/>
+    <result property="invoiceCode" column="invoice_code"/>
     <result property="shopId" column="shop_id" javaType="java.util.UUID"/>
     <result property="tableId" column="table_id" javaType="java.util.UUID"/>
     <result property="shopName" column="shop_name"/>
@@ -59,6 +60,7 @@
     <if test="search != null and search != ''">
       AND (
       i.invoice_id::text ILIKE CONCAT('%', #{search}, '%')
+      OR i.invoice_code ILIKE CONCAT('%', #{search}, '%')
       OR s.shop_name ILIKE CONCAT('%', #{search}, '%')
       OR p.full_name ILIKE CONCAT('%', #{search}, '%')
       OR st.table_number::text ILIKE CONCAT('%', #{search}, '%')
@@ -82,6 +84,7 @@
   <select id="getInvoicesFiltered" resultMap="InvoiceResultMap">
     SELECT
     pi.invoice_id,
+    pi.invoice_code,
     pi.shop_id,
     pi.table_id,
     pi.shop_name,
@@ -105,6 +108,7 @@
     FROM (
       SELECT
       i.invoice_id,
+      i.invoice_code,
       i.shop_id,
       i.table_id,
       s.shop_name,

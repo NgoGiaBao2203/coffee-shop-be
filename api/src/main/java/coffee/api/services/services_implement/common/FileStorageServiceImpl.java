@@ -188,13 +188,10 @@ public class FileStorageServiceImpl implements IFileStorageService {
   private String extractFileKeyFromUrl(String imageUrl) {
     // Extract the key from URL: https://.../storage/v1/object/public/{bucket}/{key}
     String bucketPath = "/storage/v1/object/public/" + storageProperties.getBucketName() + "/";
-    try {
-      if (imageUrl.contains(bucketPath)) {
-        return imageUrl.substring(imageUrl.indexOf(bucketPath) + bucketPath.length());
-      }
-      throw new InvalidRequestException("Invalid image URL format");
-    } catch (StringIndexOutOfBoundsException e) {
+    int bucketPathIndex = imageUrl.indexOf(bucketPath);
+    if (bucketPathIndex == -1) {
       throw new InvalidRequestException("Invalid image URL format");
     }
+    return imageUrl.substring(bucketPathIndex + bucketPath.length());
   }
 }

@@ -60,6 +60,7 @@
   <insert id="insertInvoice">
     INSERT INTO invoices (
     invoice_id,
+    invoice_code,
     shop_id,
     profile_id,
     table_id,
@@ -69,6 +70,7 @@
     is_deleted
     ) VALUES (
     #{invoiceId},
+    #{invoiceCode},
     #{shopId},
     #{profileId},
     #{tableId},

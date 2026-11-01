@@ -11,6 +11,7 @@ import lombok.Data;
 public class InvoiceResult {
 
   private UUID invoiceId;
+  private String invoiceCode;
   private UUID shopId;
   private UUID tableId;
   @JsonIgnore private UUID profileId;

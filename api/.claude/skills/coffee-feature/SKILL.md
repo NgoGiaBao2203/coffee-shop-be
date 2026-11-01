@@ -77,6 +77,22 @@ Run in this order and report real output, not assumptions:
 
 If a command can't run (no Docker/DB), say so rather than claiming success. Finish by listing files touched and the final endpoint path (remember the `/api` prefix).
 
+## Naming conventions
+
+Follow [naming-conventions.md](naming-conventions.md) for every class, method, test, migration, endpoint, error code and report name. It mirrors the current project; when in doubt, match the nearest existing file.
+
+## Report (mandatory for every new or changed API)
+
+After verification, always write a report; the task is not finished without it.
+
+- Location: `reports/report_<yyyyMMdd_HHmmss>/report_<feature>_<yyyyMMdd_HHmmss>.md`, under the project root (`api/`). Create a new `report_<datetime>` folder per run; get the timestamp from `date +%Y%m%d_%H%M%S` and use the same value in folder and file.
+- **Write the report in Vietnamese** (code, file names, endpoints and identifiers stay in English). Translate the template headings too.
+- One `.md` per feature (one module/use-case group, e.g. `shop`, `invoice`) in the same folder, never one combined file. If one task touches several features, write one file each.
+- For a project-wide check/audit request ("kiểm tra các chức năng và tạo report"), use the same folder and rules: an overview file `report_tong-quan_<datetime>.md` (counts, total test result, risks) plus one file per module. In these files "Changes" is replaced by endpoints, roles, related tables, per-module test counts and remarks; take test numbers from a real `./mvnw -o test` run (`target/surefire-reports`).
+- Fill in [report-template.md](report-template.md): steps performed, what was changed or newly added (per layer/file), API contract, related tables, and a **Database migration** section listing every table changed (write "None" when there is no migration).
+- Report only what was actually done and actually verified (real test output, note anything not run).
+- Tell the user the report path at the end.
+
 ## Do not
 
 - Introduce JPA, entities, repositories, or string-concatenated/`${}` SQL.

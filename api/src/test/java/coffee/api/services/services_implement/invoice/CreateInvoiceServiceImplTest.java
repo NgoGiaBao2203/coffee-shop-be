@@ -102,7 +102,13 @@ class CreateInvoiceServiceImplTest {
     order
         .verify(createInvoiceMapper)
         .insertInvoice(
-            any(), eq(shopId), eq(userId), eq(tableId), eq(new BigDecimal("80000.00")), eq(status));
+            any(),
+            anyString(),
+            eq(shopId),
+            eq(userId),
+            eq(tableId),
+            eq(new BigDecimal("80000.00")),
+            eq(status));
     order.verify(createInvoiceMapper).insertInvoiceDetails(any(), same(validRequest.getItems()));
   }
 
@@ -198,7 +204,8 @@ class CreateInvoiceServiceImplTest {
   }
 
   private void verifyNoInsert() {
-    verify(createInvoiceMapper, never()).insertInvoice(any(), any(), any(), any(), any(), anyInt());
+    verify(createInvoiceMapper, never())
+        .insertInvoice(any(), any(), any(), any(), any(), any(), anyInt());
     verify(createInvoiceMapper, never()).insertInvoiceDetails(any(), any());
   }
 
@@ -219,6 +226,7 @@ class CreateInvoiceServiceImplTest {
     verify(createInvoiceMapper)
         .insertInvoice(
             invoiceIdCaptor.capture(),
+            anyString(),
             eq(shopId),
             eq(userId),
             eq(tableId),
@@ -240,7 +248,13 @@ class CreateInvoiceServiceImplTest {
     verify(commonMapper).checkShopIdIsExisted(userId, shopId);
     verify(createInvoiceMapper)
         .insertInvoice(
-            any(), eq(shopId), eq(userId), eq(tableId), eq(new BigDecimal("80000.00")), eq(0));
+            any(),
+            anyString(),
+            eq(shopId),
+            eq(userId),
+            eq(tableId),
+            eq(new BigDecimal("80000.00")),
+            eq(0));
     verify(createInvoiceMapper).insertInvoiceDetails(any(), same(validRequest.getItems()));
   }
 
@@ -307,7 +321,13 @@ class CreateInvoiceServiceImplTest {
     assertEquals("S0001", process(Roles.OWNER.name(), null, userId).getCode());
     verify(createInvoiceMapper)
         .insertInvoice(
-            any(), eq(shopId), eq(userId), eq(tableId), eq(new BigDecimal("80000.00")), eq(0));
+            any(),
+            anyString(),
+            eq(shopId),
+            eq(userId),
+            eq(tableId),
+            eq(new BigDecimal("80000.00")),
+            eq(0));
   }
 
   @Test
@@ -326,7 +346,13 @@ class CreateInvoiceServiceImplTest {
     assertEquals(Set.of(firstDrinkDetailId), idsCaptor.getValue());
     verify(createInvoiceMapper)
         .insertInvoice(
-            any(), eq(shopId), eq(userId), eq(tableId), eq(new BigDecimal("75000.00")), eq(0));
+            any(),
+            anyString(),
+            eq(shopId),
+            eq(userId),
+            eq(tableId),
+            eq(new BigDecimal("75000.00")),
+            eq(0));
   }
 
   @Test
@@ -343,6 +369,7 @@ class CreateInvoiceServiceImplTest {
     verify(createInvoiceMapper)
         .insertInvoice(
             any(),
+            anyString(),
             eq(shopId),
             eq(userId),
             eq(tableId),
@@ -357,7 +384,7 @@ class CreateInvoiceServiceImplTest {
     // The current service ignores the return values of both insert methods.
     // Mockito returns 0 by default, so the service still reports success.
     assertEquals("S0001", process(Roles.OWNER.name(), null, userId).getCode());
-    verify(createInvoiceMapper).insertInvoice(any(), any(), any(), any(), any(), anyInt());
+    verify(createInvoiceMapper).insertInvoice(any(), any(), any(), any(), any(), any(), anyInt());
     verify(createInvoiceMapper).insertInvoiceDetails(any(), any());
   }
 
@@ -602,7 +629,7 @@ class CreateInvoiceServiceImplTest {
     stubValidOwnerInvoice();
     doThrow(new DataAccessException("Database insert invoice error") {})
         .when(createInvoiceMapper)
-        .insertInvoice(any(), any(), any(), any(), any(), anyInt());
+        .insertInvoice(any(), any(), any(), any(), any(), any(), anyInt());
 
     DataAccessException exception =
         assertThrows(DataAccessException.class, () -> process("OWNER", null, userId));
@@ -623,7 +650,7 @@ class CreateInvoiceServiceImplTest {
         assertThrows(DataAccessException.class, () -> process("OWNER", null, userId));
 
     assertEquals("Database insert details error", exception.getMessage());
-    verify(createInvoiceMapper).insertInvoice(any(), any(), any(), any(), any(), anyInt());
+    verify(createInvoiceMapper).insertInvoice(any(), any(), any(), any(), any(), any(), anyInt());
   }
 
   @Test
