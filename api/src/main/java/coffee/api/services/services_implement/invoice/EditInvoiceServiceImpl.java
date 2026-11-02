@@ -43,7 +43,7 @@ public class EditInvoiceServiceImpl implements IEditInvoiceService {
     validateEditableInvoice(invoice, shopId, currentUserRoleName, currentUserId);
 
     // 3. Verify the current table and the requested destination
-    validateCurrentTable(invoice.getTableId(), shopId);
+    validateCurrentTable(invoice.getTableId(), shopId, request.getInvoiceId());
     boolean changingTable = !invoice.getTableId().equals(request.getTableId());
     if (changingTable) {
       invoiceValidator.validateAvailableTable(request.getTableId(), shopId);
@@ -93,9 +93,16 @@ public class EditInvoiceServiceImpl implements IEditInvoiceService {
     }
   }
 
-  /** Verify the current table belongs to the shop, is not deleted and is occupied, then lock it. */
-  private void validateCurrentTable(UUID tableId, UUID shopId) {
-    if (tableId == null || updateInvoiceMapper.lockOccupiedTable(tableId, shopId) == null) {
+  /**
+   * Verify the current table belongs to the shop and lock it. An available table that still holds
+   * this unpaid invoice is marked occupied again instead of rejecting the edit.
+   */
+  private void validateCurrentTable(UUID tableId, UUID shopId, UUID invoiceId) {
+    boolean usable =
+        tableId != null
+            && (updateInvoiceMapper.lockOccupiedTable(tableId, shopId) != null
+                || updateInvoiceMapper.occupyCurrentTable(tableId, shopId, invoiceId) == 1);
+    if (!usable) {
       throw new InvalidRequestException(
           "Current table is unavailable or does not belong to this shop");
     }

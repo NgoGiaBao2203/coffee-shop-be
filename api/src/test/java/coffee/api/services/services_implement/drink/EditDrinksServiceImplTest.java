@@ -4,9 +4,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import coffee.api.constants.ValidationMessage;
 import coffee.api.dto.request.drink.EditDrinksRequest;
 import coffee.api.enums.Roles;
-import coffee.api.enums.ValidationMessage;
 import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.exceptions.InvalidRequestException;
 import coffee.api.mapper.CommonMapper;
@@ -679,7 +679,7 @@ class EditDrinksServiceImplTest {
 
     assertTrue(
         violations.stream()
-            .anyMatch(v -> ValidationMessage.Msg.SPECIAL_CHARACTERS.equals(v.getMessage())));
+            .anyMatch(v -> ValidationMessage.SPECIAL_CHARACTERS.equals(v.getMessage())));
   }
 
   @Test
@@ -688,7 +688,7 @@ class EditDrinksServiceImplTest {
     Set<ConstraintViolation<EditDrinksRequest>> violations = validator.validate(validRequest);
 
     assertTrue(
-        violations.stream().anyMatch(v -> ValidationMessage.Msg.SIZE_MAX.equals(v.getMessage())));
+        violations.stream().anyMatch(v -> ValidationMessage.SIZE_MAX.equals(v.getMessage())));
   }
 
   @Test
@@ -699,7 +699,7 @@ class EditDrinksServiceImplTest {
 
       assertTrue(
           violations.stream()
-              .anyMatch(v -> ValidationMessage.Msg.STATUS_INVALID.equals(v.getMessage())));
+              .anyMatch(v -> ValidationMessage.STATUS_INVALID.equals(v.getMessage())));
     }
   }
 }

@@ -1,5 +1,6 @@
 package coffee.api.controllers.drink;
 
+import coffee.api.constants.Authority;
 import coffee.api.dto.request.drink.DeleteDrinksRequest;
 import coffee.api.dto.response.drink.DeleteDrinkResponse;
 import coffee.api.enums.ResponseCode;
@@ -20,7 +21,7 @@ public class DeleteDrinksController {
   private final IDeleteDrinkService deleteDrinksService;
 
   @DeleteMapping("drink/delete")
-  @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
+  @PreAuthorize(Authority.OWNER_OR_MANAGER)
   public ResponseEntity<DeleteDrinkResponse> deleteDrink(
       @AuthenticationPrincipal CustomUserDetail customUserDetail,
       @RequestBody @Valid DeleteDrinksRequest request) {

@@ -1,5 +1,6 @@
 package coffee.api.controllers.revenue;
 
+import coffee.api.constants.Authority;
 import coffee.api.dto.request.revenue.SearchRevenueRequest;
 import coffee.api.dto.response.base_response.PageResponse;
 import coffee.api.dto.result.RevenueResult;
@@ -20,7 +21,7 @@ public class GetRevenueController {
   private final IGetRevenueService getRevenueService;
 
   @PostMapping("revenues")
-  @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'STAFF')")
+  @PreAuthorize(Authority.ANY_ROLE)
   public PageResponse<RevenueResult> GetRevenue(
       @AuthenticationPrincipal CustomUserDetail customUserDetail,
       @RequestBody @Valid SearchRevenueRequest request) {

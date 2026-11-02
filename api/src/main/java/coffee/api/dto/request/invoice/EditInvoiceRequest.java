@@ -1,6 +1,6 @@
 package coffee.api.dto.request.invoice;
 
-import coffee.api.enums.ValidationMessage;
+import coffee.api.constants.ValidationMessage;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -11,16 +11,16 @@ import lombok.Data;
 @Data
 public class EditInvoiceRequest {
 
-  @NotNull(message = ValidationMessage.Msg.FIELD_REQUIRED)
+  @NotNull(message = ValidationMessage.FIELD_REQUIRED)
   private UUID invoiceId;
 
-  @NotNull(message = ValidationMessage.Msg.FIELD_REQUIRED)
+  @NotNull(message = ValidationMessage.FIELD_REQUIRED)
   private UUID shopId;
 
-  @NotNull(message = ValidationMessage.Msg.FIELD_REQUIRED)
+  @NotNull(message = ValidationMessage.FIELD_REQUIRED)
   private UUID tableId;
 
-  @NotEmpty(message = ValidationMessage.Msg.FIELD_REQUIRED)
+  @NotEmpty(message = ValidationMessage.FIELD_REQUIRED)
   @Valid
-  private List<@NotNull(message = ValidationMessage.Msg.FIELD_REQUIRED) InvoiceItemRequest> items;
+  private List<@NotNull(message = ValidationMessage.FIELD_REQUIRED) InvoiceItemRequest> items;
 }

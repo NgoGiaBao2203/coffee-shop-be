@@ -1,5 +1,6 @@
 package coffee.api.services.services_implement.staff;
 
+import coffee.api.constants.ErrorMessage;
 import coffee.api.dto.request.user.DeleteStaffRequest;
 import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.mapper.CommonMapper;
@@ -18,7 +19,7 @@ public class DeleteStaffServiceImpl implements IDeleteStaffService {
   public void process(DeleteStaffRequest request) {
     Boolean isStaffExited = commonMapper.checkStaffExisted(request.getProfileId());
     if (!isStaffExited) {
-      throw new DataNotFoundException("Data not found", request.getProfileId());
+      throw new DataNotFoundException(ErrorMessage.DATA_NOT_FOUND, request.getProfileId());
     }
     deleteStaffMapper.deleteStaff(request.getProfileId());
   }

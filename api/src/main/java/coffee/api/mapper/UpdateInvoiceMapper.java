@@ -12,6 +12,11 @@ public interface UpdateInvoiceMapper {
 
   UUID lockOccupiedTable(@Param("tableId") UUID tableId, @Param("shopId") UUID shopId);
 
+  int occupyCurrentTable(
+      @Param("tableId") UUID tableId,
+      @Param("shopId") UUID shopId,
+      @Param("invoiceId") UUID invoiceId);
+
   int updateInvoice(
       @Param("invoiceId") UUID invoiceId,
       @Param("tableId") UUID tableId,

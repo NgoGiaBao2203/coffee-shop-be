@@ -7,9 +7,9 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import coffee.api.constants.ValidationMessage;
 import coffee.api.dto.request.invoice.StatusInvoiceRequest;
 import coffee.api.dto.result.InvoiceResult;
-import coffee.api.enums.ValidationMessage;
 import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.exceptions.InvalidRequestException;
 import coffee.api.mapper.CommonMapper;
@@ -675,14 +675,14 @@ class StatusInvoiceServiceImplTest {
     validRequest.setStatus(status);
     validRequest.setInvoiceId(null);
 
-    assertSingleViolation("invoiceId", ValidationMessage.Msg.FIELD_REQUIRED);
+    assertSingleViolation("invoiceId", ValidationMessage.FIELD_REQUIRED);
   }
 
   @Test
   void requestValidation_RejectsMissingStatus_TC031() {
     validRequest.setStatus(null);
 
-    assertSingleViolation("status", ValidationMessage.Msg.FIELD_REQUIRED);
+    assertSingleViolation("status", ValidationMessage.FIELD_REQUIRED);
   }
 
   @ParameterizedTest
@@ -690,7 +690,7 @@ class StatusInvoiceServiceImplTest {
   void requestValidation_RejectsStatusOutsideAllowedRange_TC032(int status) {
     validRequest.setStatus(status);
 
-    assertSingleViolation("status", ValidationMessage.Msg.STATUS_INVALID);
+    assertSingleViolation("status", ValidationMessage.STATUS_INVALID);
   }
 
   @Test
@@ -709,9 +709,9 @@ class StatusInvoiceServiceImplTest {
     assertEquals(
         java.util.Map.of(
             "invoiceId",
-            ValidationMessage.Msg.FIELD_REQUIRED,
+            ValidationMessage.FIELD_REQUIRED,
             "status",
-            ValidationMessage.Msg.FIELD_REQUIRED),
+            ValidationMessage.FIELD_REQUIRED),
         violations.stream()
             .collect(
                 java.util.stream.Collectors.toMap(

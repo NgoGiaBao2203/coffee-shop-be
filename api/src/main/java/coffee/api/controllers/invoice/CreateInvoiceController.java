@@ -1,5 +1,6 @@
 package coffee.api.controllers.invoice;
 
+import coffee.api.constants.Authority;
 import coffee.api.dto.request.invoice.CreateInvoiceRequest;
 import coffee.api.dto.response.invoice.CreateInvoiceResponse;
 import coffee.api.enums.ResponseCode;
@@ -21,7 +22,7 @@ public class CreateInvoiceController {
   private final ICreateInvoiceService createInvoiceService;
 
   @PostMapping("invoice/create")
-  @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'STAFF')")
+  @PreAuthorize(Authority.ANY_ROLE)
   public ResponseEntity<CreateInvoiceResponse> createInvoice(
       @AuthenticationPrincipal CustomUserDetail customUserDetail,
       @RequestBody @Valid CreateInvoiceRequest request) {

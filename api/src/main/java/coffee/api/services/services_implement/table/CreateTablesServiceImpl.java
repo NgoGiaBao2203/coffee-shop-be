@@ -1,5 +1,6 @@
 package coffee.api.services.services_implement.table;
 
+import coffee.api.constants.ErrorMessage;
 import coffee.api.dto.request.table.CreateTablesRequest;
 import coffee.api.exceptions.InvalidRequestException;
 import coffee.api.mapper.CommonMapper;
@@ -50,7 +51,7 @@ public class CreateTablesServiceImpl implements ICreateTablesService {
 
   private void validateRequest(CreateTablesRequest request) {
     if (request == null || request.getShopId() == null) {
-      throw new InvalidRequestException("Shop ID is required");
+      throw new InvalidRequestException(ErrorMessage.SHOP_ID_REQUIRED);
     }
     if (request.getTableNumber() == null || request.getTableNumber() <= 0) {
       throw new InvalidRequestException("Table number must be greater than 0");

@@ -1,5 +1,6 @@
 package coffee.api.services.services_implement.invoice.common;
 
+import coffee.api.constants.ErrorMessage;
 import coffee.api.dto.request.invoice.InvoiceItemRequest;
 import coffee.api.dto.result.DrinkDetailPriceResult;
 import coffee.api.dto.result.InvoiceResult;
@@ -108,17 +109,17 @@ public class InvoiceValidator {
   public UUID resolveTargetShopId(
       UUID requestedShopId, String currentUserRoleName, UUID currentUserShopId) {
     if (requestedShopId == null) {
-      throw new InvalidRequestException("Shop ID is required");
+      throw new InvalidRequestException(ErrorMessage.SHOP_ID_REQUIRED);
     }
     if (Roles.OWNER.name().equalsIgnoreCase(currentUserRoleName)) {
       return requestedShopId;
     }
     validateManagerOrStaffRole(currentUserRoleName);
     if (currentUserShopId == null) {
-      throw new InvalidRequestException("User is not assigned to any shop");
+      throw new InvalidRequestException(ErrorMessage.USER_NOT_ASSIGNED_TO_SHOP);
     }
     if (!currentUserShopId.equals(requestedShopId)) {
-      throw new InvalidRequestException("You do not have permission to access this shop");
+      throw new InvalidRequestException(ErrorMessage.SHOP_ACCESS_DENIED);
     }
     return currentUserShopId;
   }
@@ -126,16 +127,16 @@ public class InvoiceValidator {
   /** Verify the shop is not deleted and MANAGER or STAFF has active membership. */
   public void validateShopPermission(UUID shopId, String roleName, UUID currentUserId) {
     if (!Boolean.TRUE.equals(commonMapper.checkShopExisted(shopId))) {
-      throw new DataNotFoundException("Data not found", shopId);
+      throw new DataNotFoundException(ErrorMessage.DATA_NOT_FOUND, shopId);
     }
     if (currentUserId == null) {
-      throw new InvalidRequestException("You do not have permission to access this shop");
+      throw new InvalidRequestException(ErrorMessage.SHOP_ACCESS_DENIED);
     }
     if (isOwner(roleName)) {
       return;
     }
     if (!Boolean.TRUE.equals(commonMapper.checkShopIdIsExisted(currentUserId, shopId))) {
-      throw new InvalidRequestException("You do not have permission to access this shop");
+      throw new InvalidRequestException(ErrorMessage.SHOP_ACCESS_DENIED);
     }
   }
 

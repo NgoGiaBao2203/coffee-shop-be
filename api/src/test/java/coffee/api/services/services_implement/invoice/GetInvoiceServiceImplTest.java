@@ -4,10 +4,10 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import coffee.api.constants.ValidationMessage;
 import coffee.api.dto.request.invoice.SearchInvoiceRequest;
 import coffee.api.dto.result.InvoiceResult;
 import coffee.api.enums.SortDirection;
-import coffee.api.enums.ValidationMessage;
 import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.exceptions.InvalidRequestException;
 import coffee.api.mapper.CommonMapper;
@@ -456,59 +456,59 @@ class GetInvoiceServiceImplTest {
   @ValueSource(ints = {-1, 3, 99})
   void requestValidation_RejectsInvalidStatus_TC027(int status) {
     request.setStatus(status);
-    assertSingleViolation("status", ValidationMessage.Msg.STATUS_INVALID);
+    assertSingleViolation("status", ValidationMessage.STATUS_INVALID);
   }
 
   @ParameterizedTest
   @ValueSource(ints = {0, -1})
   void requestValidation_RejectsInvalidPage_TC028(int page) {
     request.setPage(page);
-    assertSingleViolation("page", ValidationMessage.Msg.PAGE_MIN);
+    assertSingleViolation("page", ValidationMessage.PAGE_MIN);
   }
 
   @ParameterizedTest
   @ValueSource(ints = {0, -1})
   void requestValidation_RejectsSmallPageSize_TC029(int size) {
     request.setSize(size);
-    assertSingleViolation("size", ValidationMessage.Msg.SIZE_MIN);
+    assertSingleViolation("size", ValidationMessage.SIZE_MIN);
   }
 
   @Test
   void requestValidation_RejectsLargePageSize_TC030() {
     request.setSize(101);
-    assertSingleViolation("size", ValidationMessage.Msg.SIZE_MAX);
+    assertSingleViolation("size", ValidationMessage.SIZE_MAX);
   }
 
   @Test
   void requestValidation_RejectsLongSearch_TC031() {
     request.setSearch("A".repeat(101));
-    assertSingleViolation("search", ValidationMessage.Msg.SIZE_MAX);
+    assertSingleViolation("search", ValidationMessage.SIZE_MAX);
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"%", "_", "<script>", "A; DROP TABLE invoices", "☕"})
   void requestValidation_RejectsUnsupportedSearch_TC032(String search) {
     request.setSearch(search);
-    assertSingleViolation("search", ValidationMessage.Msg.SPECIAL_CHARACTERS);
+    assertSingleViolation("search", ValidationMessage.SPECIAL_CHARACTERS);
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"", "created_at", "totalAmount DESC", "invoiceId;DROP", "tableId"})
   void requestValidation_RejectsUnsupportedSortField_TC033(String sortBy) {
     request.setSortBy(sortBy);
-    assertSingleViolation("sortBy", ValidationMessage.Msg.SORT_BY_INVALID);
+    assertSingleViolation("sortBy", ValidationMessage.SORT_BY_INVALID);
   }
 
   @Test
   void requestValidation_RejectsNullSortField_TC034() {
     request.setSortBy(null);
-    assertSingleViolation("sortBy", ValidationMessage.Msg.FIELD_REQUIRED);
+    assertSingleViolation("sortBy", ValidationMessage.FIELD_REQUIRED);
   }
 
   @Test
   void requestValidation_RejectsNullSortDirection_TC035() {
     request.setSortDirection(null);
-    assertSingleViolation("sortDirection", ValidationMessage.Msg.FIELD_REQUIRED);
+    assertSingleViolation("sortDirection", ValidationMessage.FIELD_REQUIRED);
   }
 
   // =========================================================================

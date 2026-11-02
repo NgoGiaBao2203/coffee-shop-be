@@ -1,5 +1,6 @@
 package coffee.api.services.services_implement.table.common;
 
+import coffee.api.constants.ErrorMessage;
 import coffee.api.enums.Roles;
 import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.exceptions.InvalidRequestException;
@@ -18,7 +19,7 @@ public class TableValidator {
   public void validateShopExists(UUID shopId) {
     boolean isShopExisted = commonMapper.checkShopExisted(shopId);
     if (!isShopExisted) {
-      throw new DataNotFoundException("Data not found", shopId);
+      throw new DataNotFoundException(ErrorMessage.DATA_NOT_FOUND, shopId);
     }
   }
 
@@ -29,7 +30,7 @@ public class TableValidator {
     boolean isTableExisted =
         commonMapper.checkTableExisted(tableId, currentUserRoleName, currentUserShopId);
     if (!isTableExisted) {
-      throw new DataNotFoundException("Data not found", tableId);
+      throw new DataNotFoundException(ErrorMessage.DATA_NOT_FOUND, tableId);
     }
   }
 
@@ -42,12 +43,12 @@ public class TableValidator {
     }
 
     if (currentUserShopId == null) {
-      throw new InvalidRequestException("Manager is not assigned to any shop branch");
+      throw new InvalidRequestException(ErrorMessage.MANAGER_NOT_ASSIGNED_TO_SHOP_BRANCH);
     }
 
     boolean isShopMember = commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId);
     if (!isShopMember) {
-      throw new InvalidRequestException("You do not have permission to access this shop branch");
+      throw new InvalidRequestException(ErrorMessage.SHOP_BRANCH_ACCESS_DENIED);
     }
   }
 
@@ -59,7 +60,7 @@ public class TableValidator {
 
     if (Roles.MANAGER.getValue().equals(currentUserRoleName)
         && !currentUserShopId.equals(requestShopId)) {
-      throw new InvalidRequestException("You do not have permission to access this shop branch");
+      throw new InvalidRequestException(ErrorMessage.SHOP_BRANCH_ACCESS_DENIED);
     }
   }
 

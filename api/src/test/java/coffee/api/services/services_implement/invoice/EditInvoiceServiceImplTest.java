@@ -4,12 +4,12 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import coffee.api.constants.ValidationMessage;
 import coffee.api.dto.request.invoice.EditInvoiceRequest;
 import coffee.api.dto.request.invoice.InvoiceItemRequest;
 import coffee.api.dto.result.DrinkDetailPriceResult;
 import coffee.api.dto.result.InvoiceResult;
 import coffee.api.enums.Roles;
-import coffee.api.enums.ValidationMessage;
 import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.exceptions.InvalidRequestException;
 import coffee.api.mapper.CommonMapper;
@@ -453,6 +453,20 @@ class EditInvoiceServiceImplTest {
   }
 
   @Test
+  void process_Success_WhenCurrentTableIsAvailable_OccupiesItAgain() {
+    stubInvoice(ownerRole);
+    when(updateMapper.lockOccupiedTable(tableId, shopId)).thenReturn(null);
+    when(updateMapper.occupyCurrentTable(tableId, shopId, request.getInvoiceId())).thenReturn(1);
+    stubPrices("25000.00");
+    when(updateMapper.updateInvoice(any(), any(), any(), any())).thenReturn(1);
+    when(createMapper.insertInvoiceDetails(any(), any())).thenReturn(1);
+
+    assertDoesNotThrow(() -> process(ownerRole));
+
+    verify(updateMapper).occupyCurrentTable(tableId, shopId, request.getInvoiceId());
+  }
+
+  @Test
   void process_ThrowsInvalidRequestException_WhenTargetTableIsOccupiedOrUnavailable_TC023() {
     stubInvoice(ownerRole);
     when(updateMapper.lockOccupiedTable(tableId, shopId)).thenReturn(tableId);
@@ -717,38 +731,38 @@ class EditInvoiceServiceImplTest {
   @Test
   void requestValidation_Fails_WhenInvoiceIdIsNull_TC045() {
     request.setInvoiceId(null);
-    assertSingleViolation("invoiceId", ValidationMessage.Msg.FIELD_REQUIRED);
+    assertSingleViolation("invoiceId", ValidationMessage.FIELD_REQUIRED);
   }
 
   @Test
   void requestValidation_Fails_WhenShopIdIsNull_TC046() {
     request.setShopId(null);
-    assertSingleViolation("shopId", ValidationMessage.Msg.FIELD_REQUIRED);
+    assertSingleViolation("shopId", ValidationMessage.FIELD_REQUIRED);
   }
 
   @Test
   void requestValidation_Fails_WhenTableIdIsNull_TC047() {
     request.setTableId(null);
-    assertSingleViolation("tableId", ValidationMessage.Msg.FIELD_REQUIRED);
+    assertSingleViolation("tableId", ValidationMessage.FIELD_REQUIRED);
   }
 
   @Test
   void requestValidation_Fails_WhenItemsListIsNull_TC048() {
     request.setItems(null);
-    assertSingleViolation("items", ValidationMessage.Msg.FIELD_REQUIRED);
+    assertSingleViolation("items", ValidationMessage.FIELD_REQUIRED);
   }
 
   @Test
   void requestValidation_Fails_WhenItemsListIsEmpty_TC049() {
     request.setItems(List.of());
-    assertSingleViolation("items", ValidationMessage.Msg.FIELD_REQUIRED);
+    assertSingleViolation("items", ValidationMessage.FIELD_REQUIRED);
   }
 
   @Test
   void requestValidation_Fails_WhenAnItemElementIsNull_TC050() {
     request.setItems(new ArrayList<>());
     request.getItems().add(null);
-    assertSingleViolation("items[0].<list element>", ValidationMessage.Msg.FIELD_REQUIRED);
+    assertSingleViolation("items[0].<list element>", ValidationMessage.FIELD_REQUIRED);
   }
 
   @Test
@@ -765,61 +779,61 @@ class EditInvoiceServiceImplTest {
   @Test
   void requestValidation_Fails_WhenDrinkDetailIdIsNull_TC052() {
     request.getItems().getFirst().setDrinkDetailId(null);
-    assertSingleViolation("items[0].drinkDetailId", ValidationMessage.Msg.FIELD_REQUIRED);
+    assertSingleViolation("items[0].drinkDetailId", ValidationMessage.FIELD_REQUIRED);
   }
 
   @Test
   void requestValidation_Fails_WhenQuantityIsNull_TC053() {
     request.getItems().getFirst().setQuantity(null);
-    assertSingleViolation("items[0].quantity", ValidationMessage.Msg.FIELD_REQUIRED);
+    assertSingleViolation("items[0].quantity", ValidationMessage.FIELD_REQUIRED);
   }
 
   @Test
   void requestValidation_Fails_WhenQuantityIsZeroOrNegative_TC054() {
     request.getItems().getFirst().setQuantity(0);
-    assertSingleViolation("items[0].quantity", ValidationMessage.Msg.SIZE_MIN);
+    assertSingleViolation("items[0].quantity", ValidationMessage.SIZE_MIN);
 
     request.getItems().getFirst().setQuantity(-1);
-    assertSingleViolation("items[0].quantity", ValidationMessage.Msg.SIZE_MIN);
+    assertSingleViolation("items[0].quantity", ValidationMessage.SIZE_MIN);
   }
 
   @Test
   void requestValidation_Fails_WhenQuantityExceedsMax_TC055() {
     request.getItems().getFirst().setQuantity(1000);
-    assertSingleViolation("items[0].quantity", ValidationMessage.Msg.SIZE_MAX);
+    assertSingleViolation("items[0].quantity", ValidationMessage.SIZE_MAX);
   }
 
   @Test
   void requestValidation_Fails_WhenUnitPriceIsNull_TC056() {
     request.getItems().getFirst().setUnitPrice(null);
-    assertSingleViolation("items[0].unitPrice", ValidationMessage.Msg.FIELD_REQUIRED);
+    assertSingleViolation("items[0].unitPrice", ValidationMessage.FIELD_REQUIRED);
   }
 
   @Test
   void requestValidation_Fails_WhenUnitPriceIsZeroOrNegative_TC057() {
     request.getItems().getFirst().setUnitPrice(BigDecimal.ZERO);
-    assertSingleViolation("items[0].unitPrice", ValidationMessage.Msg.PRICE_MIN);
+    assertSingleViolation("items[0].unitPrice", ValidationMessage.PRICE_MIN);
 
     request.getItems().getFirst().setUnitPrice(new BigDecimal("-1.00"));
-    assertSingleViolation("items[0].unitPrice", ValidationMessage.Msg.PRICE_MIN);
+    assertSingleViolation("items[0].unitPrice", ValidationMessage.PRICE_MIN);
   }
 
   @Test
   void requestValidation_Fails_WhenUnitPriceFractionExceedsTwoDecimals_TC058() {
     request.getItems().getFirst().setUnitPrice(new BigDecimal("25000.123"));
-    assertSingleViolation("items[0].unitPrice", ValidationMessage.Msg.SIZE_MAX);
+    assertSingleViolation("items[0].unitPrice", ValidationMessage.SIZE_MAX);
   }
 
   @Test
   void requestValidation_Fails_WhenUnitPriceIntegerDigitsExceed16_TC059() {
     request.getItems().getFirst().setUnitPrice(new BigDecimal("10000000000000000.00"));
-    assertSingleViolation("items[0].unitPrice", ValidationMessage.Msg.SIZE_MAX);
+    assertSingleViolation("items[0].unitPrice", ValidationMessage.SIZE_MAX);
   }
 
   @Test
   void requestValidation_Fails_WhenItemNoteExceeds255Characters_TC060() {
     request.getItems().getFirst().setNote("A".repeat(256));
-    assertSingleViolation("items[0].note", ValidationMessage.Msg.SIZE_MAX);
+    assertSingleViolation("items[0].note", ValidationMessage.SIZE_MAX);
   }
 
   @Test

@@ -4,9 +4,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import coffee.api.constants.ValidationMessage;
 import coffee.api.dto.request.table.DeleteTablesRequest;
 import coffee.api.enums.Roles;
-import coffee.api.enums.ValidationMessage;
 import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.exceptions.InvalidRequestException;
 import coffee.api.mapper.CommonMapper;
@@ -452,6 +452,6 @@ class DeleteTablesServiceImplTest {
     assertEquals(1, violations.size(), violations.toString());
     var violation = violations.iterator().next();
     assertEquals(field, violation.getPropertyPath().toString());
-    assertEquals(ValidationMessage.Msg.FIELD_REQUIRED, violation.getMessage());
+    assertEquals(ValidationMessage.FIELD_REQUIRED, violation.getMessage());
   }
 }

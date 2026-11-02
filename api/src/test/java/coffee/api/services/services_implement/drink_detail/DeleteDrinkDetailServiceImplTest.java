@@ -4,9 +4,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import coffee.api.constants.ValidationMessage;
 import coffee.api.dto.request.drink_detail.DeleteDrinkDetailRequest;
 import coffee.api.dto.result.DrinkDetailResult;
-import coffee.api.enums.ValidationMessage;
 import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.exceptions.InvalidRequestException;
 import coffee.api.mapper.CommonMapper;
@@ -248,8 +248,7 @@ class DeleteDrinkDetailServiceImplTest {
   void requestValidation_RejectsMissingDetailId_TC012() {
     request.setDrinkDetailId(null);
 
-    assertViolations(
-        request, Map.of("drinkDetailId", Set.of(ValidationMessage.Msg.FIELD_REQUIRED)));
+    assertViolations(request, Map.of("drinkDetailId", Set.of(ValidationMessage.FIELD_REQUIRED)));
   }
 
   // =========================================================================

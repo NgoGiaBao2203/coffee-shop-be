@@ -1,5 +1,6 @@
 package coffee.api.controllers.invoice;
 
+import coffee.api.constants.Authority;
 import coffee.api.dto.request.invoice.StatusInvoiceRequest;
 import coffee.api.dto.response.invoice.StatusInvoiceResponse;
 import coffee.api.enums.ResponseCode;
@@ -21,7 +22,7 @@ public class UpdateInvoiceStatusController {
   private final IStatusInvoiceService updateInvoiceStatusService;
 
   @PutMapping("invoice/status")
-  @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'STAFF')")
+  @PreAuthorize(Authority.ANY_ROLE)
   public ResponseEntity<StatusInvoiceResponse> updateInvoiceStatus(
       @AuthenticationPrincipal CustomUserDetail customUserDetail,
       @RequestBody @Valid StatusInvoiceRequest request) {

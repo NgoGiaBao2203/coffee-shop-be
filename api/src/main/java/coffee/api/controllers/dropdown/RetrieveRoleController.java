@@ -1,5 +1,6 @@
 package coffee.api.controllers.dropdown;
 
+import coffee.api.constants.Authority;
 import coffee.api.dto.response.dropdown.RoleResponse;
 import coffee.api.dto.result.RoleResult;
 import coffee.api.enums.ResponseCode;
@@ -17,7 +18,7 @@ public class RetrieveRoleController {
   private final IRoleService roleService;
 
   @GetMapping("dropdown/role")
-  @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
+  @PreAuthorize(Authority.OWNER_OR_MANAGER)
   public ResponseEntity<RoleResponse> retrieveRole() {
     List<RoleResult> response = roleService.process();
     return ResponseEntity.ok()

@@ -1,5 +1,6 @@
 package coffee.api.services.services_implement.invoice;
 
+import coffee.api.constants.ErrorMessage;
 import coffee.api.dto.request.invoice.SearchInvoiceRequest;
 import coffee.api.dto.response.base_response.PageResponse;
 import coffee.api.dto.response.base_response.PaginationMeta;
@@ -67,7 +68,7 @@ public class GetInvoiceServiceImpl implements IGetInvoiceService {
         throw new InvalidRequestException("You do not have permission to access invoices");
       }
       if (currentUserShopId == null) {
-        throw new InvalidRequestException("User is not assigned to any shop");
+        throw new InvalidRequestException(ErrorMessage.USER_NOT_ASSIGNED_TO_SHOP);
       }
       targetShopId =
           invoiceValidator.resolveTargetShopId(

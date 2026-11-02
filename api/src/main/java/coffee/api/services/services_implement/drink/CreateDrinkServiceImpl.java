@@ -1,5 +1,6 @@
 package coffee.api.services.services_implement.drink;
 
+import coffee.api.constants.ErrorMessage;
 import coffee.api.dto.request.drink.CreateDrinksRequest;
 import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.exceptions.InvalidRequestException;
@@ -41,7 +42,7 @@ public class CreateDrinkServiceImpl implements ICreateDrinkService {
         currentShopId,
         request.getShopId(),
         currentUserId,
-        "You do not have permission to access this shop");
+        ErrorMessage.SHOP_ACCESS_DENIED);
 
     // 3. Verify category belongs to shop for create
     drinkValidator.validateCategoryBelongsToShopForCreate(
@@ -70,11 +71,11 @@ public class CreateDrinkServiceImpl implements ICreateDrinkService {
 
   private void validateRequestShop(CreateDrinksRequest request) {
     if (request == null || request.getShopId() == null) {
-      throw new InvalidRequestException("Shop ID is required");
+      throw new InvalidRequestException(ErrorMessage.SHOP_ID_REQUIRED);
     }
     boolean isShopExisted = commonMapper.checkShopExisted(request.getShopId());
     if (!isShopExisted) {
-      throw new DataNotFoundException("Data not found", request.getShopId());
+      throw new DataNotFoundException(ErrorMessage.DATA_NOT_FOUND, request.getShopId());
     }
   }
 

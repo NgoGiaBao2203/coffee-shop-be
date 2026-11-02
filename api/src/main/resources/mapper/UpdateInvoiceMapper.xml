@@ -14,6 +14,25 @@
     <include refid="coffee.api.mapper.CommonMapper.lockOccupiedInvoiceTableSql"/>
   </select>
 
+  <!-- Recover an available table that still holds this unpaid invoice, unless another unpaid invoice uses it -->
+  <update id="occupyCurrentTable">
+    UPDATE shop_tables
+    SET status = 2, updated_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh'
+    WHERE table_id = #{tableId}
+    AND shop_id = #{shopId}
+    AND deleted_at IS NULL
+    AND is_deleted = FALSE
+    AND status = 1
+    AND NOT EXISTS (
+      SELECT 1 FROM invoices i
+      WHERE i.table_id = #{tableId}
+      AND i.invoice_id &lt;&gt; #{invoiceId}
+      AND i.status = 0
+      AND i.deleted_at IS NULL
+      AND i.is_deleted = FALSE
+    )
+  </update>
+
   <!-- 3. Only an active unpaid invoice in the validated shop can be edited -->
   <update id="updateInvoice">
     UPDATE invoices

@@ -1,5 +1,6 @@
 package coffee.api.services.services_implement.category;
 
+import coffee.api.constants.ErrorMessage;
 import coffee.api.dto.request.category.DeleteCategoriesRequest;
 import coffee.api.enums.Roles;
 import coffee.api.exceptions.DataNotFoundException;
@@ -35,11 +36,11 @@ public class DeleteCategoriesServiceImpl implements IDeleteCategoriesService {
     // 2. Verify manager role belongs to active shop branch
     if (Roles.MANAGER.getValue().equals(currentUserRoleName)) {
       if (currentUserShopId == null) {
-        throw new InvalidRequestException("Manager is not assigned to any shop branch");
+        throw new InvalidRequestException(ErrorMessage.MANAGER_NOT_ASSIGNED_TO_SHOP_BRANCH);
       }
       boolean isShopMember = commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId);
       if (!isShopMember) {
-        throw new InvalidRequestException("You do not have permission to access this shop branch");
+        throw new InvalidRequestException(ErrorMessage.SHOP_BRANCH_ACCESS_DENIED);
       }
     }
 
@@ -48,7 +49,7 @@ public class DeleteCategoriesServiceImpl implements IDeleteCategoriesService {
         commonMapper.checkCategoryExisted(
             request.getCategoryId(), currentUserRoleName, currentUserShopId);
     if (!isCategoryExisted) {
-      throw new DataNotFoundException("Data not found", request.getCategoryId());
+      throw new DataNotFoundException(ErrorMessage.DATA_NOT_FOUND, request.getCategoryId());
     }
 
     // 4. Preserve open invoice data before deleting drinks or their details

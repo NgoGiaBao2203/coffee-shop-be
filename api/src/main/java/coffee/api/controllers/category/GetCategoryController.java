@@ -1,5 +1,6 @@
 package coffee.api.controllers.category;
 
+import coffee.api.constants.Authority;
 import coffee.api.dto.request.category.SearchCategoriesRequest;
 import coffee.api.dto.response.base_response.PageResponse;
 import coffee.api.dto.result.CategoryResult;
@@ -20,7 +21,7 @@ public class GetCategoryController {
   private final IGetCategoryService getCategoryService;
 
   @PostMapping("categories")
-  @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'STAFF')")
+  @PreAuthorize(Authority.ANY_ROLE)
   public PageResponse<CategoryResult> getCategories(
       @AuthenticationPrincipal CustomUserDetail customUserDetail,
       @RequestBody @Valid SearchCategoriesRequest request) {

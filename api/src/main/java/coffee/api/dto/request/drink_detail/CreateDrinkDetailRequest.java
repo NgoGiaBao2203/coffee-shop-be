@@ -1,6 +1,7 @@
 package coffee.api.dto.request.drink_detail;
 
-import coffee.api.enums.ValidationMessage;
+import coffee.api.constants.ValidationMessage;
+import coffee.api.constants.ValidationPattern;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
@@ -13,15 +14,15 @@ import lombok.Data;
 @Data
 public class CreateDrinkDetailRequest {
 
-  @NotNull(message = ValidationMessage.Msg.FIELD_REQUIRED)
+  @NotNull(message = ValidationMessage.FIELD_REQUIRED)
   private UUID drinkId;
 
-  @NotBlank(message = ValidationMessage.Msg.FIELD_REQUIRED)
-  @Pattern(regexp = "^[SML]$", message = ValidationMessage.Msg.SPECIAL_CHARACTERS)
+  @NotBlank(message = ValidationMessage.FIELD_REQUIRED)
+  @Pattern(regexp = ValidationPattern.DRINK_SIZE, message = ValidationMessage.SPECIAL_CHARACTERS)
   private String size;
 
-  @NotNull(message = ValidationMessage.Msg.FIELD_REQUIRED)
-  @DecimalMin(value = "0.0", inclusive = false, message = ValidationMessage.Msg.PRICE_MIN)
-  @Digits(integer = 16, fraction = 2, message = ValidationMessage.Msg.SIZE_MAX)
+  @NotNull(message = ValidationMessage.FIELD_REQUIRED)
+  @DecimalMin(value = "0.0", inclusive = false, message = ValidationMessage.PRICE_MIN)
+  @Digits(integer = 16, fraction = 2, message = ValidationMessage.SIZE_MAX)
   private BigDecimal price;
 }

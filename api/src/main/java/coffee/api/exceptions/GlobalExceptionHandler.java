@@ -1,5 +1,6 @@
 package coffee.api.exceptions;
 
+import coffee.api.constants.ErrorMessage;
 import coffee.api.dto.response.base_response.ErrorApiResponse;
 import coffee.api.dto.response.base_response.ErrorDetail;
 import coffee.api.enums.ResponseCode;
@@ -37,7 +38,9 @@ public class GlobalExceptionHandler {
             .toList();
     log.error("Validation failed: {}", errorDetails);
     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-        .body(ErrorApiResponse.of(ResponseCode.INVALID_REQUEST, "Invalid request", errorDetails));
+        .body(
+            ErrorApiResponse.of(
+                ResponseCode.INVALID_REQUEST, ErrorMessage.INVALID_REQUEST, errorDetails));
   }
 
   @ExceptionHandler(HttpMessageNotReadableException.class)

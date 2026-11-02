@@ -1,5 +1,6 @@
 package coffee.api.controllers.category;
 
+import coffee.api.constants.Authority;
 import coffee.api.dto.request.category.DeleteCategoriesRequest;
 import coffee.api.dto.response.category.DeleteCategoriesResponse;
 import coffee.api.enums.ResponseCode;
@@ -20,7 +21,7 @@ public class DeleteCategoryController {
   private final IDeleteCategoriesService deleteCategoriesService;
 
   @DeleteMapping("category/delete")
-  @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
+  @PreAuthorize(Authority.OWNER_OR_MANAGER)
   public ResponseEntity<DeleteCategoriesResponse> deleteCategories(
       @AuthenticationPrincipal CustomUserDetail customUserDetail,
       @RequestBody @Valid DeleteCategoriesRequest request) {

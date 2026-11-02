@@ -1,5 +1,6 @@
 package coffee.api.services.services_implement.drink.common;
 
+import coffee.api.constants.ErrorMessage;
 import coffee.api.enums.Roles;
 import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.exceptions.InvalidRequestException;
@@ -28,7 +29,7 @@ public class DrinkValidator {
 
     boolean isShopMember = commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId);
     if (!isShopMember) {
-      throw new InvalidRequestException("You do not have permission to access this shop");
+      throw new InvalidRequestException(ErrorMessage.SHOP_ACCESS_DENIED);
     }
   }
 
@@ -54,7 +55,7 @@ public class DrinkValidator {
 
     boolean isShopMember = commonMapper.checkShopIdIsExisted(currentUserId, currentShopId);
     if (!isShopMember) {
-      throw new InvalidRequestException("You do not have permission to access this shop");
+      throw new InvalidRequestException(ErrorMessage.SHOP_ACCESS_DENIED);
     }
   }
 
@@ -62,7 +63,7 @@ public class DrinkValidator {
   public void validateCategoryBelongsToShopForCreate(UUID categoryId, UUID shopId) {
     boolean isCategoryBelongsToShop = commonMapper.checkCategoryExistsInShop(categoryId, shopId);
     if (!isCategoryBelongsToShop) {
-      throw new DataNotFoundException("Data not found", categoryId);
+      throw new DataNotFoundException(ErrorMessage.DATA_NOT_FOUND, categoryId);
     }
   }
 
@@ -78,7 +79,7 @@ public class DrinkValidator {
   public void validateDrinkExistence(UUID drinkId, String roleName, UUID shopId) {
     Boolean isDrinkExisted = commonMapper.checkDrinkExisted(drinkId, roleName, shopId);
     if (Boolean.FALSE.equals(isDrinkExisted)) {
-      throw new DataNotFoundException("Data not found", drinkId);
+      throw new DataNotFoundException(ErrorMessage.DATA_NOT_FOUND, drinkId);
     }
   }
 

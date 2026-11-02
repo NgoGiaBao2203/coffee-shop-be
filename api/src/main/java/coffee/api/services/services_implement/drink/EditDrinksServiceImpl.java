@@ -1,5 +1,6 @@
 package coffee.api.services.services_implement.drink;
 
+import coffee.api.constants.ErrorMessage;
 import coffee.api.dto.request.drink.EditDrinksRequest;
 import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.exceptions.InvalidRequestException;
@@ -80,14 +81,14 @@ public class EditDrinksServiceImpl implements IEditDrinksService {
 
   private void validateRequest(EditDrinksRequest request) {
     if (request == null || request.getDrinkId() == null) {
-      throw new InvalidRequestException("Drink ID is required");
+      throw new InvalidRequestException(ErrorMessage.DRINK_ID_REQUIRED);
     }
   }
 
   private UUID resolveDrinkShopId(UUID drinkId) {
     UUID drinkShopId = updateDrinkMapper.getShopIdByDrinkId(drinkId);
     if (drinkShopId == null) {
-      throw new DataNotFoundException("Data not found", drinkId);
+      throw new DataNotFoundException(ErrorMessage.DATA_NOT_FOUND, drinkId);
     }
     return drinkShopId;
   }

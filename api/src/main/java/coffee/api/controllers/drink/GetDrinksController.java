@@ -1,5 +1,6 @@
 package coffee.api.controllers.drink;
 
+import coffee.api.constants.Authority;
 import coffee.api.dto.request.drink.SearchDrinksRequest;
 import coffee.api.dto.response.base_response.PageResponse;
 import coffee.api.dto.result.DrinkResult;
@@ -20,7 +21,7 @@ public class GetDrinksController {
   private final IGetDrinkService getDrinksService;
 
   @PostMapping("drinks")
-  @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'STAFF')")
+  @PreAuthorize(Authority.ANY_ROLE)
   public PageResponse<DrinkResult> getDrinks(
       @AuthenticationPrincipal CustomUserDetail customUserDetail,
       @RequestBody @Valid SearchDrinksRequest request) {

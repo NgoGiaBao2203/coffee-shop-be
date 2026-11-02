@@ -1,5 +1,6 @@
 package coffee.api.controllers.staff;
 
+import coffee.api.constants.Authority;
 import coffee.api.dto.request.user.EditStaffRequest;
 import coffee.api.dto.response.staff.EditStaffResponse;
 import coffee.api.enums.ResponseCode;
@@ -20,7 +21,7 @@ public class EditStaffController {
   private final IEditStaffService editStaffService;
 
   @PutMapping("staff/edit")
-  @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
+  @PreAuthorize(Authority.OWNER_OR_MANAGER)
   public ResponseEntity<EditStaffResponse> editStaff(
       @AuthenticationPrincipal CustomUserDetail customUserDetail,
       @RequestBody @Valid EditStaffRequest request) {

@@ -1,7 +1,8 @@
 package coffee.api.dto.request.table;
 
+import coffee.api.constants.ValidationMessage;
+import coffee.api.constants.ValidationPattern;
 import coffee.api.enums.SortDirection;
-import coffee.api.enums.ValidationMessage;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
@@ -12,29 +13,27 @@ import lombok.Data;
 @Data
 public class SearchTablesRequest {
 
-  @Min(value = 1, message = ValidationMessage.Msg.PAGE_MIN)
+  @Min(value = 1, message = ValidationMessage.PAGE_MIN)
   private int page = 1;
 
-  @Min(value = 1, message = ValidationMessage.Msg.SIZE_MIN)
-  @Max(value = 100, message = ValidationMessage.Msg.SIZE_MAX)
+  @Min(value = 1, message = ValidationMessage.SIZE_MIN)
+  @Max(value = 100, message = ValidationMessage.SIZE_MAX)
   private int size = 10;
 
   private UUID shopId;
 
-  @Min(value = 1, message = ValidationMessage.Msg.SIZE_MIN)
-  @Max(value = 3, message = ValidationMessage.Msg.SIZE_MAX)
+  @Min(value = 1, message = ValidationMessage.SIZE_MIN)
+  @Max(value = 3, message = ValidationMessage.SIZE_MAX)
   private Integer status;
 
   // Allows: Unicode letters, numbers, spaces, and punctuation: - & / ( ) , . '
-  @Size(max = 100, message = ValidationMessage.Msg.SIZE_MAX)
-  @Pattern(
-      regexp = "^\\s*$|^[\\p{L}\\p{N}\\s&/(),.'\\-]+$",
-      message = ValidationMessage.Msg.SPECIAL_CHARACTERS)
+  @Size(max = 100, message = ValidationMessage.SIZE_MAX)
+  @Pattern(regexp = ValidationPattern.OPTIONAL_TEXT, message = ValidationMessage.SPECIAL_CHARACTERS)
   private String search;
 
   @Pattern(
       regexp = "^(tableId|tableNumber|status|shopId|createdAt|updatedAt)$",
-      message = ValidationMessage.Msg.SORT_BY_INVALID)
+      message = ValidationMessage.SORT_BY_INVALID)
   private String sortBy = "tableNumber";
 
   private SortDirection sortDirection = SortDirection.ASC;

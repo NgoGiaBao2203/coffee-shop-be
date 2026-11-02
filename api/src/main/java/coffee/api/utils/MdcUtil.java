@@ -1,6 +1,6 @@
 package coffee.api.utils;
 
-import coffee.api.config.MdcKey;
+import coffee.api.constants.MdcKey;
 import java.util.UUID;
 import org.slf4j.MDC;
 
