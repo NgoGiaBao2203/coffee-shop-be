@@ -708,8 +708,8 @@ class CreateInvoiceServiceImplTest {
   }
 
   @Test
-  void requestValidation_Success_WhenQuantityIs999_TC047() {
-    validRequest.getItems().get(0).setQuantity(999);
+  void requestValidation_Success_WhenQuantityIs100_TC047() {
+    validRequest.getItems().get(0).setQuantity(100);
     assertRequestValid();
   }
 
@@ -791,8 +791,8 @@ class CreateInvoiceServiceImplTest {
   }
 
   @Test
-  void requestValidation_Fails_WhenQuantityExceeds999_TC060() {
-    validRequest.getItems().get(0).setQuantity(1000);
+  void requestValidation_Fails_WhenQuantityExceeds100_TC060() {
+    validRequest.getItems().get(0).setQuantity(101);
     assertSingleViolation("items[0].quantity", ValidationMessage.SIZE_MAX);
   }
 

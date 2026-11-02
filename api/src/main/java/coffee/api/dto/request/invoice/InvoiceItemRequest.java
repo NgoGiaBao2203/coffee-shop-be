@@ -19,7 +19,7 @@ public class InvoiceItemRequest {
 
   @NotNull(message = ValidationMessage.FIELD_REQUIRED)
   @Min(value = 1, message = ValidationMessage.SIZE_MIN)
-  @Max(value = 999, message = ValidationMessage.SIZE_MAX)
+  @Max(value = 100, message = ValidationMessage.SIZE_MAX)
   private Integer quantity;
 
   @NotNull(message = ValidationMessage.FIELD_REQUIRED)

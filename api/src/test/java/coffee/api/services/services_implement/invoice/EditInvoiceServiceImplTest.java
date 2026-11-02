@@ -705,7 +705,7 @@ class EditInvoiceServiceImplTest {
     request.getItems().getFirst().setQuantity(1);
     assertRequestValid();
 
-    request.getItems().getFirst().setQuantity(999);
+    request.getItems().getFirst().setQuantity(100);
     assertRequestValid();
   }
 
@@ -799,7 +799,7 @@ class EditInvoiceServiceImplTest {
 
   @Test
   void requestValidation_Fails_WhenQuantityExceedsMax_TC055() {
-    request.getItems().getFirst().setQuantity(1000);
+    request.getItems().getFirst().setQuantity(101);
     assertSingleViolation("items[0].quantity", ValidationMessage.SIZE_MAX);
   }
 
