@@ -37,6 +37,8 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 public class FileStorageServiceImpl implements IFileStorageService {
 
   private static final String UPLOAD_DIR = "uploads/drinks";
+  private static final String LOCAL_URL_PREFIX = "/uploads/drinks/";
+  private static final String SUPABASE_PUBLIC_PATH = "/storage/v1/object/public/";
   private static final List<String> ALLOWED_EXTENSIONS = Arrays.asList(".jpg", ".png");
   private static final String FILE_NAME_PREFIX = "drink_";
   // Every upload is re-encoded as JPEG so stored files stay in the KB range
@@ -182,7 +184,7 @@ public class FileStorageServiceImpl implements IFileStorageService {
     Path targetLocation = uploadPath.resolve(uniqueFileName);
     Files.write(targetLocation, imageBytes);
 
-    return "/uploads/drinks/" + uniqueFileName;
+    return LOCAL_URL_PREFIX + uniqueFileName;
   }
 
   private String extractAndValidateExtension(String originalFilename) {
@@ -211,7 +213,7 @@ public class FileStorageServiceImpl implements IFileStorageService {
 
   @Override
   public void deleteDrinkImage(String imageUrl) {
-    if (imageUrl == null || imageUrl.trim().isEmpty()) {
+    if (imageUrl == null || imageUrl.trim().isEmpty() || !isManagedImageUrl(imageUrl)) {
       return;
     }
 
@@ -224,6 +226,20 @@ public class FileStorageServiceImpl implements IFileStorageService {
     } catch (Exception e) {
       throw new InvalidRequestException("Could not delete old image file: " + imageUrl);
     }
+  }
+
+  /**
+   * Only files uploaded by this service are deleted; external links such as placeholders are kept.
+   */
+  private boolean isManagedImageUrl(String imageUrl) {
+    if (isSupabaseEnabled()) {
+      return imageUrl.contains(supabaseBucketPath());
+    }
+    return imageUrl.startsWith(LOCAL_URL_PREFIX);
+  }
+
+  private String supabaseBucketPath() {
+    return SUPABASE_PUBLIC_PATH + storageProperties.getBucketName() + "/";
   }
 
   private void deleteFromSupabase(String imageUrl) {
@@ -241,7 +257,7 @@ public class FileStorageServiceImpl implements IFileStorageService {
   }
 
   private void deleteFromLocalFileSystem(String imageUrl) throws IOException {
-    String relativePath = imageUrl.replace("/uploads/drinks/", "");
+    String relativePath = imageUrl.replace(LOCAL_URL_PREFIX, "");
     Path filePath = Paths.get(UPLOAD_DIR).resolve(relativePath);
 
     if (Files.exists(filePath)) {
@@ -264,7 +280,7 @@ public class FileStorageServiceImpl implements IFileStorageService {
 
   private String extractFileKeyFromUrl(String imageUrl) {
     // Extract the key from URL: https://.../storage/v1/object/public/{bucket}/{key}
-    String bucketPath = "/storage/v1/object/public/" + storageProperties.getBucketName() + "/";
+    String bucketPath = supabaseBucketPath();
     int bucketPathIndex = imageUrl.indexOf(bucketPath);
     if (bucketPathIndex == -1) {
       throw new InvalidRequestException("Invalid image URL format");

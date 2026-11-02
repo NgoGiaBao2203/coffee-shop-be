@@ -158,14 +158,15 @@ class FileStorageServiceImplTest {
   }
 
   @Test
-  void deleteDrinkImage_ThrowsInvalidRequestException_WhenSupabaseUrlFormatIsInvalid_TC007() {
-    String invalidUrl = "https://example.com/invalid/path/image.png";
+  void deleteDrinkImage_SkipsExternalUrl_WhenUrlIsNotInSupabaseBucket_TC007() {
+    String externalUrl = "https://example.com/invalid/path/image.png";
 
-    InvalidRequestException exception =
-        assertThrows(
-            InvalidRequestException.class, () -> fileStorageService.deleteDrinkImage(invalidUrl));
+    try (org.mockito.MockedStatic<software.amazon.awssdk.services.s3.S3Client> mockedStaticS3 =
+        org.mockito.Mockito.mockStatic(software.amazon.awssdk.services.s3.S3Client.class)) {
+      assertDoesNotThrow(() -> fileStorageService.deleteDrinkImage(externalUrl));
 
-    assertTrue(exception.getMessage().contains("Could not delete old image file"));
+      mockedStaticS3.verifyNoInteractions();
+    }
   }
 
   @Test
@@ -755,5 +756,29 @@ class FileStorageServiceImplTest {
       assertEquals("Could not store image file. Please try again!", exception.getMessage());
       org.mockito.Mockito.verify(failingWriter).dispose();
     }
+  }
+
+  @Test
+  void deleteDrinkImage_SkipsPlaceholderUrl_WhenSupabaseIsEnabled_TC042() {
+    try (org.mockito.MockedStatic<software.amazon.awssdk.services.s3.S3Client> mockedStaticS3 =
+        org.mockito.Mockito.mockStatic(software.amazon.awssdk.services.s3.S3Client.class)) {
+      assertDoesNotThrow(
+          () -> fileStorageService.deleteDrinkImage("https://placehold.co/400x300?text=Drink"));
+
+      mockedStaticS3.verifyNoInteractions();
+    }
+  }
+
+  @Test
+  void deleteDrinkImage_SkipsExternalUrl_WhenStoringLocally_TC043() throws IOException {
+    FileStorageServiceImpl localService = new FileStorageServiceImpl(null);
+    Files.createDirectories(testUploadDir);
+    Path existingFile = testUploadDir.resolve("drink_1_1.jpg");
+    Files.write(existingFile, "data".getBytes());
+
+    assertDoesNotThrow(
+        () -> localService.deleteDrinkImage("https://placehold.co/400x300?text=Drink"));
+
+    assertTrue(Files.exists(existingFile));
   }
 }

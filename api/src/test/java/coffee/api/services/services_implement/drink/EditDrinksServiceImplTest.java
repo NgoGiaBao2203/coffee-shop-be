@@ -702,4 +702,56 @@ class EditDrinksServiceImplTest {
               .anyMatch(v -> ValidationMessage.STATUS_INVALID.equals(v.getMessage())));
     }
   }
+
+  @Test
+  void process_Success_WhenOldImageDeletionFailsAfterCommit_DoesNotThrow_TC020() {
+    MockMultipartFile newImageFile =
+        new MockMultipartFile("image", "new_drink.jpg", "image/jpeg", "fake-image".getBytes());
+    String oldImageUrl = "https://example.com/drinks/old_image.png";
+    String newUploadedUrl = "https://example.com/drinks/new_image.png";
+
+    when(commonMapper.checkDrinkExisted(drinkId, Roles.OWNER.getValue(), currentUserShopId))
+        .thenReturn(true);
+    when(editDrinkMapper.getShopIdByDrinkId(drinkId)).thenReturn(drinkShopId);
+    when(commonMapper.checkCategoryExistsInShop(drinkCategoryId, drinkShopId)).thenReturn(true);
+    when(editDrinkMapper.checkDrinkNameExistedForEdit(drinkId, "Cà Phê Muối Đặc Biệt"))
+        .thenReturn(false);
+    when(editDrinkMapper.getDrinkImageUrl(drinkId, Roles.OWNER.getValue(), drinkShopId))
+        .thenReturn(oldImageUrl);
+    when(fileStorageService.storeDrinkImage(newImageFile)).thenReturn(newUploadedUrl);
+
+    assertDoesNotThrow(
+        () ->
+            editDrinksService.process(
+                validRequest,
+                newImageFile,
+                currentUserId,
+                Roles.OWNER.getValue(),
+                currentUserShopId));
+
+    verify(fileStorageService).storeDrinkImage(newImageFile);
+    verify(editDrinkMapper)
+        .updateDrink(
+            eq(drinkId),
+            eq("Cà Phê Muối Đặc Biệt"),
+            eq(newUploadedUrl),
+            eq(1),
+            eq(drinkCategoryId),
+            eq(drinkShopId),
+            eq(Roles.OWNER.getValue()));
+
+    // Old image is not deleted before transaction commit
+    verify(fileStorageService, never()).deleteDrinkImage(oldImageUrl);
+
+    // Trigger post-commit synchronization callbacks
+    List<TransactionSynchronization> syncs =
+        TransactionSynchronizationManager.getSynchronizations();
+    assertFalse(syncs.isEmpty());
+    doThrow(new InvalidRequestException("Could not delete old image file: " + oldImageUrl))
+        .when(fileStorageService)
+        .deleteDrinkImage(oldImageUrl);
+    assertDoesNotThrow(() -> syncs.forEach(TransactionSynchronization::afterCommit));
+
+    verify(fileStorageService).deleteDrinkImage(oldImageUrl);
+  }
 }
