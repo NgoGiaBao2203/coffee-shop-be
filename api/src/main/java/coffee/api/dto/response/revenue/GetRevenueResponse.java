@@ -17,18 +17,9 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@JsonPropertyOrder({
-  "code",
-  "message",
-  "traceId",
-  "totalRevenue",
-  "totalInvoices",
-  "items",
-  "pagination"
-})
+@JsonPropertyOrder({"code", "message", "traceId", "totalRevenue", "items", "pagination"})
 public class GetRevenueResponse extends BaseApiResponse {
   private BigDecimal totalRevenue;
-  private long totalInvoices;
   private List<RevenueResult> items;
   private PaginationMeta pagination;
 
@@ -36,7 +27,6 @@ public class GetRevenueResponse extends BaseApiResponse {
       ResponseCode responseCode,
       String message,
       BigDecimal totalRevenue,
-      long totalInvoices,
       List<RevenueResult> items,
       PaginationMeta pagination) {
     return GetRevenueResponse.builder()
@@ -44,7 +34,6 @@ public class GetRevenueResponse extends BaseApiResponse {
         .message(message)
         .traceId(MdcUtil.getTraceId())
         .totalRevenue(totalRevenue)
-        .totalInvoices(totalInvoices)
         .items(items)
         .pagination(pagination)
         .build();

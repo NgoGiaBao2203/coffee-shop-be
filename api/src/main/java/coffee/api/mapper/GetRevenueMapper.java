@@ -1,7 +1,7 @@
 package coffee.api.mapper;
 
 import coffee.api.dto.result.RevenueResult;
-import coffee.api.dto.result.RevenueTotalResult;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -33,7 +33,7 @@ public interface GetRevenueMapper {
       @Param("currentUserRoleName") String currentUserRoleName,
       @Param("currentUserShopId") UUID currentUserShopId);
 
-  RevenueTotalResult getRevenueTotal(
+  BigDecimal getRevenueTotal(
       @Param("search") String search,
       @Param("shopId") UUID shopId,
       @Param("invoiceId") UUID invoiceId,

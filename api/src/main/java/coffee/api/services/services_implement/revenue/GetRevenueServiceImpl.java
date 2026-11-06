@@ -5,7 +5,6 @@ import coffee.api.dto.request.revenue.SearchRevenueRequest;
 import coffee.api.dto.response.base_response.PaginationMeta;
 import coffee.api.dto.response.revenue.GetRevenueResponse;
 import coffee.api.dto.result.RevenueResult;
-import coffee.api.dto.result.RevenueTotalResult;
 import coffee.api.enums.ResponseCode;
 import coffee.api.enums.Roles;
 import coffee.api.exceptions.InvalidRequestException;
@@ -56,19 +55,19 @@ public class GetRevenueServiceImpl implements IGetRevenueService {
     List<RevenueResult> revenues =
         fetchRevenues(request, currentUserRoleName, currentUserShopId, targetShopId, totalElements);
 
-    // 4. Get total revenue and invoice count of all pages
-    RevenueTotalResult total =
-        fetchTotal(request, currentUserRoleName, currentUserShopId, targetShopId, totalElements);
+    // 4. Get total revenue of all pages
+    BigDecimal totalRevenue =
+        fetchTotalRevenue(
+            request, currentUserRoleName, currentUserShopId, targetShopId, totalElements);
 
-    // 5. Return revenue invoices, total and pagination
+    // 5. Return revenue invoices, total revenue and pagination
     String message =
         revenues.isEmpty() ? "No revenue records found" : "Get revenue statistics successfully";
 
     return GetRevenueResponse.of(
         ResponseCode.SUCCESS,
         message,
-        total.getTotalRevenue(),
-        total.getTotalInvoices(),
+        totalRevenue,
         revenues,
         buildPagination(request, totalElements));
   }
@@ -133,33 +132,26 @@ public class GetRevenueServiceImpl implements IGetRevenueService {
     return revenues != null ? revenues : Collections.emptyList();
   }
 
-  /** Get the total only when matching invoices exist; missing values become zero. */
-  private RevenueTotalResult fetchTotal(
+  /** Get the total revenue only when matching invoices exist; a missing value becomes zero. */
+  private BigDecimal fetchTotalRevenue(
       SearchRevenueRequest request,
       String currentUserRoleName,
       UUID currentUserShopId,
       UUID targetShopId,
       long totalElements) {
-    RevenueTotalResult total = null;
-    if (totalElements > 0) {
-      total =
-          getRevenueMapper.getRevenueTotal(
-              request.trimmedSearch(),
-              targetShopId,
-              request.getInvoiceId(),
-              toStartDateTime(request),
-              toEndDateTime(request),
-              currentUserRoleName,
-              currentUserShopId);
+    if (totalElements == 0) {
+      return BigDecimal.ZERO;
     }
-    RevenueTotalResult result = new RevenueTotalResult();
-    result.setTotalRevenue(
-        total != null && total.getTotalRevenue() != null
-            ? total.getTotalRevenue()
-            : BigDecimal.ZERO);
-    result.setTotalInvoices(
-        total != null && total.getTotalInvoices() != null ? total.getTotalInvoices() : 0L);
-    return result;
+    BigDecimal total =
+        getRevenueMapper.getRevenueTotal(
+            request.trimmedSearch(),
+            targetShopId,
+            request.getInvoiceId(),
+            toStartDateTime(request),
+            toEndDateTime(request),
+            currentUserRoleName,
+            currentUserShopId);
+    return total != null ? total : BigDecimal.ZERO;
   }
 
   /** Build pagination from request and total matching invoices. */

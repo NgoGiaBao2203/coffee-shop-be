@@ -29,38 +29,32 @@
     </collection>
   </resultMap>
 
-  <!-- 3. Map the total revenue of all matching invoices -->
-  <resultMap id="RevenueTotalResultMap" type="coffee.api.dto.result.RevenueTotalResult">
-    <result property="totalRevenue" column="total_revenue"/>
-    <result property="totalInvoices" column="total_invoices"/>
-  </resultMap>
-
-  <!-- 4. Share paid invoice and shop filters between count, list and total queries -->
+  <!-- 3. Share paid invoice and shop filters between count, list and total queries -->
   <sql id="revenueFilterCondition">
     i.deleted_at IS NULL
     AND i.is_deleted = FALSE
     AND s.deleted_at IS NULL
     AND s.is_deleted = FALSE
 
-    <!-- 5. Only paid invoices count as revenue (0 = unpaid, 1 = paid, 2 = cancelled) -->
+    <!-- 4. Only paid invoices count as revenue (0 = unpaid, 1 = paid, 2 = cancelled) -->
     AND i.status = 1
 
-    <!-- 6. Restrict non-OWNER users to their assigned shop -->
+    <!-- 5. Restrict non-OWNER users to their assigned shop -->
     <if test="currentUserRoleName != 'OWNER'">
       AND i.shop_id = #{currentUserShopId}
     </if>
 
-    <!-- 7. Filter OWNER by the requested shop -->
+    <!-- 6. Filter OWNER by the requested shop -->
     <if test="currentUserRoleName == 'OWNER' and shopId != null">
       AND i.shop_id = #{shopId}
     </if>
 
-    <!-- 8. Filter by invoice ID -->
+    <!-- 7. Filter by invoice ID -->
     <if test="invoiceId != null">
       AND i.invoice_id = #{invoiceId}::uuid
     </if>
 
-    <!-- 9. Filter by date range -->
+    <!-- 8. Filter by date range -->
     <if test="startDateTime != null">
       AND i.created_at &gt;= #{startDateTime}
     </if>
@@ -68,7 +62,7 @@
       AND i.created_at &lt;= #{endDateTime}
     </if>
 
-    <!-- 10. Search invoice, shop, staff, table and drink name (deleted drinks included) -->
+    <!-- 9. Search invoice, shop, staff, table and drink name (deleted drinks included) -->
     <if test="search != null and search != ''">
       AND (
         i.invoice_code ILIKE CONCAT('%', #{search}, '%')
@@ -89,7 +83,7 @@
     </if>
   </sql>
 
-  <!-- 11. Count matching paid invoices before pagination -->
+  <!-- 10. Count matching paid invoices before pagination -->
   <select id="countRevenueFiltered" resultType="long">
     SELECT COUNT(1)
     FROM invoices i
@@ -101,7 +95,7 @@
     </where>
   </select>
 
-  <!-- 12. Fetch paid invoices and their drinks -->
+  <!-- 11. Fetch paid invoices and their drinks -->
   <select id="getRevenueFiltered" resultMap="RevenueResultMap">
     SELECT
       pi.invoice_id,
@@ -121,7 +115,7 @@
       id.unit_price,
       (id.unit_price * id.quantity) AS item_total,
       id.note
-    <!-- 13. Sort and paginate invoices in a subquery before joining their detail rows -->
+    <!-- 12. Sort and paginate invoices in a subquery before joining their detail rows -->
     FROM (
       SELECT
         i.invoice_id,
@@ -156,12 +150,12 @@
 
       LIMIT #{size} OFFSET #{offset}
     ) pi
-    <!-- 14. Join active invoice details and keep deleted drinks for history -->
+    <!-- 13. Join active invoice details and keep deleted drinks for history -->
     LEFT JOIN invoice_details id ON pi.invoice_id = id.invoice_id
       AND id.deleted_at IS NULL
     LEFT JOIN drink_details dd ON id.drink_detail_id = dd.drink_detail_id
     LEFT JOIN drinks d ON dd.drink_id = d.drink_id
-    <!-- 15. Keep invoice order and order the drinks within each invoice -->
+    <!-- 14. Keep invoice order and order the drinks within each invoice -->
     ORDER BY
     <choose>
       <when test="sortBy == 'invoiceId'">pi.invoice_id</when>
@@ -178,11 +172,9 @@
     id.invoice_detail_id ASC
   </select>
 
-  <!-- 16. Sum the total amount of all matching paid invoices on every page -->
-  <select id="getRevenueTotal" resultMap="RevenueTotalResultMap">
-    SELECT
-      COALESCE(SUM(i.total_amount), 0) AS total_revenue,
-      COUNT(1) AS total_invoices
+  <!-- 15. Sum the total amount of all matching paid invoices on every page -->
+  <select id="getRevenueTotal" resultType="java.math.BigDecimal">
+    SELECT COALESCE(SUM(i.total_amount), 0)
     FROM invoices i
     JOIN shops s ON i.shop_id = s.shop_id
     LEFT JOIN profiles p ON i.profile_id = p.profile_id
