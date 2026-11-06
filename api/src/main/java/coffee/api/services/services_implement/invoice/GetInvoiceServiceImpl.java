@@ -5,13 +5,13 @@ import coffee.api.dto.request.invoice.SearchInvoiceRequest;
 import coffee.api.dto.response.base_response.PageResponse;
 import coffee.api.dto.response.base_response.PaginationMeta;
 import coffee.api.dto.result.InvoiceResult;
+import coffee.api.enums.Roles;
 import coffee.api.exceptions.InvalidRequestException;
 import coffee.api.mapper.GetInvoiceMapper;
 import coffee.api.services.services_implement.invoice.common.InvoiceValidator;
 import coffee.api.services.services_interface.invoice.IGetInvoiceService;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -34,20 +34,19 @@ public class GetInvoiceServiceImpl implements IGetInvoiceService {
     UUID targetShopId =
         resolveAndValidateShopId(
             request.getShopId(), currentUserRoleName, currentUserShopId, currentUserId);
-    String roleName = currentUserRoleName.toUpperCase(Locale.ROOT);
 
     // 2. Count invoices matching shop, status and search filters
     long totalElements =
         getInvoiceMapper.countInvoicesFiltered(
             request.trimmedSearch(),
-            roleName,
+            currentUserRoleName,
             currentUserShopId,
             targetShopId,
             request.getStatus());
 
     // 3. Get invoice details and normalize status
     List<InvoiceResult> invoices =
-        fetchInvoices(request, roleName, currentUserShopId, targetShopId, totalElements);
+        fetchInvoices(request, currentUserRoleName, currentUserShopId, targetShopId, totalElements);
 
     // 4. Return invoice list and pagination
     return PageResponse.of(
@@ -60,13 +59,11 @@ public class GetInvoiceServiceImpl implements IGetInvoiceService {
       String currentUserRoleName,
       UUID currentUserShopId,
       UUID currentUserId) {
-    boolean isOwner = "OWNER".equalsIgnoreCase(currentUserRoleName);
+    boolean isOwner = Roles.OWNER.getValue().equals(currentUserRoleName);
     UUID targetShopId = requestedShopId;
     if (!isOwner) {
-      if (!"MANAGER".equalsIgnoreCase(currentUserRoleName)
-          && !"STAFF".equalsIgnoreCase(currentUserRoleName)) {
-        throw new InvalidRequestException("You do not have permission to access invoices");
-      }
+      invoiceValidator.validateManagerOrStaffRole(
+          currentUserRoleName, "You do not have permission to access invoices");
       if (currentUserShopId == null) {
         throw new InvalidRequestException(ErrorMessage.USER_NOT_ASSIGNED_TO_SHOP);
       }
@@ -83,7 +80,7 @@ public class GetInvoiceServiceImpl implements IGetInvoiceService {
   /** Get invoice details only when matching invoices exist and normalize response status. */
   private List<InvoiceResult> fetchInvoices(
       SearchInvoiceRequest request,
-      String roleName,
+      String currentUserRoleName,
       UUID currentUserShopId,
       UUID targetShopId,
       long totalElements) {
@@ -96,7 +93,7 @@ public class GetInvoiceServiceImpl implements IGetInvoiceService {
               request.getSortDirection().toString(),
               request.getSize(),
               request.calcOffset(),
-              roleName,
+              currentUserRoleName,
               currentUserShopId,
               targetShopId,
               request.getStatus());
@@ -122,7 +119,7 @@ public class GetInvoiceServiceImpl implements IGetInvoiceService {
 
   /** Convert stored invoice status codes into the response status names. */
   private String normalizeStatus(String rawStatus) {
-    if (rawStatus == null) return "Không xác định";
+    if (rawStatus == null) return "UNDEFINED";
 
     return switch (rawStatus) {
       case "0" -> "PENDING";

@@ -19,5 +19,14 @@ public final class ErrorMessage {
   public static final String MANAGER_NOT_ASSIGNED_TO_SHOP_BRANCH =
       "Manager is not assigned to any shop branch";
 
+  // ── Invoice ─────────────────────────────────────────────────────
+  public static final String INVOICE_NOT_FOUND = "Invoice not found";
+
+  // ── Table ───────────────────────────────────────────────────────
+  public static final String TABLE_UNAVAILABLE_IN_SHOP =
+      "Table is unavailable or does not exist in this shop";
+  public static final String CURRENT_TABLE_UNAVAILABLE =
+      "Current table is unavailable or does not belong to this shop";
+
   private ErrorMessage() {}
 }

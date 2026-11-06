@@ -1,10 +1,13 @@
 package coffee.api.dto.request.revenue;
 
 import coffee.api.constants.ValidationMessage;
+import coffee.api.constants.ValidationPattern;
 import coffee.api.enums.SortDirection;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.util.UUID;
 import lombok.Data;
@@ -19,22 +22,24 @@ public class SearchRevenueRequest {
   @Max(value = 100, message = ValidationMessage.SIZE_MAX)
   private int size = 10;
 
+  @Size(max = 100, message = ValidationMessage.SIZE_MAX)
+  @Pattern(regexp = ValidationPattern.OPTIONAL_TEXT, message = ValidationMessage.SPECIAL_CHARACTERS)
   private String search;
+
   private UUID shopId;
   private UUID invoiceId;
 
   private LocalDate startDate;
   private LocalDate endDate;
 
-  private Integer year;
-  private Integer month;
-
+  @NotNull(message = ValidationMessage.FIELD_REQUIRED)
   @Pattern(
       regexp =
           "^(invoiceId|shopName|fullName|drinkName|createdAt|totalAmount|tableNumber|size|quantity|price)$",
       message = ValidationMessage.SORT_BY_INVALID)
   private String sortBy = "createdAt";
 
+  @NotNull(message = ValidationMessage.FIELD_REQUIRED)
   private SortDirection sortDirection = SortDirection.DESC;
 
   public void setStartDate(Object value) {
@@ -71,6 +76,6 @@ public class SearchRevenueRequest {
   }
 
   public String directionValue() {
-    return sortDirection != null ? sortDirection.name() : SortDirection.DESC.name();
+    return sortDirection.name();
   }
 }

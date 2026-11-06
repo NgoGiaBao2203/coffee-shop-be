@@ -4,8 +4,16 @@
 
 <mapper namespace="coffee.api.mapper.GetRevenueMapper">
 
+  <!-- 1. Map the overall revenue total of all matching lines -->
+  <resultMap id="RevenueTotalResultMap" type="coffee.api.dto.result.RevenueTotalResult">
+    <result property="totalRevenue" column="total_revenue"/>
+    <result property="totalInvoices" column="total_invoices"/>
+  </resultMap>
+
+  <!-- 2. Map one revenue line (one drink of an invoice) -->
   <resultMap id="RevenueResultMap" type="coffee.api.dto.result.RevenueResult">
     <result property="invoiceId" column="invoice_id"/>
+    <result property="invoiceCode" column="invoice_code"/>
     <result property="shopId" column="shop_id"/>
     <result property="shopName" column="shop_name"/>
     <result property="fullName" column="full_name"/>
@@ -19,17 +27,18 @@
     <result property="note" column="note"/>
   </resultMap>
 
-  <!-- Base SQL query to select detailed revenue items -->
+  <!-- 3. Select the detailed revenue lines -->
   <sql id="selectRevenueSql">
     SELECT
     i.invoice_id,
+    i.invoice_code,
     s.shop_id,
     s.shop_name,
     p.full_name,
     d.drink_name,
     i.created_at,
     i.total_amount,
-    i.table_number,
+    st.table_number,
     dd.size,
     id.quantity,
     id.unit_price AS price,
@@ -40,29 +49,36 @@
     JOIN drinks AS d ON dd.drink_id = d.drink_id
     JOIN shops AS s ON i.shop_id = s.shop_id
     JOIN profiles AS p ON i.profile_id = p.profile_id
+    LEFT JOIN shop_tables AS st ON i.table_id = st.table_id
   </sql>
 
-  <!-- Common dynamic WHERE filtering conditions -->
+  <!-- 4. Share the filters between the list, count and total queries -->
   <sql id="filterConditions">
     <where>
-      i.is_deleted = false AND d.is_deleted = false
+      <!-- 5. Exclude deleted invoices, details and shops; keep deleted drinks and sizes so paid invoices retain their history -->
+      i.is_deleted = false AND i.deleted_at IS NULL
+      AND id.deleted_at IS NULL
+      AND s.is_deleted = false AND s.deleted_at IS NULL
 
-      <!-- Filter by user shop if non-OWNER role -->
+      <!-- 6. Only paid invoices count as revenue (0 = unpaid, 1 = paid, 2 = cancelled) -->
+      AND i.status = 1
+
+      <!-- 7. Restrict non-OWNER users to their assigned shop -->
       <if test="currentUserRoleName != 'OWNER'">
         AND i.shop_id = #{currentUserShopId}
       </if>
 
-      <!-- Filter by specific shop if current user is OWNER -->
+      <!-- 8. Filter OWNER by the requested shop -->
       <if test="currentUserRoleName == 'OWNER' and shopId != null">
         AND i.shop_id = #{shopId}
       </if>
 
-      <!-- Filter by specific invoice ID -->
-      <if test="invoiceId != null and invoiceId != ''">
+      <!-- 9. Filter by invoice ID -->
+      <if test="invoiceId != null">
         AND i.invoice_id = #{invoiceId}::uuid
       </if>
 
-      <!-- Date range filtering -->
+      <!-- 10. Filter by date range -->
       <if test="startDateTime != null">
         AND i.created_at &gt;= #{startDateTime}
       </if>
@@ -70,20 +86,21 @@
         AND i.created_at &lt;= #{endDateTime}
       </if>
 
-      <!-- Search keyword filtering across multiple fields -->
+      <!-- 11. Search drink, staff, shop, table number, invoice ID and invoice code -->
       <if test="search != null and search != ''">
         AND (
         d.drink_name ILIKE '%' || #{search} || '%'
         OR p.full_name ILIKE '%' || #{search} || '%'
         OR s.shop_name ILIKE '%' || #{search} || '%'
-        OR CAST(i.table_number AS VARCHAR) ILIKE '%' || #{search} || '%'
+        OR CAST(st.table_number AS VARCHAR) ILIKE '%' || #{search} || '%'
         OR CAST(i.invoice_id AS VARCHAR) ILIKE '%' || #{search} || '%'
+        OR i.invoice_code ILIKE '%' || #{search} || '%'
         )
       </if>
     </where>
   </sql>
 
-  <!-- Fetch paginated revenue list with dynamic sorting -->
+  <!-- 12. Fetch the paginated revenue lines with dynamic sorting -->
   <select id="getRevenueFiltered" resultMap="RevenueResultMap">
     <include refid="selectRevenueSql"/>
     <include refid="filterConditions"/>
@@ -96,17 +113,21 @@
         <when test="sortBy == 'drinkName'">d.drink_name</when>
         <when test="sortBy == 'createdAt'">i.created_at</when>
         <when test="sortBy == 'totalAmount'">i.total_amount</when>
-        <when test="sortBy == 'tableNumber'">i.table_number</when>
+        <when test="sortBy == 'tableNumber'">st.table_number</when>
+        <when test="sortBy == 'size'">dd.size</when>
         <when test="sortBy == 'quantity'">id.quantity</when>
         <when test="sortBy == 'price'">id.unit_price</when>
         <otherwise>i.created_at</otherwise>
       </choose>
-      ${sortDirection}
+      <choose>
+        <when test="sortDirection != null and sortDirection.toUpperCase() == 'ASC'">ASC</when>
+        <otherwise>DESC</otherwise>
+      </choose>
     </if>
     LIMIT #{size} OFFSET #{offset}
   </select>
 
-  <!-- Count total matching revenue records for pagination -->
+  <!-- 13. Count the matching revenue lines before pagination -->
   <select id="countRevenueFiltered" resultType="long">
     SELECT COUNT(*)
     FROM invoices AS i
@@ -115,6 +136,22 @@
     JOIN drinks AS d ON dd.drink_id = d.drink_id
     JOIN shops AS s ON i.shop_id = s.shop_id
     JOIN profiles AS p ON i.profile_id = p.profile_id
+    LEFT JOIN shop_tables AS st ON i.table_id = st.table_id
+    <include refid="filterConditions"/>
+  </select>
+
+  <!-- 14. Sum the revenue of all matching lines on every page (price x quantity) -->
+  <select id="getRevenueTotal" resultMap="RevenueTotalResultMap">
+    SELECT
+    COALESCE(SUM(id.unit_price * id.quantity), 0) AS total_revenue,
+    COUNT(DISTINCT i.invoice_id) AS total_invoices
+    FROM invoices AS i
+    JOIN invoice_details AS id ON i.invoice_id = id.invoice_id
+    JOIN drink_details AS dd ON id.drink_detail_id = dd.drink_detail_id
+    JOIN drinks AS d ON dd.drink_id = d.drink_id
+    JOIN shops AS s ON i.shop_id = s.shop_id
+    JOIN profiles AS p ON i.profile_id = p.profile_id
+    LEFT JOIN shop_tables AS st ON i.table_id = st.table_id
     <include refid="filterConditions"/>
   </select>
 

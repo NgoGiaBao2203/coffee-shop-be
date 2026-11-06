@@ -8,6 +8,7 @@ import lombok.Data;
 @Data
 public class RevenueResult {
   private UUID invoiceId;
+  private String invoiceCode;
   private UUID shopId;
   private String shopName;
   private String fullName;

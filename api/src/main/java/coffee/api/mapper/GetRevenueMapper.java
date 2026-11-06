@@ -1,6 +1,7 @@
 package coffee.api.mapper;
 
 import coffee.api.dto.result.RevenueResult;
+import coffee.api.dto.result.RevenueTotalResult;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -16,8 +17,6 @@ public interface GetRevenueMapper {
       @Param("invoiceId") UUID invoiceId,
       @Param("startDateTime") LocalDateTime startDateTime,
       @Param("endDateTime") LocalDateTime endDateTime,
-      @Param("year") Integer year,
-      @Param("month") Integer month,
       @Param("sortBy") String sortBy,
       @Param("sortDirection") String sortDirection,
       @Param("size") int size,
@@ -31,8 +30,15 @@ public interface GetRevenueMapper {
       @Param("invoiceId") UUID invoiceId,
       @Param("startDateTime") LocalDateTime startDateTime,
       @Param("endDateTime") LocalDateTime endDateTime,
-      @Param("year") Integer year,
-      @Param("month") Integer month,
+      @Param("currentUserRoleName") String currentUserRoleName,
+      @Param("currentUserShopId") UUID currentUserShopId);
+
+  RevenueTotalResult getRevenueTotal(
+      @Param("search") String search,
+      @Param("shopId") UUID shopId,
+      @Param("invoiceId") UUID invoiceId,
+      @Param("startDateTime") LocalDateTime startDateTime,
+      @Param("endDateTime") LocalDateTime endDateTime,
       @Param("currentUserRoleName") String currentUserRoleName,
       @Param("currentUserShopId") UUID currentUserShopId);
 }

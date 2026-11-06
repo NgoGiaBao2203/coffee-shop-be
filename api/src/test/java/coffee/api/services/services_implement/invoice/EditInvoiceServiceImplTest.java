@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import coffee.api.constants.ErrorMessage;
 import coffee.api.constants.ValidationMessage;
 import coffee.api.dto.request.invoice.EditInvoiceRequest;
 import coffee.api.dto.request.invoice.InvoiceItemRequest;
@@ -206,17 +207,6 @@ class EditInvoiceServiceImplTest {
     verify(updateMapper).deleteInvoiceDetails(request.getInvoiceId());
   }
 
-  @ParameterizedTest
-  @ValueSource(strings = {"owner", "manager", "staff"})
-  void process_Success_WhenRoleProvidedInDifferentCasing_TC004(String role) {
-    stubValidEdit(role.toUpperCase(java.util.Locale.ROOT));
-    stubSave();
-
-    assertDoesNotThrow(() -> process(role));
-
-    verify(updateMapper).deleteInvoiceDetails(request.getInvoiceId());
-  }
-
   @Test
   void process_Success_WhenOwnerEditsWithoutAssignedShop_TC005() {
     stubValidEdit(ownerRole);
@@ -378,7 +368,7 @@ class EditInvoiceServiceImplTest {
     when(commonMapper.checkShopExisted(shopId)).thenReturn(true);
 
     var error = assertThrows(DataNotFoundException.class, () -> process(ownerRole));
-    assertEquals("Invoice not found", error.getMessage());
+    assertEquals(ErrorMessage.INVOICE_NOT_FOUND, error.getMessage());
 
     verifyNoSave();
   }
@@ -445,8 +435,7 @@ class EditInvoiceServiceImplTest {
     if (missingId) invoice.setTableId(null);
 
     var error = assertThrows(InvalidRequestException.class, () -> process(ownerRole));
-    assertEquals(
-        "Current table is unavailable or does not belong to this shop", error.getMessage());
+    assertEquals(ErrorMessage.CURRENT_TABLE_UNAVAILABLE, error.getMessage());
 
     verifyNoSave();
     verifyNoInteractions(createMapper);
@@ -473,7 +462,7 @@ class EditInvoiceServiceImplTest {
     request.setTableId(UUID.fromString("00000000-0000-0000-0000-000000000212"));
 
     var error = assertThrows(InvalidRequestException.class, () -> process(ownerRole));
-    assertEquals("Table is unavailable or does not exist in this shop", error.getMessage());
+    assertEquals(ErrorMessage.TABLE_UNAVAILABLE_IN_SHOP, error.getMessage());
 
     verifyNoSave();
     verify(createMapper, never()).getSellableDrinkPrices(any(), any());
@@ -486,7 +475,7 @@ class EditInvoiceServiceImplTest {
     when(createMapper.checkTableAvailableInShop(request.getTableId(), shopId)).thenReturn(true);
 
     var error = assertThrows(InvalidRequestException.class, () -> process(ownerRole));
-    assertEquals("Table is unavailable or does not exist in this shop", error.getMessage());
+    assertEquals(ErrorMessage.TABLE_UNAVAILABLE_IN_SHOP, error.getMessage());
 
     verifyNoSave();
   }

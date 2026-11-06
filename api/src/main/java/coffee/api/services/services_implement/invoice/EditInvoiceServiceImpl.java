@@ -1,5 +1,6 @@
 package coffee.api.services.services_implement.invoice;
 
+import coffee.api.constants.ErrorMessage;
 import coffee.api.dto.request.invoice.EditInvoiceRequest;
 import coffee.api.dto.result.InvoiceResult;
 import coffee.api.enums.Roles;
@@ -38,7 +39,7 @@ public class EditInvoiceServiceImpl implements IEditInvoiceService {
     // 2. Lock the invoice and verify it is unpaid and editable by this user
     InvoiceResult invoice = updateInvoiceMapper.findInvoiceById(request.getInvoiceId());
     if (invoice == null) {
-      throw new DataNotFoundException("Invoice not found", request.getInvoiceId());
+      throw new DataNotFoundException(ErrorMessage.INVOICE_NOT_FOUND, request.getInvoiceId());
     }
     validateEditableInvoice(invoice, shopId, currentUserRoleName, currentUserId);
 
@@ -83,8 +84,7 @@ public class EditInvoiceServiceImpl implements IEditInvoiceService {
     if (!requestedShopId.equals(invoice.getShopId())) {
       throw new InvalidRequestException("Invoice does not belong to this shop");
     }
-    if (Roles.STAFF.name().equalsIgnoreCase(roleName)
-        && !currentUserId.equals(invoice.getProfileId())) {
+    if (Roles.STAFF.getValue().equals(roleName) && !currentUserId.equals(invoice.getProfileId())) {
       throw new InvalidRequestException("You do not have permission to edit this invoice");
     }
     if (!"0".equals(invoice.getStatus())) {
@@ -103,8 +103,7 @@ public class EditInvoiceServiceImpl implements IEditInvoiceService {
             && (updateInvoiceMapper.lockOccupiedTable(tableId, shopId) != null
                 || updateInvoiceMapper.occupyCurrentTable(tableId, shopId, invoiceId) == 1);
     if (!usable) {
-      throw new InvalidRequestException(
-          "Current table is unavailable or does not belong to this shop");
+      throw new InvalidRequestException(ErrorMessage.CURRENT_TABLE_UNAVAILABLE);
     }
   }
 }

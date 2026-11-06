@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import coffee.api.constants.ErrorMessage;
 import coffee.api.constants.ValidationMessage;
 import coffee.api.dto.request.invoice.CreateInvoiceRequest;
 import coffee.api.dto.request.invoice.InvoiceItemRequest;
@@ -118,7 +119,7 @@ class CreateInvoiceServiceImplTest {
     stubValidOwnerInvoice();
     when(createInvoiceMapper.occupyTable(tableId, shopId)).thenReturn(0);
 
-    expectInvalid("OWNER", null, userId, "Table is unavailable or does not exist in this shop");
+    expectInvalid("OWNER", null, userId, ErrorMessage.TABLE_UNAVAILABLE_IN_SHOP);
 
     verifyNoInsert();
   }
@@ -286,30 +287,6 @@ class CreateInvoiceServiceImplTest {
     expectInvalid("STAFF", shopId, userId, "Shop ID is required");
 
     verifyNoInteractions(commonMapper, createInvoiceMapper);
-  }
-
-  @Test
-  void process_Success_WhenRoleCaseIsInsensitive_TC006() {
-    when(createInvoiceMapper.occupyTable(tableId, shopId)).thenReturn(1);
-    stubValidOwnerInvoice();
-    assertEquals("S0001", process("owner", null, userId).getCode());
-    verify(commonMapper, never()).checkShopIdIsExisted(any(), any());
-  }
-
-  @Test
-  void process_Success_WhenManagerRoleCaseIsInsensitive_TC007() {
-    when(createInvoiceMapper.occupyTable(tableId, shopId)).thenReturn(1);
-    stubValidNonOwnerInvoice();
-    assertEquals("S0001", process("manager", shopId, userId).getCode());
-    verify(commonMapper).checkShopIdIsExisted(userId, shopId);
-  }
-
-  @Test
-  void process_Success_WhenStaffRoleCaseIsInsensitive_TC008() {
-    when(createInvoiceMapper.occupyTable(tableId, shopId)).thenReturn(1);
-    stubValidNonOwnerInvoice();
-    assertEquals("S0001", process("staff", shopId, userId).getCode());
-    verify(createInvoiceMapper).insertInvoiceDetails(any(), any());
   }
 
   @Test
@@ -509,7 +486,7 @@ class CreateInvoiceServiceImplTest {
   @Test
   void process_ThrowsInvalid_WhenTableIsNotAvailable_TC028() {
     stubShopExists();
-    expectInvalid("OWNER", null, userId, "Table is unavailable or does not exist in this shop");
+    expectInvalid("OWNER", null, userId, ErrorMessage.TABLE_UNAVAILABLE_IN_SHOP);
     verify(createInvoiceMapper).checkTableAvailableInShop(tableId, shopId);
     verify(createInvoiceMapper, never()).getSellableDrinkPrices(anySet(), any());
     verifyNoInsert();
@@ -519,7 +496,7 @@ class CreateInvoiceServiceImplTest {
   void process_ThrowsInvalid_WhenTableIdIsNull_TC029() {
     validRequest.setTableId(null);
     stubShopExists();
-    expectInvalid("OWNER", null, userId, "Table is unavailable or does not exist in this shop");
+    expectInvalid("OWNER", null, userId, ErrorMessage.TABLE_UNAVAILABLE_IN_SHOP);
     verify(createInvoiceMapper).checkTableAvailableInShop(null, shopId);
     verifyNoInsert();
   }

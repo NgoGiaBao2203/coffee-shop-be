@@ -30,12 +30,11 @@ public class InvoiceValidator {
       UUID invoiceId, String roleName, UUID currentUserShopId, UUID currentUserId) {
     InvoiceResult invoice = commonMapper.lockInvoice(invoiceId);
     if (invoice == null) {
-      throw new DataNotFoundException("Invoice not found", invoiceId);
+      throw new DataNotFoundException(ErrorMessage.INVOICE_NOT_FOUND, invoiceId);
     }
     UUID shopId = resolveTargetShopId(invoice.getShopId(), roleName, currentUserShopId);
     validateShopPermission(shopId, roleName, currentUserId);
-    if (Roles.STAFF.name().equalsIgnoreCase(roleName)
-        && !currentUserId.equals(invoice.getProfileId())) {
+    if (Roles.STAFF.getValue().equals(roleName) && !currentUserId.equals(invoice.getProfileId())) {
       throw new InvalidRequestException("You do not have permission to change this invoice");
     }
     if (!"0".equals(invoice.getStatus())) {
@@ -49,8 +48,7 @@ public class InvoiceValidator {
   /** Verify and lock the occupied table before updating its invoice. */
   public void validateOccupiedInvoiceTable(UUID tableId, UUID shopId) {
     if (tableId == null || commonMapper.lockOccupiedInvoiceTable(tableId, shopId) == null) {
-      throw new InvalidRequestException(
-          "Current table is unavailable or does not belong to this shop");
+      throw new InvalidRequestException(ErrorMessage.CURRENT_TABLE_UNAVAILABLE);
     }
   }
 
@@ -111,10 +109,11 @@ public class InvoiceValidator {
     if (requestedShopId == null) {
       throw new InvalidRequestException(ErrorMessage.SHOP_ID_REQUIRED);
     }
-    if (Roles.OWNER.name().equalsIgnoreCase(currentUserRoleName)) {
+    if (Roles.OWNER.getValue().equals(currentUserRoleName)) {
       return requestedShopId;
     }
-    validateManagerOrStaffRole(currentUserRoleName);
+    validateManagerOrStaffRole(
+        currentUserRoleName, "You do not have permission to create invoices");
     if (currentUserShopId == null) {
       throw new InvalidRequestException(ErrorMessage.USER_NOT_ASSIGNED_TO_SHOP);
     }
@@ -140,28 +139,28 @@ public class InvoiceValidator {
     }
   }
 
-  /** Verify non-owner users have MANAGER or STAFF role to create invoices. */
-  private void validateManagerOrStaffRole(String currentUserRoleName) {
-    if (!Roles.MANAGER.name().equalsIgnoreCase(currentUserRoleName)
-        && !Roles.STAFF.name().equalsIgnoreCase(currentUserRoleName)) {
-      throw new InvalidRequestException("You do not have permission to create invoices");
+  /** Verify non-owner users have MANAGER or STAFF role, otherwise fail with the given message. */
+  public void validateManagerOrStaffRole(String currentUserRoleName, String message) {
+    if (!Roles.MANAGER.getValue().equals(currentUserRoleName)
+        && !Roles.STAFF.getValue().equals(currentUserRoleName)) {
+      throw new InvalidRequestException(message);
     }
   }
 
   /** Check if the role is OWNER */
   private boolean isOwner(String roleName) {
-    return Roles.OWNER.name().equalsIgnoreCase(roleName);
+    return Roles.OWNER.getValue().equals(roleName);
   }
 
   public void validateAvailableTable(UUID tableId, UUID shopId) {
     if (!createInvoiceMapper.checkTableAvailableInShop(tableId, shopId)) {
-      throw new InvalidRequestException("Table is unavailable or does not exist in this shop");
+      throw new InvalidRequestException(ErrorMessage.TABLE_UNAVAILABLE_IN_SHOP);
     }
   }
 
   public void occupyAvailableTable(UUID tableId, UUID shopId) {
     if (createInvoiceMapper.occupyTable(tableId, shopId) != 1) {
-      throw new InvalidRequestException("Table is unavailable or does not exist in this shop");
+      throw new InvalidRequestException(ErrorMessage.TABLE_UNAVAILABLE_IN_SHOP);
     }
   }
 }

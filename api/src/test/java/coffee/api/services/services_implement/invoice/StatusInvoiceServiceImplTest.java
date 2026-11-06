@@ -7,6 +7,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import coffee.api.constants.ErrorMessage;
 import coffee.api.constants.ValidationMessage;
 import coffee.api.dto.request.invoice.StatusInvoiceRequest;
 import coffee.api.dto.result.InvoiceResult;
@@ -207,23 +208,6 @@ class StatusInvoiceServiceImplTest {
   }
 
   @ParameterizedTest
-  @CsvSource({"owner, 1", "owner, 2", "manager, 1", "manager, 2", "staff, 1", "staff, 2"})
-  void process_Success_WithCaseInsensitiveRole_TC006(String role, int targetStatus) {
-    validRequest.setStatus(targetStatus);
-    stubShopPermission(role);
-    stubOccupiedTable();
-    stubTableRelease();
-    when(commonMapper.lockInvoice(invoiceId)).thenReturn(existingInvoice);
-    when(statusInvoiceMapper.updateInvoiceStatus(invoiceId, currentShopId, targetStatus))
-        .thenReturn(1);
-
-    statusInvoiceService.process(validRequest, role, currentShopId, currentProfileId);
-
-    verify(statusInvoiceMapper).updateInvoiceStatus(invoiceId, currentShopId, targetStatus);
-    verify(commonMapper).releaseInvoiceTable(existingInvoice.getTableId(), currentShopId);
-  }
-
-  @ParameterizedTest
   @ValueSource(ints = {1, 2})
   void process_Success_AsOwnerWithoutAssignedShop_TC007(int targetStatus) {
     validRequest.setStatus(targetStatus);
@@ -283,7 +267,7 @@ class StatusInvoiceServiceImplTest {
                 statusInvoiceService.process(
                     validRequest, "OWNER", currentShopId, currentProfileId));
 
-    assertEquals("Invoice not found", exception.getMessage());
+    assertEquals(ErrorMessage.INVOICE_NOT_FOUND, exception.getMessage());
   }
 
   @ParameterizedTest
@@ -474,8 +458,7 @@ class StatusInvoiceServiceImplTest {
             () ->
                 statusInvoiceService.process(
                     validRequest, "OWNER", currentShopId, currentProfileId));
-    assertEquals(
-        "Current table is unavailable or does not belong to this shop", error.getMessage());
+    assertEquals(ErrorMessage.CURRENT_TABLE_UNAVAILABLE, error.getMessage());
     verify(statusInvoiceMapper, never()).updateInvoiceStatus(any(), any(), any());
   }
 
@@ -494,8 +477,7 @@ class StatusInvoiceServiceImplTest {
                 statusInvoiceService.process(
                     validRequest, "OWNER", currentShopId, currentProfileId));
 
-    assertEquals(
-        "Current table is unavailable or does not belong to this shop", error.getMessage());
+    assertEquals(ErrorMessage.CURRENT_TABLE_UNAVAILABLE, error.getMessage());
     verify(commonMapper, never()).lockOccupiedInvoiceTable(any(), any());
     org.mockito.Mockito.verifyNoInteractions(statusInvoiceMapper);
   }

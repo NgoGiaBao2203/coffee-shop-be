@@ -19,7 +19,6 @@ import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Locale;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -88,7 +87,7 @@ class GetInvoiceServiceImplTest {
   }
 
   private void stubResults(String role, long count, List<InvoiceResult> invoices) {
-    String roleName = role.toUpperCase(Locale.ROOT);
+    String roleName = role;
     when(getInvoiceMapper.countInvoicesFiltered(null, roleName, shopId, shopId, null))
         .thenReturn(count);
     when(getInvoiceMapper.getInvoicesFiltered(
@@ -117,7 +116,7 @@ class GetInvoiceServiceImplTest {
   // =========================================================================
 
   @ParameterizedTest
-  @ValueSource(strings = {"OWNER", "MANAGER", "STAFF", "owner", "manager", "staff"})
+  @ValueSource(strings = {"OWNER", "MANAGER", "STAFF"})
   void process_Success_ForSupportedRoles_TC001(String role) {
     // 1. Prepare valid permission and invoice data
     stubShopPermission(role);
@@ -235,7 +234,7 @@ class GetInvoiceServiceImplTest {
     var response = process("OWNER");
 
     assertEquals(
-        List.of("PENDING", "COMPLETED", "CANCELLED", "Không xác định", "UNDEFINED"),
+        List.of("PENDING", "COMPLETED", "CANCELLED", "UNDEFINED", "UNDEFINED"),
         response.getItems().stream().map(InvoiceResult::getStatus).toList());
   }
 
