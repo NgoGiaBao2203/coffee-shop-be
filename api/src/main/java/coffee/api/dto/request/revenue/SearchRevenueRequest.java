@@ -34,8 +34,7 @@ public class SearchRevenueRequest {
 
   @NotNull(message = ValidationMessage.FIELD_REQUIRED)
   @Pattern(
-      regexp =
-          "^(invoiceId|shopName|fullName|drinkName|createdAt|totalAmount|tableNumber|size|quantity|price)$",
+      regexp = "^(invoiceId|shopName|staffName|createdAt|totalAmount|tableNumber)$",
       message = ValidationMessage.SORT_BY_INVALID)
   private String sortBy = "createdAt";
 

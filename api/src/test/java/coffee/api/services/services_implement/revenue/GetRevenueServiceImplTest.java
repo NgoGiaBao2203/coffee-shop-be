@@ -6,9 +6,8 @@ import static org.mockito.Mockito.*;
 import coffee.api.constants.ErrorMessage;
 import coffee.api.constants.ValidationMessage;
 import coffee.api.dto.request.revenue.SearchRevenueRequest;
-import coffee.api.dto.response.revenue.GetRevenueResponse;
+import coffee.api.dto.response.base_response.PageResponse;
 import coffee.api.dto.result.RevenueResult;
-import coffee.api.dto.result.RevenueTotalResult;
 import coffee.api.enums.SortDirection;
 import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.exceptions.InvalidRequestException;
@@ -77,10 +76,13 @@ public class GetRevenueServiceImplTest {
     sample.setInvoiceCode("IV-ABCD1234");
     sample.setShopId(shopId);
     sample.setShopName("Coffee Shop - Chi nhánh 1");
-    sample.setDrinkName("Cà Phê Sữa");
+    sample.setStaffName("Employee One");
     sample.setTotalAmount(new BigDecimal("99000.00"));
-    sample.setQuantity(1);
-    sample.setPrice(new BigDecimal("29000.00"));
+    var item = new RevenueResult.RevenueItemResult();
+    item.setDrinkName("Cà Phê Sữa");
+    item.setQuantity(1);
+    item.setUnitPrice(new BigDecimal("29000.00"));
+    sample.setItems(List.of(item));
   }
 
   private void stubShopPermission(UUID shop, String role) {
@@ -96,18 +98,9 @@ public class GetRevenueServiceImplTest {
     when(getRevenueMapper.getRevenueFiltered(
             null, target, null, null, null, "createdAt", "DESC", 10, 0, role, shopId))
         .thenReturn(rows);
-    when(getRevenueMapper.getRevenueTotal(null, target, null, null, null, role, shopId))
-        .thenReturn(total("29000.00", 1));
   }
 
-  private RevenueTotalResult total(String revenue, long invoices) {
-    RevenueTotalResult result = new RevenueTotalResult();
-    result.setTotalRevenue(new BigDecimal(revenue));
-    result.setTotalInvoices(invoices);
-    return result;
-  }
-
-  private GetRevenueResponse process(String role) {
+  private PageResponse<RevenueResult> process(String role) {
     return service.process(request, role, shopId, userId);
   }
 
@@ -132,14 +125,12 @@ public class GetRevenueServiceImplTest {
 
     assertEquals("Get revenue statistics successfully", response.getMessage());
     assertEquals(1, response.getItems().size());
-    assertEquals("Cà Phê Sữa", response.getItems().getFirst().getDrinkName());
+    assertEquals("Cà Phê Sữa", response.getItems().getFirst().getItems().getFirst().getDrinkName());
     assertEquals("IV-ABCD1234", response.getItems().getFirst().getInvoiceCode());
     assertEquals(1, response.getPagination().getPage());
     assertEquals(10, response.getPagination().getSize());
     assertEquals(1L, response.getPagination().getTotalElements());
     assertEquals(1, response.getPagination().getTotalPages());
-    assertEquals(new BigDecimal("29000.00"), response.getTotalRevenue());
-    assertEquals(1L, response.getTotalInvoices());
   }
 
   @Test
@@ -188,10 +179,6 @@ public class GetRevenueServiceImplTest {
     assertTrue(response.getItems().isEmpty());
     assertEquals(0L, response.getPagination().getTotalElements());
     assertEquals(0, response.getPagination().getTotalPages());
-    assertEquals(0, BigDecimal.ZERO.compareTo(response.getTotalRevenue()));
-    assertEquals(0L, response.getTotalInvoices());
-    verify(getRevenueMapper, never())
-        .getRevenueTotal(any(), any(), any(), any(), any(), any(), any());
     verify(getRevenueMapper, never())
         .getRevenueFiltered(
             any(), any(), any(), any(), any(), any(), any(), anyInt(), anyInt(), any(), any());
@@ -239,65 +226,12 @@ public class GetRevenueServiceImplTest {
             "MANAGER",
             shopId))
         .thenReturn(List.of(sample));
-    when(getRevenueMapper.getRevenueTotal(
-            "Cà Phê", shopId, invoiceId, start, end, "MANAGER", shopId))
-        .thenReturn(total("580000.00", 12));
 
     var response = process("MANAGER");
 
-    assertEquals(new BigDecimal("580000.00"), response.getTotalRevenue());
-    assertEquals(12L, response.getTotalInvoices());
     assertEquals(3, response.getPagination().getPage());
     assertEquals(45L, response.getPagination().getTotalElements());
     assertEquals(3, response.getPagination().getTotalPages());
-  }
-
-  @Test
-  void process_NullTotalResultFallsBackToZero_TC035() {
-    stubShopPermission(shopId, "MANAGER");
-    stubResults("MANAGER", shopId, 1, List.of(sample));
-    when(getRevenueMapper.getRevenueTotal(null, shopId, null, null, null, "MANAGER", shopId))
-        .thenReturn(null);
-
-    var response = process("MANAGER");
-
-    assertEquals(BigDecimal.ZERO, response.getTotalRevenue());
-    assertEquals(0L, response.getTotalInvoices());
-    assertEquals(1, response.getItems().size());
-  }
-
-  @Test
-  void process_NullTotalFieldsFallBackToZero_TC036() {
-    stubShopPermission(shopId, "MANAGER");
-    stubResults("MANAGER", shopId, 1, List.of(sample));
-    when(getRevenueMapper.getRevenueTotal(null, shopId, null, null, null, "MANAGER", shopId))
-        .thenReturn(new RevenueTotalResult());
-
-    var response = process("MANAGER");
-
-    assertEquals(BigDecimal.ZERO, response.getTotalRevenue());
-    assertEquals(0L, response.getTotalInvoices());
-  }
-
-  @Test
-  void process_TotalCoversWholePeriod_NotOnlyCurrentPage_TC037() {
-    request.setPage(2);
-    request.setSize(1);
-    stubShopPermission(shopId, "MANAGER");
-    when(getRevenueMapper.countRevenueFiltered(null, shopId, null, null, null, "MANAGER", shopId))
-        .thenReturn(5L);
-    when(getRevenueMapper.getRevenueFiltered(
-            null, shopId, null, null, null, "createdAt", "DESC", 1, 1, "MANAGER", shopId))
-        .thenReturn(List.of(sample));
-    when(getRevenueMapper.getRevenueTotal(null, shopId, null, null, null, "MANAGER", shopId))
-        .thenReturn(total("145000.00", 4));
-
-    var response = process("MANAGER");
-
-    assertEquals(1, response.getItems().size());
-    assertEquals(new BigDecimal("145000.00"), response.getTotalRevenue());
-    assertEquals(4L, response.getTotalInvoices());
-    assertEquals(5L, response.getPagination().getTotalElements());
   }
 
   // =========================================================================
@@ -411,25 +345,15 @@ public class GetRevenueServiceImplTest {
 
   @ParameterizedTest
   @ValueSource(
-      strings = {
-        "invoiceId",
-        "shopName",
-        "fullName",
-        "drinkName",
-        "createdAt",
-        "totalAmount",
-        "tableNumber",
-        "size",
-        "quantity",
-        "price"
-      })
+      strings = {"invoiceId", "shopName", "staffName", "createdAt", "totalAmount", "tableNumber"})
   void requestValidation_AcceptsSupportedSortField_TC019(String field) {
     request.setSortBy(field);
     assertTrue(validator.validate(request).isEmpty());
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {"status", "createdAt; DROP TABLE invoices", ""})
+  @ValueSource(
+      strings = {"status", "fullName", "drinkName", "price", "createdAt; DROP TABLE invoices", ""})
   void requestValidation_RejectsUnsupportedSortField_TC020(String sortBy) {
     request.setSortBy(sortBy);
     assertSingleViolation("sortBy", ValidationMessage.SORT_BY_INVALID);
