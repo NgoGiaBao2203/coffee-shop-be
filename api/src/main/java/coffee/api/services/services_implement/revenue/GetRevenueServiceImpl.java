@@ -2,14 +2,17 @@ package coffee.api.services.services_implement.revenue;
 
 import coffee.api.constants.ErrorMessage;
 import coffee.api.dto.request.revenue.SearchRevenueRequest;
-import coffee.api.dto.response.base_response.PageResponse;
 import coffee.api.dto.response.base_response.PaginationMeta;
+import coffee.api.dto.response.revenue.GetRevenueResponse;
 import coffee.api.dto.result.RevenueResult;
+import coffee.api.dto.result.RevenueTotalResult;
+import coffee.api.enums.ResponseCode;
 import coffee.api.enums.Roles;
 import coffee.api.exceptions.InvalidRequestException;
 import coffee.api.mapper.GetRevenueMapper;
 import coffee.api.services.services_implement.invoice.common.InvoiceValidator;
 import coffee.api.services.services_interface.revenue.IGetRevenueService;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Collections;
@@ -26,7 +29,7 @@ public class GetRevenueServiceImpl implements IGetRevenueService {
   private final InvoiceValidator invoiceValidator;
 
   @Override
-  public PageResponse<RevenueResult> process(
+  public GetRevenueResponse process(
       SearchRevenueRequest request,
       String currentUserRoleName,
       UUID currentUserShopId,
@@ -53,11 +56,21 @@ public class GetRevenueServiceImpl implements IGetRevenueService {
     List<RevenueResult> revenues =
         fetchRevenues(request, currentUserRoleName, currentUserShopId, targetShopId, totalElements);
 
-    // 4. Return revenue invoices and pagination
+    // 4. Get total revenue and invoice count of all pages
+    RevenueTotalResult total =
+        fetchTotal(request, currentUserRoleName, currentUserShopId, targetShopId, totalElements);
+
+    // 5. Return revenue invoices, total and pagination
     String message =
         revenues.isEmpty() ? "No revenue records found" : "Get revenue statistics successfully";
 
-    return PageResponse.of(message, revenues, buildPagination(request, totalElements));
+    return GetRevenueResponse.of(
+        ResponseCode.SUCCESS,
+        message,
+        total.getTotalRevenue(),
+        total.getTotalInvoices(),
+        revenues,
+        buildPagination(request, totalElements));
   }
 
   /**
@@ -118,6 +131,35 @@ public class GetRevenueServiceImpl implements IGetRevenueService {
             currentUserRoleName,
             currentUserShopId);
     return revenues != null ? revenues : Collections.emptyList();
+  }
+
+  /** Get the total only when matching invoices exist; missing values become zero. */
+  private RevenueTotalResult fetchTotal(
+      SearchRevenueRequest request,
+      String currentUserRoleName,
+      UUID currentUserShopId,
+      UUID targetShopId,
+      long totalElements) {
+    RevenueTotalResult total = null;
+    if (totalElements > 0) {
+      total =
+          getRevenueMapper.getRevenueTotal(
+              request.trimmedSearch(),
+              targetShopId,
+              request.getInvoiceId(),
+              toStartDateTime(request),
+              toEndDateTime(request),
+              currentUserRoleName,
+              currentUserShopId);
+    }
+    RevenueTotalResult result = new RevenueTotalResult();
+    result.setTotalRevenue(
+        total != null && total.getTotalRevenue() != null
+            ? total.getTotalRevenue()
+            : BigDecimal.ZERO);
+    result.setTotalInvoices(
+        total != null && total.getTotalInvoices() != null ? total.getTotalInvoices() : 0L);
+    return result;
   }
 
   /** Build pagination from request and total matching invoices. */

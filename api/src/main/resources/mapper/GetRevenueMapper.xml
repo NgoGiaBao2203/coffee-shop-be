@@ -172,4 +172,24 @@
     id.invoice_detail_id ASC
   </select>
 
+  <!-- 15. Map the overall revenue total of all matching paid invoices -->
+  <resultMap id="RevenueTotalResultMap" type="coffee.api.dto.result.RevenueTotalResult">
+    <result property="totalRevenue" column="total_revenue"/>
+    <result property="totalInvoices" column="total_invoices"/>
+  </resultMap>
+
+  <!-- 16. Sum the total amount of all matching paid invoices on every page -->
+  <select id="getRevenueTotal" resultMap="RevenueTotalResultMap">
+    SELECT
+    COALESCE(SUM(i.total_amount), 0) AS total_revenue,
+    COUNT(1) AS total_invoices
+    FROM invoices i
+    JOIN shops s ON i.shop_id = s.shop_id
+    LEFT JOIN profiles p ON i.profile_id = p.profile_id
+    LEFT JOIN shop_tables st ON st.table_id = i.table_id
+    <where>
+      <include refid="revenueFilterCondition"/>
+    </where>
+  </select>
+
 </mapper>
