@@ -171,7 +171,7 @@ public class GetRevenueServiceImplTest {
   }
 
   @Test
-  void process_ReturnsEmptyPage_AndSkipsListQuery_WhenCountIsZero_TC006() {
+  void process_ReturnsEmptyPage_AndSkipsListQuery_WhenCountIsZero_TC005() {
     stubShopPermission(shopId, "MANAGER");
     when(getRevenueMapper.countRevenueFiltered(null, shopId, null, null, null, "MANAGER", shopId))
         .thenReturn(0L);
@@ -191,7 +191,7 @@ public class GetRevenueServiceImplTest {
   }
 
   @Test
-  void process_ReturnsEmptyList_WhenMapperReturnsNull_TC007() {
+  void process_ReturnsEmptyList_WhenMapperReturnsNull_TC006() {
     stubShopPermission(shopId, "MANAGER");
     stubResults("MANAGER", shopId, 3, null);
 
@@ -203,7 +203,7 @@ public class GetRevenueServiceImplTest {
   }
 
   @Test
-  void process_PassesValidatedFilters_AndCalculatesPagination_TC008() {
+  void process_PassesValidatedFilters_AndCalculatesPagination_TC007() {
     UUID invoiceId = UUID.randomUUID();
     request.setSearch("  Cà Phê ");
     request.setInvoiceId(invoiceId);
@@ -245,7 +245,7 @@ public class GetRevenueServiceImplTest {
   }
 
   @Test
-  void process_NullTotalResultFallsBackToZero_TC035() {
+  void process_NullTotalResultFallsBackToZero_TC008() {
     stubShopPermission(shopId, "MANAGER");
     stubResults("MANAGER", shopId, 1, List.of(sample));
     when(getRevenueMapper.getRevenueTotal(null, shopId, null, null, null, "MANAGER", shopId))
@@ -258,7 +258,7 @@ public class GetRevenueServiceImplTest {
   }
 
   @Test
-  void process_TotalCoversWholePeriod_NotOnlyCurrentPage_TC037() {
+  void process_TotalCoversWholePeriod_NotOnlyCurrentPage_TC009() {
     request.setPage(2);
     request.setSize(1);
     stubShopPermission(shopId, "MANAGER");
@@ -283,7 +283,7 @@ public class GetRevenueServiceImplTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"STAFF", "CUSTOMER", ""})
-  void process_RejectsRolesOtherThanOwnerAndManager_TC009(String role) {
+  void process_RejectsRolesOtherThanOwnerAndManager_TC010(String role) {
     var ex = assertThrows(InvalidRequestException.class, () -> process(role));
 
     assertEquals("You do not have permission to access revenue", ex.getMessage());
@@ -291,7 +291,7 @@ public class GetRevenueServiceImplTest {
   }
 
   @Test
-  void process_RejectsManagerWithoutAssignedShop_TC010() {
+  void process_RejectsManagerWithoutAssignedShop_TC011() {
     var ex =
         assertThrows(
             InvalidRequestException.class, () -> service.process(request, "MANAGER", null, userId));
@@ -301,7 +301,7 @@ public class GetRevenueServiceImplTest {
   }
 
   @Test
-  void process_RejectsMissingOrDeletedShop_TC011() {
+  void process_RejectsMissingOrDeletedShop_TC012() {
     request.setShopId(otherShopId);
     when(commonMapper.checkShopExisted(otherShopId)).thenReturn(false);
 
@@ -310,7 +310,7 @@ public class GetRevenueServiceImplTest {
   }
 
   @Test
-  void process_RejectsManagerWithoutActiveMembership_TC012() {
+  void process_RejectsManagerWithoutActiveMembership_TC013() {
     when(commonMapper.checkShopExisted(shopId)).thenReturn(true);
     when(commonMapper.checkShopIdIsExisted(userId, shopId)).thenReturn(false);
 
@@ -321,7 +321,7 @@ public class GetRevenueServiceImplTest {
   }
 
   @Test
-  void process_RejectsMissingUserId_TC013() {
+  void process_RejectsMissingUserId_TC014() {
     when(commonMapper.checkShopExisted(shopId)).thenReturn(true);
 
     var ex =
@@ -332,7 +332,7 @@ public class GetRevenueServiceImplTest {
   }
 
   @Test
-  void process_RejectsStartDateAfterEndDate_TC014() {
+  void process_RejectsStartDateAfterEndDate_TC015() {
     request.setStartDate(LocalDate.of(2026, 9, 1));
     request.setEndDate(LocalDate.of(2026, 8, 1));
     stubShopPermission(shopId, "MANAGER");
@@ -344,7 +344,7 @@ public class GetRevenueServiceImplTest {
   }
 
   @Test
-  void process_AcceptsSameStartAndEndDate_TC015() {
+  void process_AcceptsSameStartAndEndDate_TC016() {
     request.setStartDate(LocalDate.of(2026, 8, 1));
     request.setEndDate(LocalDate.of(2026, 8, 1));
     stubShopPermission(shopId, "MANAGER");
@@ -357,7 +357,7 @@ public class GetRevenueServiceImplTest {
   }
 
   @Test
-  void process_PropagatesCountQueryFailure_TC016() {
+  void process_PropagatesCountQueryFailure_TC017() {
     stubShopPermission(shopId, "MANAGER");
     when(getRevenueMapper.countRevenueFiltered(null, shopId, null, null, null, "MANAGER", shopId))
         .thenThrow(new IllegalStateException("db down"));
@@ -366,7 +366,7 @@ public class GetRevenueServiceImplTest {
   }
 
   @Test
-  void process_PropagatesListQueryFailure_TC017() {
+  void process_PropagatesListQueryFailure_TC018() {
     stubShopPermission(shopId, "MANAGER");
     when(getRevenueMapper.countRevenueFiltered(null, shopId, null, null, null, "MANAGER", shopId))
         .thenReturn(1L);
@@ -377,19 +377,44 @@ public class GetRevenueServiceImplTest {
     assertThrows(IllegalStateException.class, () -> process("MANAGER"));
   }
 
+  @Test
+  void process_AcceptsOnlyStartDate_TC019() {
+    request.setStartDate(LocalDate.of(2026, 8, 1));
+    stubShopPermission(shopId, "MANAGER");
+    LocalDateTime start = LocalDateTime.of(2026, 8, 1, 0, 0);
+    when(getRevenueMapper.countRevenueFiltered(null, shopId, null, start, null, "MANAGER", shopId))
+        .thenReturn(0L);
+
+    assertEquals("No revenue records found", process("MANAGER").getMessage());
+    verify(getRevenueMapper)
+        .countRevenueFiltered(null, shopId, null, start, null, "MANAGER", shopId);
+  }
+
+  @Test
+  void process_AcceptsOnlyEndDate_TC020() {
+    request.setEndDate(LocalDate.of(2026, 8, 31));
+    stubShopPermission(shopId, "MANAGER");
+    LocalDateTime end = LocalDate.of(2026, 8, 31).atTime(LocalTime.MAX);
+    when(getRevenueMapper.countRevenueFiltered(null, shopId, null, null, end, "MANAGER", shopId))
+        .thenReturn(0L);
+
+    assertEquals("No revenue records found", process("MANAGER").getMessage());
+    verify(getRevenueMapper).countRevenueFiltered(null, shopId, null, null, end, "MANAGER", shopId);
+  }
+
   // =========================================================================
   // REQUEST VALIDATION
   // =========================================================================
 
   @Test
-  void requestValidation_AcceptsDefaults_TC018() {
+  void requestValidation_AcceptsDefaults_TC021() {
     assertTrue(validator.validate(request).isEmpty());
   }
 
   @ParameterizedTest
   @ValueSource(
       strings = {"invoiceId", "shopName", "staffName", "createdAt", "totalAmount", "tableNumber"})
-  void requestValidation_AcceptsSupportedSortField_TC019(String field) {
+  void requestValidation_AcceptsSupportedSortField_TC022(String field) {
     request.setSortBy(field);
     assertTrue(validator.validate(request).isEmpty());
   }
@@ -397,13 +422,13 @@ public class GetRevenueServiceImplTest {
   @ParameterizedTest
   @ValueSource(
       strings = {"status", "fullName", "drinkName", "price", "createdAt; DROP TABLE invoices", ""})
-  void requestValidation_RejectsUnsupportedSortField_TC020(String sortBy) {
+  void requestValidation_RejectsUnsupportedSortField_TC023(String sortBy) {
     request.setSortBy(sortBy);
     assertSingleViolation("sortBy", ValidationMessage.SORT_BY_INVALID);
   }
 
   @Test
-  void requestValidation_RejectsNullSortFieldAndDirection_TC021() {
+  void requestValidation_RejectsNullSortFieldAndDirection_TC024() {
     request.setSortBy(null);
     request.setSortDirection(null);
 
@@ -415,20 +440,20 @@ public class GetRevenueServiceImplTest {
 
   @ParameterizedTest
   @ValueSource(ints = {0, -1})
-  void requestValidation_RejectsInvalidPage_TC022(int page) {
+  void requestValidation_RejectsInvalidPage_TC025(int page) {
     request.setPage(page);
     assertSingleViolation("page", ValidationMessage.PAGE_MIN);
   }
 
   @ParameterizedTest
   @ValueSource(ints = {1, 100})
-  void requestValidation_AcceptsSizeBoundary_TC023(int size) {
+  void requestValidation_AcceptsSizeBoundary_TC026(int size) {
     request.setSize(size);
     assertTrue(validator.validate(request).isEmpty());
   }
 
   @Test
-  void requestValidation_RejectsSmallAndLargeSize_TC024() {
+  void requestValidation_RejectsSmallAndLargeSize_TC027() {
     request.setSize(0);
     assertSingleViolation("size", ValidationMessage.SIZE_MIN);
     request.setSize(101);
@@ -437,20 +462,20 @@ public class GetRevenueServiceImplTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"Cà phê", "Nguyễn Văn A", "7c9e6679-7425-40de-944b-e07fc1f90ae7", "  "})
-  void requestValidation_AcceptsSearch_TC025(String search) {
+  void requestValidation_AcceptsSearch_TC028(String search) {
     request.setSearch(search);
     assertTrue(validator.validate(request).isEmpty());
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"100%", "a_b", "<script>", "x; DROP TABLE"})
-  void requestValidation_RejectsUnsupportedSearch_TC026(String search) {
+  void requestValidation_RejectsUnsupportedSearch_TC029(String search) {
     request.setSearch(search);
     assertSingleViolation("search", ValidationMessage.SPECIAL_CHARACTERS);
   }
 
   @Test
-  void requestValidation_SearchLengthBoundary_TC027() {
+  void requestValidation_SearchLengthBoundary_TC030() {
     request.setSearch("a".repeat(100));
     assertTrue(validator.validate(request).isEmpty());
     request.setSearch("a".repeat(101));
