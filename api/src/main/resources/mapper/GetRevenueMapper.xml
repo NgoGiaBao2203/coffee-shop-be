@@ -83,6 +83,23 @@
     </if>
   </sql>
 
+  <!-- Whitelisted invoice sort column and direction (aliases i, s, p, st); also used by
+       ExportRevenueMapper.xml -->
+  <sql id="revenueInvoiceOrder">
+    <choose>
+      <when test="sortBy == 'invoiceId'">i.invoice_id</when>
+      <when test="sortBy == 'shopName'">s.shop_name</when>
+      <when test="sortBy == 'staffName'">p.full_name</when>
+      <when test="sortBy == 'tableNumber'">st.table_number</when>
+      <when test="sortBy == 'totalAmount'">i.total_amount</when>
+      <otherwise>i.created_at</otherwise>
+    </choose>
+    <choose>
+      <when test="sortDirection != null and sortDirection.toUpperCase() == 'ASC'">ASC</when>
+      <otherwise>DESC</otherwise>
+    </choose>
+  </sql>
+
   <!-- 10. Count matching paid invoices before pagination -->
   <select id="countRevenueFiltered" resultType="long">
     SELECT COUNT(1)
@@ -134,19 +151,7 @@
         <include refid="revenueFilterCondition"/>
       </where>
 
-      ORDER BY
-      <choose>
-        <when test="sortBy == 'invoiceId'">i.invoice_id</when>
-        <when test="sortBy == 'shopName'">s.shop_name</when>
-        <when test="sortBy == 'staffName'">p.full_name</when>
-        <when test="sortBy == 'tableNumber'">st.table_number</when>
-        <when test="sortBy == 'totalAmount'">i.total_amount</when>
-        <otherwise>i.created_at</otherwise>
-      </choose>
-      <choose>
-        <when test="sortDirection != null and sortDirection.toUpperCase() == 'ASC'">ASC</when>
-        <otherwise>DESC</otherwise>
-      </choose>
+      ORDER BY <include refid="revenueInvoiceOrder"/>
 
       LIMIT #{size} OFFSET #{offset}
     ) pi

@@ -15,6 +15,7 @@ import coffee.api.mapper.CommonMapper;
 import coffee.api.mapper.CreateInvoiceMapper;
 import coffee.api.mapper.GetRevenueMapper;
 import coffee.api.services.services_implement.invoice.common.InvoiceValidator;
+import coffee.api.services.services_implement.revenue.common.RevenueFilterResolver;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
@@ -65,7 +66,8 @@ public class GetRevenueServiceImplTest {
   void setUp() {
     service =
         new GetRevenueServiceImpl(
-            getRevenueMapper, new InvoiceValidator(createInvoiceMapper, commonMapper));
+            getRevenueMapper,
+            new RevenueFilterResolver(new InvoiceValidator(createInvoiceMapper, commonMapper)));
     shopId = UUID.fromString("00000000-0000-0000-0000-000000000401");
     otherShopId = UUID.fromString("00000000-0000-0000-0000-000000000402");
     userId = UUID.fromString("00000000-0000-0000-0000-000000000403");

@@ -1,19 +1,15 @@
 package coffee.api.services.services_implement.revenue;
 
-import coffee.api.constants.ErrorMessage;
 import coffee.api.dto.request.revenue.SearchRevenueRequest;
 import coffee.api.dto.response.base_response.PaginationMeta;
 import coffee.api.dto.response.revenue.GetRevenueResponse;
 import coffee.api.dto.result.RevenueResult;
 import coffee.api.enums.ResponseCode;
-import coffee.api.enums.Roles;
-import coffee.api.exceptions.InvalidRequestException;
 import coffee.api.mapper.GetRevenueMapper;
-import coffee.api.services.services_implement.invoice.common.InvoiceValidator;
+import coffee.api.services.services_implement.revenue.common.RevenueFilterResolver;
 import coffee.api.services.services_interface.revenue.IGetRevenueService;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -25,7 +21,7 @@ import org.springframework.stereotype.Service;
 public class GetRevenueServiceImpl implements IGetRevenueService {
 
   private final GetRevenueMapper getRevenueMapper;
-  private final InvoiceValidator invoiceValidator;
+  private final RevenueFilterResolver revenueFilterResolver;
 
   @Override
   public GetRevenueResponse process(
@@ -36,9 +32,9 @@ public class GetRevenueServiceImpl implements IGetRevenueService {
 
     // 1. Verify role, shop permission and date range
     UUID targetShopId =
-        resolveTargetShopId(
+        revenueFilterResolver.resolveTargetShopId(
             request.getShopId(), currentUserRoleName, currentUserShopId, currentUserId);
-    validateDateRange(request);
+    revenueFilterResolver.validateDateRange(request.getStartDate(), request.getEndDate());
 
     // 2. Count paid invoices matching shop, date and search filters
     long totalElements =
@@ -70,40 +66,6 @@ public class GetRevenueServiceImpl implements IGetRevenueService {
         totalRevenue,
         revenues,
         buildPagination(request, totalElements));
-  }
-
-  /**
-   * Allow OWNER to view any shop (or all shops when no shop is requested) and restrict MANAGER to
-   * the assigned shop. Other roles are denied. Returns the shop to filter by, or null for all.
-   */
-  private UUID resolveTargetShopId(
-      UUID requestedShopId,
-      String currentUserRoleName,
-      UUID currentUserShopId,
-      UUID currentUserId) {
-    UUID targetShopId = requestedShopId;
-    if (!Roles.OWNER.getValue().equals(currentUserRoleName)) {
-      if (!Roles.MANAGER.getValue().equals(currentUserRoleName)) {
-        throw new InvalidRequestException("You do not have permission to access revenue");
-      }
-      if (currentUserShopId == null) {
-        throw new InvalidRequestException(ErrorMessage.USER_NOT_ASSIGNED_TO_SHOP);
-      }
-      targetShopId = currentUserShopId;
-    }
-    if (targetShopId != null) {
-      invoiceValidator.validateShopPermission(targetShopId, currentUserRoleName, currentUserId);
-    }
-    return targetShopId;
-  }
-
-  /** Verify the start date is not after the end date. */
-  private void validateDateRange(SearchRevenueRequest request) {
-    if (request.getStartDate() != null
-        && request.getEndDate() != null
-        && request.getStartDate().isAfter(request.getEndDate())) {
-      throw new InvalidRequestException("startDate must not be after endDate");
-    }
   }
 
   /** Get paid invoices only when matching invoices exist. */
@@ -164,13 +126,11 @@ public class GetRevenueServiceImpl implements IGetRevenueService {
         .build();
   }
 
-  /** Start of the start date, or null when no start date is requested. */
   private LocalDateTime toStartDateTime(SearchRevenueRequest request) {
-    return request.getStartDate() != null ? request.getStartDate().atStartOfDay() : null;
+    return revenueFilterResolver.toStartDateTime(request.getStartDate());
   }
 
-  /** End of the end date, or null when no end date is requested. */
   private LocalDateTime toEndDateTime(SearchRevenueRequest request) {
-    return request.getEndDate() != null ? request.getEndDate().atTime(LocalTime.MAX) : null;
+    return revenueFilterResolver.toEndDateTime(request.getEndDate());
   }
 }
