@@ -21,18 +21,40 @@
     <result property="isDeleted" column="is_deleted"/>
 
     <!-- 2. Map invoice detail rows to the items collection -->
-    <collection property="items" ofType="coffee.api.dto.result.InvoiceResult$InvoiceItemResult">
-      <id property="invoiceDetailId" column="invoice_detail_id" javaType="java.util.UUID"/>
-      <result property="drinkDetailId" column="drink_detail_id" javaType="java.util.UUID"/>
-      <result property="drinkId" column="drink_id" javaType="java.util.UUID"/>
-      <result property="drinkName" column="drink_name"/>
-      <result property="size" column="size"/>
-      <result property="quantity" column="quantity"/>
-      <result property="unitPrice" column="unit_price"/>
-      <result property="itemTotal" column="item_total"/>
-      <result property="note" column="note"/>
-    </collection>
+    <collection property="items" resultMap="InvoiceItemResultMap"/>
   </resultMap>
+
+  <!-- Invoice detail row; shared with PrintInvoiceMapper -->
+  <resultMap id="InvoiceItemResultMap" type="coffee.api.dto.result.InvoiceResult$InvoiceItemResult">
+    <id property="invoiceDetailId" column="invoice_detail_id" javaType="java.util.UUID"/>
+    <result property="drinkDetailId" column="drink_detail_id" javaType="java.util.UUID"/>
+    <result property="drinkId" column="drink_id" javaType="java.util.UUID"/>
+    <result property="drinkName" column="drink_name"/>
+    <result property="size" column="size"/>
+    <result property="quantity" column="quantity"/>
+    <result property="unitPrice" column="unit_price"/>
+    <result property="itemTotal" column="item_total"/>
+    <result property="note" column="note"/>
+  </resultMap>
+
+  <!-- Detail columns of one invoice (aliases id, dd, d); shared with PrintInvoiceMapper -->
+  <sql id="invoiceItemColumns">
+    id.invoice_detail_id,
+    id.drink_detail_id,
+    dd.drink_id,
+    d.drink_name,
+    dd.size,
+    id.quantity,
+    id.unit_price,
+    (id.unit_price * id.quantity) AS item_total,
+    id.note
+  </sql>
+
+  <!-- Drink variant and drink joins for the detail rows (alias id); shared with PrintInvoiceMapper -->
+  <sql id="invoiceItemDrinkJoins">
+    LEFT JOIN drink_details dd ON id.drink_detail_id = dd.drink_detail_id
+    LEFT JOIN drinks d ON dd.drink_id = d.drink_id
+  </sql>
 
   <!-- 3. Share active invoice and shop filters between count and list queries -->
   <sql id="invoiceFilterCondition">
@@ -95,15 +117,7 @@
     pi.created_at,
     pi.update_at,
     pi.is_deleted,
-    id.invoice_detail_id,
-    id.drink_detail_id,
-    dd.drink_id,
-    d.drink_name,
-    dd.size,
-    id.quantity,
-    id.unit_price,
-    (id.unit_price * id.quantity) AS item_total,
-    id.note
+    <include refid="invoiceItemColumns"/>
     <!-- 10. Sort and paginate invoices in a subquery before joining their detail rows -->
     FROM (
       SELECT
@@ -149,8 +163,7 @@
     <!-- 11. Join active invoice details and retain historical drink information -->
     LEFT JOIN invoice_details id ON pi.invoice_id = id.invoice_id
       AND id.deleted_at IS NULL
-    LEFT JOIN drink_details dd ON id.drink_detail_id = dd.drink_detail_id
-    LEFT JOIN drinks d ON dd.drink_id = d.drink_id
+    <include refid="invoiceItemDrinkJoins"/>
     <!-- 12. Preserve invoice ordering and order detail rows within each invoice -->
     ORDER BY
     <choose>

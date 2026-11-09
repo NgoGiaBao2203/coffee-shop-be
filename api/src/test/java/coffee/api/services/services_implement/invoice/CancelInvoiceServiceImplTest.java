@@ -229,7 +229,22 @@ class CancelInvoiceServiceImplTest {
   }
 
   @Test
-  void process_ThrowsInvalid_WhenUpdateAffectsNoRow_TC009() {
+  void process_ThrowsInvalid_WhenInvoiceHasNoTable_TC009() {
+    existingInvoice.setTableId(null);
+    stubInvoiceAndPermission("OWNER");
+
+    var error =
+        assertThrows(
+            InvalidRequestException.class,
+            () -> service.process(validRequest, "OWNER", shopId, profileId));
+
+    assertEquals(ErrorMessage.CURRENT_TABLE_UNAVAILABLE, error.getMessage());
+    verify(commonMapper, never()).lockOccupiedInvoiceTable(any(), any());
+    verify(statusMapper, never()).updateInvoiceStatus(any(), any(), any());
+  }
+
+  @Test
+  void process_ThrowsInvalid_WhenUpdateAffectsNoRow_TC010() {
     stubInvoiceAndPermission("OWNER");
     when(commonMapper.lockOccupiedInvoiceTable(tableId, shopId)).thenReturn(tableId);
     when(statusMapper.updateInvoiceStatus(invoiceId, shopId, TARGET)).thenReturn(0);
@@ -245,7 +260,7 @@ class CancelInvoiceServiceImplTest {
   }
 
   @Test
-  void process_ThrowsInvalid_WhenTableReleaseFails_TC010() {
+  void process_ThrowsInvalid_WhenTableReleaseFails_TC011() {
     stubInvoiceAndPermission("OWNER");
     stubTableAndUpdate();
     when(commonMapper.hasUnpaidTableInvoices(tableId)).thenReturn(false);
@@ -260,7 +275,7 @@ class CancelInvoiceServiceImplTest {
   }
 
   @Test
-  void process_PropagatesDataAccessException_WhenUpdateFails_TC011() {
+  void process_PropagatesDataAccessException_WhenUpdateFails_TC012() {
     stubInvoiceAndPermission("OWNER");
     when(commonMapper.lockOccupiedInvoiceTable(tableId, shopId)).thenReturn(tableId);
     when(statusMapper.updateInvoiceStatus(invoiceId, shopId, TARGET))
@@ -276,12 +291,12 @@ class CancelInvoiceServiceImplTest {
   // =========================================================================
 
   @Test
-  void requestValidation_Success_WhenInvoiceIdIsPresent_TC012() {
+  void requestValidation_Success_WhenInvoiceIdIsPresent_TC013() {
     assertEquals(0, validator.validate(validRequest).size());
   }
 
   @Test
-  void requestValidation_Fails_WhenInvoiceIdIsNull_TC013() {
+  void requestValidation_Fails_WhenInvoiceIdIsNull_TC014() {
     validRequest.setInvoiceId(null);
 
     var violations = validator.validate(validRequest);
