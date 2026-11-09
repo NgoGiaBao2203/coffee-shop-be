@@ -82,7 +82,6 @@ class CreateInvoiceServiceImplTest {
     validRequest = new CreateInvoiceRequest();
     validRequest.setShopId(shopId);
     validRequest.setTableId(tableId);
-    validRequest.setStatus(0);
     validRequest.setItems(
         new ArrayList<>(
             List.of(
@@ -90,28 +89,28 @@ class CreateInvoiceServiceImplTest {
                 item(secondDrinkDetailId, 1, "30000.00", null))));
   }
 
-  @ParameterizedTest
-  @ValueSource(ints = {0, 1})
-  void process_CreatesRequestedPaymentStatus_AndOccupiesTable(int status) {
+  @Test
+  void process_AlwaysCreatesUnpaidInvoice_AndOccupiesTable() {
     when(createInvoiceMapper.occupyTable(tableId, shopId)).thenReturn(1);
-    validRequest.setStatus(status);
     stubValidOwnerInvoice();
 
-    process("OWNER", null, userId);
+    var response = process("OWNER", null, userId);
 
+    ArgumentCaptor<UUID> invoiceIdCaptor = ArgumentCaptor.forClass(UUID.class);
     var order = inOrder(createInvoiceMapper);
     order.verify(createInvoiceMapper).occupyTable(tableId, shopId);
     order
         .verify(createInvoiceMapper)
         .insertInvoice(
-            any(),
+            invoiceIdCaptor.capture(),
             anyString(),
             eq(shopId),
             eq(userId),
             eq(tableId),
             eq(new BigDecimal("80000.00")),
-            eq(status));
+            eq(0));
     order.verify(createInvoiceMapper).insertInvoiceDetails(any(), same(validRequest.getItems()));
+    assertEquals(invoiceIdCaptor.getValue(), response.getInvoiceId());
   }
 
   @Test
@@ -122,27 +121,6 @@ class CreateInvoiceServiceImplTest {
     expectInvalid("OWNER", null, userId, ErrorMessage.TABLE_UNAVAILABLE_IN_SHOP);
 
     verifyNoInsert();
-  }
-
-  @ParameterizedTest
-  @ValueSource(ints = {-1, 2})
-  void process_RejectsInvalidInitialStatus(int status) {
-    validRequest.setStatus(status);
-
-    expectInvalid("OWNER", null, userId, "Invoice status must be 0 (unpaid) or 1 (paid)");
-
-    verifyNoInteractions(commonMapper, createInvoiceMapper);
-    assertSingleViolation("status", ValidationMessage.STATUS_INVALID);
-  }
-
-  @Test
-  void process_RejectsNullInitialStatus() {
-    validRequest.setStatus(null);
-
-    expectInvalid("OWNER", null, userId, "Invoice status must be 0 (unpaid) or 1 (paid)");
-
-    verifyNoInteractions(commonMapper, createInvoiceMapper);
-    assertSingleViolation("status", ValidationMessage.FIELD_REQUIRED);
   }
 
   private InvoiceItemRequest item(UUID id, Integer quantity, String price, String note) {
@@ -813,13 +791,7 @@ class CreateInvoiceServiceImplTest {
   void requestValidation_Fails_WhenAllTopLevelFieldsAreNull_TC067() {
     CreateInvoiceRequest empty = new CreateInvoiceRequest();
     Set<ConstraintViolation<CreateInvoiceRequest>> violations = validator.validate(empty);
-    assertEquals(4, violations.size());
-  }
-
-  @Test
-  void requestValidation_Fails_WhenStatusIsMissing() {
-    validRequest.setStatus(null);
-    assertSingleViolation("status", ValidationMessage.FIELD_REQUIRED);
+    assertEquals(3, violations.size());
   }
 
   @Test

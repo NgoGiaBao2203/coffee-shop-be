@@ -2,8 +2,6 @@ package coffee.api.dto.request.invoice;
 
 import coffee.api.constants.ValidationMessage;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import java.util.List;
@@ -18,12 +16,6 @@ public class CreateInvoiceRequest {
 
   @NotNull(message = ValidationMessage.FIELD_REQUIRED)
   private UUID tableId;
-
-  // Required, no default: 0 = pay later, 1 = paid up front at the counter.
-  @NotNull(message = ValidationMessage.FIELD_REQUIRED)
-  @Min(value = 0, message = ValidationMessage.STATUS_INVALID)
-  @Max(value = 1, message = ValidationMessage.STATUS_INVALID)
-  private Integer status;
 
   @NotEmpty(message = ValidationMessage.FIELD_REQUIRED)
   @Valid

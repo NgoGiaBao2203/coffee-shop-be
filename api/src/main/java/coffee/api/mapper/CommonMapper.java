@@ -16,11 +16,6 @@ public interface CommonMapper {
 
   int releaseInvoiceTable(@Param("tableId") UUID tableId, @Param("shopId") UUID shopId);
 
-  boolean checkDrinkNameExisted(
-      @Param("drinkId") UUID drinkId,
-      @Param("drinkName") String drinkName,
-      @Param("shopId") UUID shopId);
-
   UUID findDrinkIdByName(@Param("drinkName") String drinkName, @Param("shopId") UUID shopId);
 
   boolean checkDrinkDetailSizeExisted(

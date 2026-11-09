@@ -209,21 +209,6 @@
     )
   </select>
 
-  <!-- 14. Check if drink name exists in shop (case-insensitive & trimmed) -->
-  <select id="checkDrinkNameExisted" resultType="boolean">
-    SELECT EXISTS (
-    SELECT 1
-    FROM drinks
-    WHERE LOWER(TRIM(drink_name)) = LOWER(TRIM(#{drinkName}))
-    AND shop_id = #{shopId}
-    AND deleted_at IS NULL
-    AND is_deleted = false
-    <if test="drinkId != null">
-      AND drink_id != #{drinkId}
-    </if>
-    )
-  </select>
-
 
   <!-- 15. Shared SQL to lock an active invoice -->
   <sql id="lockInvoiceSql">

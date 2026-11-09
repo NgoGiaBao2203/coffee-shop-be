@@ -1,11 +1,11 @@
 package coffee.api.controllers.invoice;
 
 import coffee.api.constants.Authority;
-import coffee.api.dto.request.invoice.StatusInvoiceRequest;
-import coffee.api.dto.response.invoice.StatusInvoiceResponse;
+import coffee.api.dto.request.invoice.PayInvoiceRequest;
+import coffee.api.dto.response.invoice.PayInvoiceResponse;
 import coffee.api.enums.ResponseCode;
 import coffee.api.security.CustomUserDetail;
-import coffee.api.services.services_interface.invoice.IStatusInvoiceService;
+import coffee.api.services.services_interface.invoice.IPayInvoiceService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,24 +17,23 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-public class UpdateInvoiceStatusController {
+public class PayInvoiceController {
 
-  private final IStatusInvoiceService updateInvoiceStatusService;
+  private final IPayInvoiceService payInvoiceService;
 
-  @PutMapping("invoice/status")
+  @PutMapping("invoice/pay")
   @PreAuthorize(Authority.ANY_ROLE)
-  public ResponseEntity<StatusInvoiceResponse> updateInvoiceStatus(
+  public ResponseEntity<PayInvoiceResponse> payInvoice(
       @AuthenticationPrincipal CustomUserDetail customUserDetail,
-      @RequestBody @Valid StatusInvoiceRequest request) {
+      @RequestBody @Valid PayInvoiceRequest request) {
 
-    updateInvoiceStatusService.process(
+    payInvoiceService.process(
         request,
         customUserDetail.getRoleName(),
         customUserDetail.getShopId(),
         customUserDetail.getUserId());
 
     return ResponseEntity.ok()
-        .body(
-            StatusInvoiceResponse.of(ResponseCode.SUCCESS, "Invoice status updated successfully"));
+        .body(PayInvoiceResponse.of(ResponseCode.SUCCESS, "Invoice paid successfully"));
   }
 }

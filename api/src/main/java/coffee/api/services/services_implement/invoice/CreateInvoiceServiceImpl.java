@@ -3,7 +3,6 @@ package coffee.api.services.services_implement.invoice;
 import coffee.api.dto.request.invoice.CreateInvoiceRequest;
 import coffee.api.dto.response.invoice.CreateInvoiceResponse;
 import coffee.api.enums.ResponseCode;
-import coffee.api.exceptions.InvalidRequestException;
 import coffee.api.mapper.CreateInvoiceMapper;
 import coffee.api.services.services_implement.invoice.common.InvoiceValidator;
 import coffee.api.services.services_interface.invoice.ICreateInvoiceService;
@@ -20,6 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class CreateInvoiceServiceImpl implements ICreateInvoiceService {
 
+  private static final int STATUS_UNPAID = 0;
+
   private static final DateTimeFormatter INVOICE_CODE_DATE =
       DateTimeFormatter.ofPattern("yyyyMMdd");
 
@@ -34,9 +35,7 @@ public class CreateInvoiceServiceImpl implements ICreateInvoiceService {
       UUID currentUserShopId,
       UUID currentUserId) {
 
-    // 1. Verify initial invoice status
-    Integer status = request.getStatus();
-    validateInitialInvoiceStatus(status);
+    // 1. The server always creates an invoice as unpaid; the client cannot choose the status
 
     // 2. Verify shop permission
     UUID targetShopId =
@@ -65,11 +64,11 @@ public class CreateInvoiceServiceImpl implements ICreateInvoiceService {
         currentUserId,
         tableId,
         totalAmount,
-        status);
+        STATUS_UNPAID);
 
     createInvoiceMapper.insertInvoiceDetails(invoiceId, request.getItems());
 
-    return CreateInvoiceResponse.of(ResponseCode.SUCCESS, "Create invoice successfully");
+    return CreateInvoiceResponse.of(ResponseCode.SUCCESS, "Create invoice successfully", invoiceId);
   }
 
   /** Build a code like INV-20260101-1A2B3C4D from the creation date and the invoice id. */
@@ -77,12 +76,5 @@ public class CreateInvoiceServiceImpl implements ICreateInvoiceService {
     String datePart = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")).format(INVOICE_CODE_DATE);
     String suffix = invoiceId.toString().replace("-", "").substring(0, 8).toUpperCase();
     return "INV-" + datePart + "-" + suffix;
-  }
-
-  /** Only allow unpaid or paid status when creating an invoice. */
-  private void validateInitialInvoiceStatus(Integer status) {
-    if (status == null || (status != 0 && status != 1)) {
-      throw new InvalidRequestException("Invoice status must be 0 (unpaid) or 1 (paid)");
-    }
   }
 }

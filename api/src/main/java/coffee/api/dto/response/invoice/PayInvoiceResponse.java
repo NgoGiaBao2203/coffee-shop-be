@@ -14,10 +14,10 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @JsonPropertyOrder({"code", "message", "errorDetails", "traceId"})
-public class StatusInvoiceResponse extends BaseApiResponse {
+public class PayInvoiceResponse extends BaseApiResponse {
 
-  public static StatusInvoiceResponse of(ResponseCode responseCode, String message) {
-    return StatusInvoiceResponse.builder()
+  public static PayInvoiceResponse of(ResponseCode responseCode, String message) {
+    return PayInvoiceResponse.builder()
         .code(responseCode.getCode())
         .message(message)
         .traceId(MdcUtil.getTraceId())

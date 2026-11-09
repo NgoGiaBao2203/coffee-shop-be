@@ -27,13 +27,16 @@ public class CreateInvoiceController {
       @AuthenticationPrincipal CustomUserDetail customUserDetail,
       @RequestBody @Valid CreateInvoiceRequest request) {
 
-    createInvoiceService.process(
-        request,
-        customUserDetail.getRoleName(),
-        customUserDetail.getShopId(),
-        customUserDetail.getUserId());
+    CreateInvoiceResponse result =
+        createInvoiceService.process(
+            request,
+            customUserDetail.getRoleName(),
+            customUserDetail.getShopId(),
+            customUserDetail.getUserId());
 
     return ResponseEntity.ok()
-        .body(CreateInvoiceResponse.of(ResponseCode.SUCCESS, "Invoice created successfully"));
+        .body(
+            CreateInvoiceResponse.of(
+                ResponseCode.SUCCESS, "Invoice created successfully", result.getInvoiceId()));
   }
 }

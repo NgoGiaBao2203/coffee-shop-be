@@ -3,7 +3,6 @@ package coffee.api.services.services_implement.invoice;
 import coffee.api.constants.ErrorMessage;
 import coffee.api.dto.request.invoice.EditInvoiceRequest;
 import coffee.api.dto.result.InvoiceResult;
-import coffee.api.enums.Roles;
 import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.exceptions.InvalidRequestException;
 import coffee.api.mapper.CreateInvoiceMapper;
@@ -84,13 +83,12 @@ public class EditInvoiceServiceImpl implements IEditInvoiceService {
     if (!requestedShopId.equals(invoice.getShopId())) {
       throw new InvalidRequestException("Invoice does not belong to this shop");
     }
-    if (Roles.STAFF.getValue().equals(roleName) && !currentUserId.equals(invoice.getProfileId())) {
-      throw new InvalidRequestException("You do not have permission to edit this invoice");
-    }
-    if (!"0".equals(invoice.getStatus())) {
-      throw new InvalidRequestException(
-          "Cannot edit an invoice that is already completed or cancelled");
-    }
+    invoiceValidator.validateOwnerAndUnpaid(
+        invoice,
+        roleName,
+        currentUserId,
+        "You do not have permission to edit this invoice",
+        "Cannot edit an invoice that is already completed or cancelled");
   }
 
   /**

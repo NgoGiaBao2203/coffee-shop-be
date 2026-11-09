@@ -34,15 +34,29 @@ public class InvoiceValidator {
     }
     UUID shopId = resolveTargetShopId(invoice.getShopId(), roleName, currentUserShopId);
     validateShopPermission(shopId, roleName, currentUserId);
-    if (Roles.STAFF.getValue().equals(roleName) && !currentUserId.equals(invoice.getProfileId())) {
-      throw new InvalidRequestException("You do not have permission to change this invoice");
-    }
-    if (!"0".equals(invoice.getStatus())) {
-      throw new InvalidRequestException(
-          "Cannot change an invoice that is already completed or cancelled");
-    }
+    validateOwnerAndUnpaid(
+        invoice,
+        roleName,
+        currentUserId,
+        "You do not have permission to change this invoice",
+        "Cannot change an invoice that is already completed or cancelled");
     validateOccupiedInvoiceTable(invoice.getTableId(), shopId);
     return invoice;
+  }
+
+  /** Verify STAFF created the invoice (MANAGER and OWNER are exempt) and it is still unpaid. */
+  public void validateOwnerAndUnpaid(
+      InvoiceResult invoice,
+      String roleName,
+      UUID currentUserId,
+      String notOwnerMessage,
+      String notUnpaidMessage) {
+    if (Roles.STAFF.getValue().equals(roleName) && !currentUserId.equals(invoice.getProfileId())) {
+      throw new InvalidRequestException(notOwnerMessage);
+    }
+    if (!"0".equals(invoice.getStatus())) {
+      throw new InvalidRequestException(notUnpaidMessage);
+    }
   }
 
   /** Verify and lock the occupied table before updating its invoice. */
