@@ -11,7 +11,7 @@
     <set>
       full_name = #{fullName},
       phone_number = #{phoneNumber},
-      updated_at = NOW(),
+      updated_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh',
       <!-- Only update role_id in profiles if current user is an OWNER -->
       <if test="currentUserRoleName == 'OWNER'">
         role_id = #{roleId}

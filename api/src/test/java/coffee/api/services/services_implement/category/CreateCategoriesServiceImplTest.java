@@ -4,9 +4,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import coffee.api.constants.ValidationMessage;
 import coffee.api.dto.request.category.CreateCategoriesRequest;
 import coffee.api.enums.Roles;
-import coffee.api.enums.ValidationMessage;
 import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.exceptions.InvalidRequestException;
 import coffee.api.mapper.CommonMapper;
@@ -440,7 +440,7 @@ public class CreateCategoriesServiceImplTest {
     Set<ConstraintViolation<CreateCategoriesRequest>> violations = validator.validate(validRequest);
 
     assertEquals(1, violations.size());
-    assertEquals(ValidationMessage.Msg.FIELD_REQUIRED, violations.iterator().next().getMessage());
+    assertEquals(ValidationMessage.FIELD_REQUIRED, violations.iterator().next().getMessage());
   }
 
   @Test
@@ -449,7 +449,7 @@ public class CreateCategoriesServiceImplTest {
     Set<ConstraintViolation<CreateCategoriesRequest>> violations = validator.validate(validRequest);
 
     assertEquals(1, violations.size());
-    assertEquals(ValidationMessage.Msg.FIELD_REQUIRED, violations.iterator().next().getMessage());
+    assertEquals(ValidationMessage.FIELD_REQUIRED, violations.iterator().next().getMessage());
   }
 
   @Test
@@ -458,7 +458,7 @@ public class CreateCategoriesServiceImplTest {
     Set<ConstraintViolation<CreateCategoriesRequest>> violations = validator.validate(validRequest);
 
     assertEquals(1, violations.size());
-    assertEquals(ValidationMessage.Msg.SIZE_MAX, violations.iterator().next().getMessage());
+    assertEquals(ValidationMessage.SIZE_MAX, violations.iterator().next().getMessage());
   }
 
   @Test
@@ -467,8 +467,7 @@ public class CreateCategoriesServiceImplTest {
     Set<ConstraintViolation<CreateCategoriesRequest>> violations = validator.validate(validRequest);
 
     assertEquals(1, violations.size());
-    assertEquals(
-        ValidationMessage.Msg.SPECIAL_CHARACTERS, violations.iterator().next().getMessage());
+    assertEquals(ValidationMessage.SPECIAL_CHARACTERS, violations.iterator().next().getMessage());
   }
 
   // =========================================================================
@@ -481,7 +480,7 @@ public class CreateCategoriesServiceImplTest {
     Set<ConstraintViolation<CreateCategoriesRequest>> violations = validator.validate(validRequest);
 
     assertEquals(1, violations.size());
-    assertEquals(ValidationMessage.Msg.FIELD_REQUIRED, violations.iterator().next().getMessage());
+    assertEquals(ValidationMessage.FIELD_REQUIRED, violations.iterator().next().getMessage());
   }
 
   @Test

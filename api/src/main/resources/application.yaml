@@ -4,7 +4,17 @@ spring:
   mvc:
     servlet:
       path: /api
+  # Drink images up to 5MB are accepted, then downscaled and compressed before storage
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
 
   # This tells Spring Boot to look for and load application-dev.yaml
   profiles:
     active: dev
+
+server:
+  tomcat:
+    # Read past an oversized upload so the client still receives the 400 response
+    max-swallow-size: 20MB

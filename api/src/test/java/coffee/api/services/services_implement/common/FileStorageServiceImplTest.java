@@ -4,11 +4,16 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import coffee.api.config.SupabaseStorageProperties;
 import coffee.api.exceptions.InvalidRequestException;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Comparator;
+import javax.imageio.ImageIO;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,9 +22,39 @@ import org.springframework.web.multipart.MultipartFile;
 
 class FileStorageServiceImplTest {
 
+  private static final String GENERATED_NAME_PATTERN = "drink_\\d{13}_\\d{6}\\.jpg";
+
   private FileStorageServiceImpl fileStorageService;
   private SupabaseStorageProperties storageProperties;
   private final Path testUploadDir = Paths.get("uploads/drinks");
+
+  private static byte[] imageBytes(String format, int width, int height, int imageType) {
+    BufferedImage image = new BufferedImage(width, height, imageType);
+    for (int x = 0; x < width; x++) {
+      for (int y = 0; y < height; y++) {
+        image.setRGB(x, y, (x * 255 / width) << 16 | (y * 255 / height) << 8);
+      }
+    }
+    try {
+      ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+      ImageIO.write(image, format, outputStream);
+      return outputStream.toByteArray();
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
+
+  private static byte[] pngBytes() {
+    return imageBytes("png", 120, 80, BufferedImage.TYPE_INT_RGB);
+  }
+
+  private static byte[] jpgBytes() {
+    return imageBytes("jpg", 120, 80, BufferedImage.TYPE_INT_RGB);
+  }
+
+  private static BufferedImage readStoredImage(String imageUrl) throws IOException {
+    return ImageIO.read(Paths.get(imageUrl.substring(1)).toFile());
+  }
 
   private void cleanDirectory() throws IOException {
     if (Files.exists(testUploadDir)) {
@@ -114,7 +149,7 @@ class FileStorageServiceImplTest {
   @Test
   void storeDrinkImage_ThrowsRuntimeException_WhenSupabaseS3CallFails_TC006() {
     MockMultipartFile validFile =
-        new MockMultipartFile("image", "coffee_test.png", "image/png", "content".getBytes());
+        new MockMultipartFile("image", "coffee_test.png", "image/png", pngBytes());
 
     RuntimeException exception =
         assertThrows(RuntimeException.class, () -> fileStorageService.storeDrinkImage(validFile));
@@ -123,14 +158,15 @@ class FileStorageServiceImplTest {
   }
 
   @Test
-  void deleteDrinkImage_ThrowsInvalidRequestException_WhenSupabaseUrlFormatIsInvalid_TC007() {
-    String invalidUrl = "https://example.com/invalid/path/image.png";
+  void deleteDrinkImage_SkipsExternalUrl_WhenUrlIsNotInSupabaseBucket_TC007() {
+    String externalUrl = "https://example.com/invalid/path/image.png";
 
-    InvalidRequestException exception =
-        assertThrows(
-            InvalidRequestException.class, () -> fileStorageService.deleteDrinkImage(invalidUrl));
+    try (org.mockito.MockedStatic<software.amazon.awssdk.services.s3.S3Client> mockedStaticS3 =
+        org.mockito.Mockito.mockStatic(software.amazon.awssdk.services.s3.S3Client.class)) {
+      assertDoesNotThrow(() -> fileStorageService.deleteDrinkImage(externalUrl));
 
-    assertTrue(exception.getMessage().contains("Could not delete old image file"));
+      mockedStaticS3.verifyNoInteractions();
+    }
   }
 
   @Test
@@ -152,13 +188,13 @@ class FileStorageServiceImplTest {
   void storeDrinkImage_SavesToLocalFileSystem_WhenPropertiesNull_TC009() {
     FileStorageServiceImpl localService = new FileStorageServiceImpl(null);
     MockMultipartFile validFile =
-        new MockMultipartFile("image", "latte.png", "image/png", "sample content".getBytes());
+        new MockMultipartFile("image", "latte.png", "image/png", pngBytes());
 
     String result = localService.storeDrinkImage(validFile);
 
     assertNotNull(result);
-    assertTrue(result.startsWith("/uploads/drinks/latte_"));
-    assertTrue(result.endsWith(".png"));
+    assertTrue(result.startsWith("/uploads/drinks/drink_"));
+    assertTrue(result.endsWith(".jpg"));
 
     Path savedPath = Paths.get(result.substring(1));
     assertTrue(Files.exists(savedPath));
@@ -168,12 +204,12 @@ class FileStorageServiceImplTest {
   void storeDrinkImage_SavesToLocalFileSystem_WhenSupabaseDisabled_TC010() {
     storageProperties.setEnabled(false);
     MockMultipartFile validFile =
-        new MockMultipartFile("image", "mocha.jpg", "image/jpeg", "sample mocha".getBytes());
+        new MockMultipartFile("image", "mocha.jpg", "image/jpeg", jpgBytes());
 
     String result = fileStorageService.storeDrinkImage(validFile);
 
     assertNotNull(result);
-    assertTrue(result.startsWith("/uploads/drinks/mocha_"));
+    assertTrue(result.startsWith("/uploads/drinks/drink_"));
     assertTrue(result.endsWith(".jpg"));
 
     Path savedPath = Paths.get(result.substring(1));
@@ -184,24 +220,24 @@ class FileStorageServiceImplTest {
   void storeDrinkImage_SavesToLocalFileSystem_WhenAccessKeyIsEmpty_TC011() {
     storageProperties.setAccessKey("");
     MockMultipartFile validFile =
-        new MockMultipartFile("image", "cappuccino.png", "image/png", "sample content".getBytes());
+        new MockMultipartFile("image", "cappuccino.png", "image/png", pngBytes());
 
     String result = fileStorageService.storeDrinkImage(validFile);
 
     assertNotNull(result);
-    assertTrue(result.startsWith("/uploads/drinks/cappuccino_"));
+    assertTrue(result.startsWith("/uploads/drinks/drink_"));
   }
 
   @Test
   void storeDrinkImage_HandlesUppercaseExtension_TC012() {
     FileStorageServiceImpl localService = new FileStorageServiceImpl(null);
     MockMultipartFile uppercaseExtFile =
-        new MockMultipartFile("image", "espresso.PNG", "image/png", "content".getBytes());
+        new MockMultipartFile("image", "espresso.PNG", "image/png", pngBytes());
 
     String result = localService.storeDrinkImage(uppercaseExtFile);
 
     assertNotNull(result);
-    assertTrue(result.endsWith(".png"));
+    assertTrue(result.endsWith(".jpg"));
   }
 
   @Test
@@ -298,40 +334,39 @@ class FileStorageServiceImplTest {
   }
 
   @Test
-  void extractBaseFileName_ReturnsBaseName_WhenDotPresent_TC020() throws Exception {
-    java.lang.reflect.Method method =
-        FileStorageServiceImpl.class.getDeclaredMethod("extractBaseFileName", String.class);
-    method.setAccessible(true);
+  void storeDrinkImage_UsesGeneratedNumericName_WhenOriginalNameHasVietnameseAccents_TC020() {
+    FileStorageServiceImpl localService = new FileStorageServiceImpl(null);
+    MockMultipartFile accentedFile =
+        new MockMultipartFile("image", "Cà phê sữa đá.jpg", "image/jpeg", jpgBytes());
 
-    String result = (String) method.invoke(fileStorageService, "espresso_drink.png");
+    String result = localService.storeDrinkImage(accentedFile);
 
-    assertEquals("espresso_drink", result);
+    String fileName = result.substring("/uploads/drinks/".length());
+    assertTrue(fileName.matches(GENERATED_NAME_PATTERN));
+    assertTrue(Files.exists(Paths.get(result.substring(1))));
   }
 
   @Test
-  void extractBaseFileName_ReturnsOriginalFilename_WhenNoDotPresent_TC021() throws Exception {
-    java.lang.reflect.Method method =
-        FileStorageServiceImpl.class.getDeclaredMethod("extractBaseFileName", String.class);
-    method.setAccessible(true);
+  void storeDrinkImage_GeneratesDifferentNames_WhenSameFileUploadedTwice_TC021() {
+    FileStorageServiceImpl localService = new FileStorageServiceImpl(null);
+    MockMultipartFile file = new MockMultipartFile("image", "trà đào.png", "image/png", pngBytes());
 
-    String result = (String) method.invoke(fileStorageService, "espresso_drink");
+    String first = localService.storeDrinkImage(file);
+    String second = localService.storeDrinkImage(file);
 
-    assertEquals("espresso_drink", result);
+    assertNotEquals(first, second);
   }
 
   @Test
-  void extractBaseFileName_ThrowsInvalidRequestException_WhenNull_TC022() throws Exception {
-    java.lang.reflect.Method method =
-        FileStorageServiceImpl.class.getDeclaredMethod("extractBaseFileName", String.class);
-    method.setAccessible(true);
+  void storeDrinkImage_ThrowsInvalidRequestException_WhenExtensionIsJpeg_TC022() {
+    MockMultipartFile jpegFile =
+        new MockMultipartFile("image", "bạc xỉu.jpeg", "image/jpeg", "content".getBytes());
 
-    java.lang.reflect.InvocationTargetException targetException =
+    InvalidRequestException exception =
         assertThrows(
-            java.lang.reflect.InvocationTargetException.class,
-            () -> method.invoke(fileStorageService, (String) null));
+            InvalidRequestException.class, () -> fileStorageService.storeDrinkImage(jpegFile));
 
-    assertInstanceOf(InvalidRequestException.class, targetException.getCause());
-    assertEquals("Invalid file name", targetException.getCause().getMessage());
+    assertEquals("Only JPG and PNG image files are allowed", exception.getMessage());
   }
 
   @Test
@@ -389,15 +424,15 @@ class FileStorageServiceImplTest {
           .thenReturn(mockBuilder);
 
       MockMultipartFile validFile =
-          new MockMultipartFile("image", "espresso.png", "image/png", "sample content".getBytes());
+          new MockMultipartFile("image", "espresso.png", "image/png", pngBytes());
 
       String result = fileStorageService.storeDrinkImage(validFile);
 
       assertNotNull(result);
       assertTrue(
           result.startsWith(
-              "https://aws-0-ap-south-1.pooler.supabase.com/storage/v1/object/public/drinks/espresso_"));
-      assertTrue(result.endsWith(".png"));
+              "https://aws-0-ap-south-1.pooler.supabase.com/storage/v1/object/public/drinks/drink_"));
+      assertTrue(result.endsWith(".jpg"));
 
       org.mockito.Mockito.verify(mockS3Client, org.mockito.Mockito.times(1))
           .putObject(
@@ -462,13 +497,13 @@ class FileStorageServiceImplTest {
   void storeDrinkImage_SavesToLocalFileSystem_WhenAccessKeyIsNull_TC028() {
     storageProperties.setAccessKey(null);
     MockMultipartFile validFile =
-        new MockMultipartFile("image", "latte.png", "image/png", "sample content".getBytes());
+        new MockMultipartFile("image", "latte.png", "image/png", pngBytes());
 
     String result = fileStorageService.storeDrinkImage(validFile);
 
     assertNotNull(result);
-    assertTrue(result.startsWith("/uploads/drinks/latte_"));
-    assertTrue(result.endsWith(".png"));
+    assertTrue(result.startsWith("/uploads/drinks/drink_"));
+    assertTrue(result.endsWith(".jpg"));
   }
 
   @Test
@@ -526,7 +561,7 @@ class FileStorageServiceImplTest {
 
     FileStorageServiceImpl localService = new FileStorageServiceImpl(null);
     MockMultipartFile validFile =
-        new MockMultipartFile("image", "caramel.png", "image/png", "content".getBytes());
+        new MockMultipartFile("image", "caramel.png", "image/png", pngBytes());
 
     String result = localService.storeDrinkImage(validFile);
 
@@ -544,15 +579,206 @@ class FileStorageServiceImplTest {
 
     FileStorageServiceImpl localService = new FileStorageServiceImpl(null);
     MockMultipartFile validFile =
-        new MockMultipartFile("image", "matcha.png", "image/png", "sample content".getBytes());
+        new MockMultipartFile("image", "matcha.png", "image/png", pngBytes());
 
     String result = localService.storeDrinkImage(validFile);
 
     assertNotNull(result);
-    assertTrue(result.startsWith("/uploads/drinks/matcha_"));
-    assertTrue(result.endsWith(".png"));
+    assertTrue(result.startsWith("/uploads/drinks/drink_"));
+    assertTrue(result.endsWith(".jpg"));
 
     Path savedPath = Paths.get(result.substring(1));
     assertTrue(Files.exists(savedPath));
+  }
+
+  @Test
+  void storeDrinkImage_DownscalesToMaxDimension_WhenImageIsLarge_TC034() throws IOException {
+    FileStorageServiceImpl localService = new FileStorageServiceImpl(null);
+    MockMultipartFile largeFile =
+        new MockMultipartFile(
+            "image",
+            "large.png",
+            "image/png",
+            imageBytes("png", 2000, 1000, BufferedImage.TYPE_INT_RGB));
+
+    String result = localService.storeDrinkImage(largeFile);
+
+    BufferedImage stored = readStoredImage(result);
+    assertEquals(800, stored.getWidth());
+    assertEquals(400, stored.getHeight());
+  }
+
+  @Test
+  void storeDrinkImage_KeepsOriginalSize_WhenImageIsSmallerThanMaxDimension_TC035()
+      throws IOException {
+    FileStorageServiceImpl localService = new FileStorageServiceImpl(null);
+    MockMultipartFile smallFile =
+        new MockMultipartFile(
+            "image",
+            "small.jpg",
+            "image/jpeg",
+            imageBytes("jpg", 300, 200, BufferedImage.TYPE_INT_RGB));
+
+    String result = localService.storeDrinkImage(smallFile);
+
+    BufferedImage stored = readStoredImage(result);
+    assertEquals(300, stored.getWidth());
+    assertEquals(200, stored.getHeight());
+  }
+
+  @Test
+  void storeDrinkImage_StoresSmallerJpegFile_WhenPngIsUploaded_TC036() throws IOException {
+    FileStorageServiceImpl localService = new FileStorageServiceImpl(null);
+    byte[] originalBytes = imageBytes("png", 1600, 1600, BufferedImage.TYPE_INT_RGB);
+    MockMultipartFile pngFile =
+        new MockMultipartFile("image", "menu.png", "image/png", originalBytes);
+
+    String result = localService.storeDrinkImage(pngFile);
+
+    byte[] storedBytes = Files.readAllBytes(Paths.get(result.substring(1)));
+    assertTrue(storedBytes.length < originalBytes.length);
+    assertEquals(
+        "JPEG",
+        ImageIO.getImageReaders(
+                ImageIO.createImageInputStream(new ByteArrayInputStream(storedBytes)))
+            .next()
+            .getFormatName()
+            .toUpperCase());
+  }
+
+  @Test
+  void storeDrinkImage_ThrowsInvalidRequestException_WhenContentIsNotAnImage_TC037() {
+    MockMultipartFile fakeImage =
+        new MockMultipartFile("image", "fake.png", "image/png", "not an image".getBytes());
+
+    InvalidRequestException exception =
+        assertThrows(
+            InvalidRequestException.class, () -> fileStorageService.storeDrinkImage(fakeImage));
+
+    assertEquals("Invalid image file", exception.getMessage());
+  }
+
+  @Test
+  void storeDrinkImage_FillsTransparentAreaWithWhite_WhenPngHasAlpha_TC038() throws IOException {
+    FileStorageServiceImpl localService = new FileStorageServiceImpl(null);
+    BufferedImage transparent = new BufferedImage(50, 50, BufferedImage.TYPE_INT_ARGB);
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    ImageIO.write(transparent, "png", outputStream);
+    MockMultipartFile transparentFile =
+        new MockMultipartFile("image", "logo.png", "image/png", outputStream.toByteArray());
+
+    String result = localService.storeDrinkImage(transparentFile);
+
+    int pixel = readStoredImage(result).getRGB(25, 25) & 0xFFFFFF;
+    assertTrue((pixel >> 16 & 0xFF) > 245 && (pixel >> 8 & 0xFF) > 245 && (pixel & 0xFF) > 245);
+  }
+
+  @Test
+  void storeDrinkImage_UploadsJpegContentType_WhenSupabaseIsEnabled_TC039() {
+    software.amazon.awssdk.services.s3.S3Client mockS3Client =
+        org.mockito.Mockito.mock(software.amazon.awssdk.services.s3.S3Client.class);
+    software.amazon.awssdk.services.s3.S3ClientBuilder mockBuilder =
+        org.mockito.Mockito.mock(software.amazon.awssdk.services.s3.S3ClientBuilder.class);
+    org.mockito.Mockito.when(mockBuilder.credentialsProvider(org.mockito.ArgumentMatchers.any()))
+        .thenReturn(mockBuilder);
+    org.mockito.Mockito.when(mockBuilder.region(org.mockito.ArgumentMatchers.any()))
+        .thenReturn(mockBuilder);
+    org.mockito.Mockito.when(
+            mockBuilder.serviceConfiguration(
+                org.mockito.ArgumentMatchers.any(
+                    software.amazon.awssdk.services.s3.S3Configuration.class)))
+        .thenReturn(mockBuilder);
+    org.mockito.Mockito.when(mockBuilder.endpointOverride(org.mockito.ArgumentMatchers.any()))
+        .thenReturn(mockBuilder);
+    org.mockito.Mockito.when(mockBuilder.build()).thenReturn(mockS3Client);
+
+    try (org.mockito.MockedStatic<software.amazon.awssdk.services.s3.S3Client> mockedStaticS3 =
+        org.mockito.Mockito.mockStatic(software.amazon.awssdk.services.s3.S3Client.class)) {
+      mockedStaticS3
+          .when(software.amazon.awssdk.services.s3.S3Client::builder)
+          .thenReturn(mockBuilder);
+
+      fileStorageService.storeDrinkImage(
+          new MockMultipartFile("image", "Trà sữa.png", "image/png", pngBytes()));
+
+      org.mockito.ArgumentCaptor<software.amazon.awssdk.services.s3.model.PutObjectRequest>
+          requestCaptor =
+              org.mockito.ArgumentCaptor.forClass(
+                  software.amazon.awssdk.services.s3.model.PutObjectRequest.class);
+      org.mockito.Mockito.verify(mockS3Client)
+          .putObject(
+              requestCaptor.capture(),
+              org.mockito.ArgumentMatchers.any(software.amazon.awssdk.core.sync.RequestBody.class));
+      assertEquals("image/jpeg", requestCaptor.getValue().contentType());
+      assertTrue(requestCaptor.getValue().key().matches(GENERATED_NAME_PATTERN));
+    }
+  }
+
+  @Test
+  void storeDrinkImage_ThrowsInvalidRequestException_WhenImageIsCorrupted_TC040() {
+    byte[] validPng = pngBytes();
+    byte[] truncatedPng = java.util.Arrays.copyOf(validPng, validPng.length / 2);
+    MockMultipartFile corruptedFile =
+        new MockMultipartFile("image", "broken.png", "image/png", truncatedPng);
+
+    InvalidRequestException exception =
+        assertThrows(
+            InvalidRequestException.class, () -> fileStorageService.storeDrinkImage(corruptedFile));
+
+    assertEquals("Invalid image file", exception.getMessage());
+  }
+
+  @Test
+  void storeDrinkImage_ThrowsRuntimeException_WhenJpegEncodingFails_TC041() throws IOException {
+    FileStorageServiceImpl localService = new FileStorageServiceImpl(null);
+    javax.imageio.ImageWriter failingWriter =
+        org.mockito.Mockito.mock(javax.imageio.ImageWriter.class);
+    org.mockito.Mockito.when(failingWriter.getDefaultWriteParam())
+        .thenReturn(new javax.imageio.plugins.jpeg.JPEGImageWriteParam(null));
+    org.mockito.Mockito.doThrow(new IOException("Simulated encoder error"))
+        .when(failingWriter)
+        .write(
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(javax.imageio.IIOImage.class),
+            org.mockito.ArgumentMatchers.any());
+    MockMultipartFile validFile =
+        new MockMultipartFile("image", "latte.png", "image/png", pngBytes());
+
+    try (org.mockito.MockedStatic<ImageIO> mockedImageIo =
+        org.mockito.Mockito.mockStatic(ImageIO.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
+      mockedImageIo
+          .when(() -> ImageIO.getImageWritersByFormatName("jpg"))
+          .thenReturn(java.util.List.of(failingWriter).iterator());
+
+      RuntimeException exception =
+          assertThrows(RuntimeException.class, () -> localService.storeDrinkImage(validFile));
+
+      assertEquals("Could not store image file. Please try again!", exception.getMessage());
+      org.mockito.Mockito.verify(failingWriter).dispose();
+    }
+  }
+
+  @Test
+  void deleteDrinkImage_SkipsPlaceholderUrl_WhenSupabaseIsEnabled_TC042() {
+    try (org.mockito.MockedStatic<software.amazon.awssdk.services.s3.S3Client> mockedStaticS3 =
+        org.mockito.Mockito.mockStatic(software.amazon.awssdk.services.s3.S3Client.class)) {
+      assertDoesNotThrow(
+          () -> fileStorageService.deleteDrinkImage("https://placehold.co/400x300?text=Drink"));
+
+      mockedStaticS3.verifyNoInteractions();
+    }
+  }
+
+  @Test
+  void deleteDrinkImage_SkipsExternalUrl_WhenStoringLocally_TC043() throws IOException {
+    FileStorageServiceImpl localService = new FileStorageServiceImpl(null);
+    Files.createDirectories(testUploadDir);
+    Path existingFile = testUploadDir.resolve("drink_1_1.jpg");
+    Files.write(existingFile, "data".getBytes());
+
+    assertDoesNotThrow(
+        () -> localService.deleteDrinkImage("https://placehold.co/400x300?text=Drink"));
+
+    assertTrue(Files.exists(existingFile));
   }
 }

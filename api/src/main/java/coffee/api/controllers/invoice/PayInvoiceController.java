@@ -1,5 +1,6 @@
 package coffee.api.controllers.invoice;
 
+import coffee.api.constants.Authority;
 import coffee.api.dto.request.invoice.PayInvoiceRequest;
 import coffee.api.dto.response.invoice.PayInvoiceResponse;
 import coffee.api.enums.ResponseCode;
@@ -21,7 +22,7 @@ public class PayInvoiceController {
   private final IPayInvoiceService payInvoiceService;
 
   @PutMapping("invoice/pay")
-  @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'STAFF')")
+  @PreAuthorize(Authority.ANY_ROLE)
   public ResponseEntity<PayInvoiceResponse> payInvoice(
       @AuthenticationPrincipal CustomUserDetail customUserDetail,
       @RequestBody @Valid PayInvoiceRequest request) {

@@ -1,5 +1,6 @@
 package coffee.api.controllers.table;
 
+import coffee.api.constants.Authority;
 import coffee.api.dto.request.table.DeleteTablesRequest;
 import coffee.api.dto.response.table.DeleteTablesResponse;
 import coffee.api.enums.ResponseCode;
@@ -20,7 +21,7 @@ public class DeleteTablesController {
   private final IDeleteTablesService deleteTablesService;
 
   @DeleteMapping("table/delete")
-  @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
+  @PreAuthorize(Authority.OWNER_OR_MANAGER)
   public ResponseEntity<DeleteTablesResponse> deleteTable(
       @AuthenticationPrincipal CustomUserDetail customUserDetail,
       @RequestBody @Valid DeleteTablesRequest request) {

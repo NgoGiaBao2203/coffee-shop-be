@@ -1,5 +1,6 @@
 package coffee.api.controllers.staff;
 
+import coffee.api.constants.Authority;
 import coffee.api.dto.request.user.DeleteStaffRequest;
 import coffee.api.dto.response.staff.DeleteStaffResponse;
 import coffee.api.enums.ResponseCode;
@@ -18,7 +19,7 @@ public class DeleteStaffController {
   private final IDeleteStaffService deleteStaffService;
 
   @DeleteMapping("staff/delete")
-  @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
+  @PreAuthorize(Authority.OWNER_OR_MANAGER)
   public ResponseEntity<DeleteStaffResponse> deleteStaff(
       @RequestBody @Valid DeleteStaffRequest request) {
     deleteStaffService.process(request);

@@ -1,5 +1,6 @@
 package coffee.api.services.services_implement.table;
 
+import coffee.api.constants.ErrorMessage;
 import coffee.api.dto.request.table.EditTablesRequest;
 import coffee.api.dto.response.base_response.ErrorDetail;
 import coffee.api.enums.ResponseCode;
@@ -67,7 +68,7 @@ public class EditTablesServiceImpl implements IEditTablesService {
 
   private void validateRequest(EditTablesRequest request) {
     if (request == null || request.getShopId() == null) {
-      throw new InvalidRequestException("Shop ID is required");
+      throw new InvalidRequestException(ErrorMessage.SHOP_ID_REQUIRED);
     }
     if (request.getTableId() == null) {
       throw new InvalidRequestException("Table ID is required");
@@ -104,7 +105,7 @@ public class EditTablesServiceImpl implements IEditTablesService {
     }
 
     if (!errors.isEmpty()) {
-      throw new InvalidRequestWithErrorDetailsException("Invalid request", errors);
+      throw new InvalidRequestWithErrorDetailsException(ErrorMessage.INVALID_REQUEST, errors);
     }
   }
 

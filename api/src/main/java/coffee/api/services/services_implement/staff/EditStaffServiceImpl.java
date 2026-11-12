@@ -1,5 +1,6 @@
 package coffee.api.services.services_implement.staff;
 
+import coffee.api.constants.ErrorMessage;
 import coffee.api.dto.request.user.EditStaffRequest;
 import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.exceptions.PhoneNumberExistedException;
@@ -19,7 +20,7 @@ public class EditStaffServiceImpl implements IEditStaffService {
   public void process(EditStaffRequest request, String currentUserRoleName) {
     Boolean isStaffExited = commonMapper.checkStaffExisted(request.getProfileId());
     if (!isStaffExited) {
-      throw new DataNotFoundException("Data not found", request.getProfileId());
+      throw new DataNotFoundException(ErrorMessage.DATA_NOT_FOUND, request.getProfileId());
     }
     Boolean isStaffPhoneExited =
         commonMapper.checkStaffPhoneExisted(request.getProfileId(), request.getPhoneNumber());

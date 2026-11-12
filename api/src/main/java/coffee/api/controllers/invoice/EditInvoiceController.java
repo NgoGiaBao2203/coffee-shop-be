@@ -1,5 +1,6 @@
 package coffee.api.controllers.invoice;
 
+import coffee.api.constants.Authority;
 import coffee.api.dto.request.invoice.EditInvoiceRequest;
 import coffee.api.dto.response.invoice.EditInvoiceResponse;
 import coffee.api.enums.ResponseCode;
@@ -21,7 +22,7 @@ public class EditInvoiceController {
   private final IEditInvoiceService editInvoiceService;
 
   @PutMapping("invoice/edit")
-  @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'STAFF')")
+  @PreAuthorize(Authority.ANY_ROLE)
   public ResponseEntity<EditInvoiceResponse> editInvoice(
       @AuthenticationPrincipal CustomUserDetail customUserDetail,
       @RequestBody @Valid EditInvoiceRequest request) {

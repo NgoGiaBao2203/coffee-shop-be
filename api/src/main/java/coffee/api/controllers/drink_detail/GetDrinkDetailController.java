@@ -1,5 +1,6 @@
 package coffee.api.controllers.drink_detail;
 
+import coffee.api.constants.Authority;
 import coffee.api.dto.response.drink_detail.GetDrinkDetailResponse;
 import coffee.api.dto.result.DrinkResult;
 import coffee.api.enums.ResponseCode;
@@ -20,7 +21,7 @@ public class GetDrinkDetailController {
   private final IGetDrinkDetailService getDrinkDetailService;
 
   @GetMapping("drink/detail/{drinkId}")
-  @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'STAFF')")
+  @PreAuthorize(Authority.ANY_ROLE)
   public GetDrinkDetailResponse getDrinkDetail(
       @AuthenticationPrincipal CustomUserDetail customUserDetail, @PathVariable UUID drinkId) {
 

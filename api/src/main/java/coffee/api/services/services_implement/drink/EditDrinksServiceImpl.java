@@ -1,5 +1,6 @@
 package coffee.api.services.services_implement.drink;
 
+import coffee.api.constants.ErrorMessage;
 import coffee.api.dto.request.drink.EditDrinksRequest;
 import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.exceptions.InvalidRequestException;
@@ -9,12 +10,14 @@ import coffee.api.services.services_interface.common.IFileStorageService;
 import coffee.api.services.services_interface.drink.IEditDrinksService;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class EditDrinksServiceImpl implements IEditDrinksService {
@@ -80,14 +83,14 @@ public class EditDrinksServiceImpl implements IEditDrinksService {
 
   private void validateRequest(EditDrinksRequest request) {
     if (request == null || request.getDrinkId() == null) {
-      throw new InvalidRequestException("Drink ID is required");
+      throw new InvalidRequestException(ErrorMessage.DRINK_ID_REQUIRED);
     }
   }
 
   private UUID resolveDrinkShopId(UUID drinkId) {
     UUID drinkShopId = updateDrinkMapper.getShopIdByDrinkId(drinkId);
     if (drinkShopId == null) {
-      throw new DataNotFoundException("Data not found", drinkId);
+      throw new DataNotFoundException(ErrorMessage.DATA_NOT_FOUND, drinkId);
     }
     return drinkShopId;
   }
@@ -129,7 +132,7 @@ public class EditDrinksServiceImpl implements IEditDrinksService {
             @Override
             public void afterCommit() {
               if (oldImageUrl != null && !oldImageUrl.isBlank()) {
-                fileStorageService.deleteDrinkImage(oldImageUrl);
+                deleteOldImageQuietly(oldImageUrl);
               }
             }
 
@@ -143,5 +146,14 @@ public class EditDrinksServiceImpl implements IEditDrinksService {
     }
 
     return newStoredImageUrl;
+  }
+
+  /** The drink is already saved, so a failed cleanup must not turn the request into an error. */
+  private void deleteOldImageQuietly(String oldImageUrl) {
+    try {
+      fileStorageService.deleteDrinkImage(oldImageUrl);
+    } catch (RuntimeException e) {
+      log.warn("Could not delete old drink image {}: {}", oldImageUrl, e.getMessage());
+    }
   }
 }

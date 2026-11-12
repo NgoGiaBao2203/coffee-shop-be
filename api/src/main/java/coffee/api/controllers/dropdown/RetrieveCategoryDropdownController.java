@@ -1,5 +1,6 @@
 package coffee.api.controllers.dropdown;
 
+import coffee.api.constants.Authority;
 import coffee.api.dto.response.dropdown.CategoryDropdownResponse;
 import coffee.api.dto.result.CategoryDropdownResult;
 import coffee.api.enums.ResponseCode;
@@ -19,7 +20,7 @@ public class RetrieveCategoryDropdownController {
   private final ICategoryDropdownService categoryDropdownService;
 
   @GetMapping("dropdown/category")
-  @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
+  @PreAuthorize(Authority.OWNER_OR_MANAGER)
   public ResponseEntity<CategoryDropdownResponse> retrieveCategory(
       @AuthenticationPrincipal CustomUserDetail customUserDetail) {
     List<CategoryDropdownResult> response =

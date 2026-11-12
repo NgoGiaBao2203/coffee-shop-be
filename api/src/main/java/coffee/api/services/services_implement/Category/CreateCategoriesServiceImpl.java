@@ -1,5 +1,6 @@
 package coffee.api.services.services_implement.category;
 
+import coffee.api.constants.ErrorMessage;
 import coffee.api.dto.request.category.CreateCategoriesRequest;
 import coffee.api.enums.Roles;
 import coffee.api.exceptions.DataNotFoundException;
@@ -31,28 +32,28 @@ public class CreateCategoriesServiceImpl implements ICreateCategoriesService {
 
     // 1. Verify request and shop ID
     if (request == null || request.getShopId() == null) {
-      throw new InvalidRequestException("Shop ID is required");
+      throw new InvalidRequestException(ErrorMessage.SHOP_ID_REQUIRED);
     }
 
     // 2. Verify shop exists
     boolean isShopExisted = commonMapper.checkShopExisted(request.getShopId());
     if (!isShopExisted) {
-      throw new DataNotFoundException("Data not found", request.getShopId());
+      throw new DataNotFoundException(ErrorMessage.DATA_NOT_FOUND, request.getShopId());
     }
 
     // 3. Verify authorization and active assignment for MANAGER
     if (Roles.MANAGER.getValue().equals(currentUserRoleName)) {
       if (currentUserShopId == null) {
-        throw new InvalidRequestException("Manager is not assigned to any shop branch");
+        throw new InvalidRequestException(ErrorMessage.MANAGER_NOT_ASSIGNED_TO_SHOP_BRANCH);
       }
 
       if (!currentUserShopId.equals(request.getShopId())) {
-        throw new InvalidRequestException("You do not have permission to access this shop branch");
+        throw new InvalidRequestException(ErrorMessage.SHOP_BRANCH_ACCESS_DENIED);
       }
 
       boolean isShopMember = commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId);
       if (!isShopMember) {
-        throw new InvalidRequestException("You do not have permission to access this shop branch");
+        throw new InvalidRequestException(ErrorMessage.SHOP_BRANCH_ACCESS_DENIED);
       }
     }
 

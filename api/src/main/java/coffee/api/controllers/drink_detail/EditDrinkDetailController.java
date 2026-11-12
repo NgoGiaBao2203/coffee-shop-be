@@ -1,5 +1,6 @@
 package coffee.api.controllers.drink_detail;
 
+import coffee.api.constants.Authority;
 import coffee.api.dto.request.drink_detail.EditDrinkDetailRequest;
 import coffee.api.dto.response.drink_detail.EditDrinkDetailResponse;
 import coffee.api.enums.ResponseCode;
@@ -21,7 +22,7 @@ public class EditDrinkDetailController {
   private final IEditDrinkDetailService editDrinkDetailService;
 
   @PutMapping("drink-detail/edit")
-  @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
+  @PreAuthorize(Authority.OWNER_OR_MANAGER)
   public ResponseEntity<EditDrinkDetailResponse> editDrinkDetail(
       @AuthenticationPrincipal CustomUserDetail customUserDetail,
       @RequestBody @Valid EditDrinkDetailRequest request) {

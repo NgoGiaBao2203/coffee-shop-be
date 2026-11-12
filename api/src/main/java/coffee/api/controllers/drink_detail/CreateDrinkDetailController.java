@@ -1,5 +1,6 @@
 package coffee.api.controllers.drink_detail;
 
+import coffee.api.constants.Authority;
 import coffee.api.dto.request.drink_detail.CreateDrinkDetailRequest;
 import coffee.api.dto.response.drink_detail.CreateDrinkDetailResponse;
 import coffee.api.enums.ResponseCode;
@@ -21,7 +22,7 @@ public class CreateDrinkDetailController {
   private final ICreateDrinkDetailService createDrinkDetailService;
 
   @PostMapping("drink-detail/create")
-  @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
+  @PreAuthorize(Authority.OWNER_OR_MANAGER)
   public ResponseEntity<CreateDrinkDetailResponse> createDrinkDetail(
       @AuthenticationPrincipal CustomUserDetail customUserDetail,
       @RequestBody @Valid CreateDrinkDetailRequest request) {

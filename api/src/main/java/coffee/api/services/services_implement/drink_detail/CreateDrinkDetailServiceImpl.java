@@ -1,5 +1,6 @@
 package coffee.api.services.services_implement.drink_detail;
 
+import coffee.api.constants.ErrorMessage;
 import coffee.api.dto.request.drink_detail.CreateDrinkDetailRequest;
 import coffee.api.exceptions.InvalidRequestException;
 import coffee.api.mapper.CreateDrinkDetailMapper;
@@ -49,7 +50,7 @@ public class CreateDrinkDetailServiceImpl implements ICreateDrinkDetailService {
 
   private void validateRequest(CreateDrinkDetailRequest request) {
     if (request == null || request.getDrinkId() == null) {
-      throw new InvalidRequestException("Drink ID is required");
+      throw new InvalidRequestException(ErrorMessage.DRINK_ID_REQUIRED);
     }
   }
 }

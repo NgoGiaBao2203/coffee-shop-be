@@ -1,5 +1,6 @@
 package coffee.api.controllers.shop;
 
+import coffee.api.constants.Authority;
 import coffee.api.dto.request.shop.SearchShopRequest;
 import coffee.api.dto.response.base_response.PageResponse;
 import coffee.api.dto.result.ShopResult;
@@ -20,7 +21,7 @@ public class GetShopController {
   private final IGetShopService getShopService;
 
   @GetMapping("shops")
-  @PreAuthorize("hasAnyRole('OWNER')")
+  @PreAuthorize(Authority.OWNER)
   public PageResponse<ShopResult> shopBranchResult(
       @AuthenticationPrincipal CustomUserDetail customUserDetail,
       @ModelAttribute @Valid SearchShopRequest request) {

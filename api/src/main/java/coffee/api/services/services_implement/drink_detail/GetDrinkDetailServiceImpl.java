@@ -1,5 +1,6 @@
 package coffee.api.services.services_implement.drink_detail;
 
+import coffee.api.constants.ErrorMessage;
 import coffee.api.dto.result.DrinkResult;
 import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.exceptions.InvalidRequestException;
@@ -21,7 +22,7 @@ public class GetDrinkDetailServiceImpl implements IGetDrinkDetailService {
   public DrinkResult process(
       UUID drinkId, UUID currentUserId, String currentUserRoleName, UUID currentUserShopId) {
     if (drinkId == null) {
-      throw new InvalidRequestException("Drink ID is required");
+      throw new InvalidRequestException(ErrorMessage.DRINK_ID_REQUIRED);
     }
 
     // Verify the current user's active shop assignment

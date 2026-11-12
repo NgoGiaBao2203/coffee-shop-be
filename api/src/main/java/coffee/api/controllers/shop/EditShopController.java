@@ -1,5 +1,6 @@
 package coffee.api.controllers.shop;
 
+import coffee.api.constants.Authority;
 import coffee.api.dto.request.shop.EditShopRequest;
 import coffee.api.dto.response.shop.EditShopResponse;
 import coffee.api.enums.ResponseCode;
@@ -21,7 +22,7 @@ public class EditShopController {
   private final IEditShopService editShopBranchService;
 
   @PutMapping("shop/{shopId}")
-  @PreAuthorize("hasAnyRole('OWNER')")
+  @PreAuthorize(Authority.OWNER)
   public ResponseEntity<EditShopResponse> editShopBranch(
       @PathVariable UUID shopId, @RequestBody @Valid EditShopRequest request) {
     editShopBranchService.process(shopId, request);

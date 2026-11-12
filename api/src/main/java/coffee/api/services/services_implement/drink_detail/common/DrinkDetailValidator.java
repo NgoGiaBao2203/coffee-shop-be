@@ -1,5 +1,6 @@
 package coffee.api.services.services_implement.drink_detail.common;
 
+import coffee.api.constants.ErrorMessage;
 import coffee.api.dto.result.DrinkDetailResult;
 import coffee.api.enums.Roles;
 import coffee.api.exceptions.DataNotFoundException;
@@ -28,12 +29,12 @@ public class DrinkDetailValidator {
       return;
     }
     if (currentUserShopId == null) {
-      throw new InvalidRequestException("User is not assigned to any shop");
+      throw new InvalidRequestException(ErrorMessage.USER_NOT_ASSIGNED_TO_SHOP);
     }
     if (Roles.MANAGER.getValue().equals(currentUserRoleName)) {
       boolean isShopMember = commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId);
       if (!isShopMember) {
-        throw new InvalidRequestException("You do not have permission to access this shop");
+        throw new InvalidRequestException(ErrorMessage.SHOP_ACCESS_DENIED);
       }
     }
   }
@@ -42,7 +43,7 @@ public class DrinkDetailValidator {
   public void validateDrinkExists(
       UUID drinkId, String currentUserRoleName, UUID currentUserShopId) {
     if (drinkId == null) {
-      throw new InvalidRequestException("Drink ID is required");
+      throw new InvalidRequestException(ErrorMessage.DRINK_ID_REQUIRED);
     }
     if (!createDrinkDetailMapper.checkDrinkAccessible(
         drinkId, currentUserRoleName, currentUserShopId)) {
