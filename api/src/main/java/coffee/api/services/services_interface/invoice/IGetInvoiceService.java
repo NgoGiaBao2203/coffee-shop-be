@@ -8,5 +8,8 @@ import java.util.UUID;
 public interface IGetInvoiceService {
 
   PageResponse<InvoiceResult> process(
-      SearchInvoiceRequest request, String currentUserRoleName, UUID currentUserShopId);
+      SearchInvoiceRequest request,
+      String currentUserRoleName,
+      UUID currentUserShopId,
+      UUID currentUserId);
 }

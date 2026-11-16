@@ -1,6 +1,6 @@
 package coffee.api.filter;
 
-import coffee.api.config.MdcKey;
+import coffee.api.constants.MdcKey;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

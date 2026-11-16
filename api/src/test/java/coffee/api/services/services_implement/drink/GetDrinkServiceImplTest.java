@@ -4,12 +4,12 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import coffee.api.constants.ValidationMessage;
 import coffee.api.dto.request.drink.SearchDrinksRequest;
 import coffee.api.dto.response.base_response.PageResponse;
 import coffee.api.dto.result.DrinkResult;
 import coffee.api.enums.Roles;
 import coffee.api.enums.SortDirection;
-import coffee.api.enums.ValidationMessage;
 import coffee.api.exceptions.InvalidRequestException;
 import coffee.api.mapper.GetDrinksMapper;
 import jakarta.validation.ConstraintViolation;
@@ -590,7 +590,7 @@ public class GetDrinkServiceImplTest {
     Set<ConstraintViolation<SearchDrinksRequest>> violations = validator.validate(validRequest);
 
     assertEquals(1, violations.size());
-    assertEquals(ValidationMessage.Msg.PAGE_MIN, violations.iterator().next().getMessage());
+    assertEquals(ValidationMessage.PAGE_MIN, violations.iterator().next().getMessage());
   }
 
   @Test
@@ -599,7 +599,7 @@ public class GetDrinkServiceImplTest {
     Set<ConstraintViolation<SearchDrinksRequest>> violations = validator.validate(validRequest);
 
     assertEquals(1, violations.size());
-    assertEquals(ValidationMessage.Msg.SIZE_MIN, violations.iterator().next().getMessage());
+    assertEquals(ValidationMessage.SIZE_MIN, violations.iterator().next().getMessage());
   }
 
   @Test
@@ -608,7 +608,7 @@ public class GetDrinkServiceImplTest {
     Set<ConstraintViolation<SearchDrinksRequest>> violations = validator.validate(validRequest);
 
     assertEquals(1, violations.size());
-    assertEquals(ValidationMessage.Msg.SIZE_MAX, violations.iterator().next().getMessage());
+    assertEquals(ValidationMessage.SIZE_MAX, violations.iterator().next().getMessage());
   }
 
   @Test
@@ -617,7 +617,7 @@ public class GetDrinkServiceImplTest {
     Set<ConstraintViolation<SearchDrinksRequest>> violations = validator.validate(validRequest);
 
     assertEquals(1, violations.size());
-    assertEquals(ValidationMessage.Msg.SIZE_MAX, violations.iterator().next().getMessage());
+    assertEquals(ValidationMessage.SIZE_MAX, violations.iterator().next().getMessage());
   }
 
   @Test
@@ -626,8 +626,7 @@ public class GetDrinkServiceImplTest {
     Set<ConstraintViolation<SearchDrinksRequest>> violations = validator.validate(validRequest);
 
     assertEquals(1, violations.size());
-    assertEquals(
-        ValidationMessage.Msg.SPECIAL_CHARACTERS, violations.iterator().next().getMessage());
+    assertEquals(ValidationMessage.SPECIAL_CHARACTERS, violations.iterator().next().getMessage());
   }
 
   @Test
@@ -636,6 +635,6 @@ public class GetDrinkServiceImplTest {
     Set<ConstraintViolation<SearchDrinksRequest>> violations = validator.validate(validRequest);
 
     assertEquals(1, violations.size());
-    assertEquals(ValidationMessage.Msg.SORT_BY_INVALID, violations.iterator().next().getMessage());
+    assertEquals(ValidationMessage.SORT_BY_INVALID, violations.iterator().next().getMessage());
   }
 }

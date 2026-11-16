@@ -1,5 +1,6 @@
 package coffee.api.controllers.table;
 
+import coffee.api.constants.Authority;
 import coffee.api.dto.request.table.CreateTablesRequest;
 import coffee.api.dto.response.table.CreateTablesResponse;
 import coffee.api.enums.ResponseCode;
@@ -21,7 +22,7 @@ public class CreateTablesController {
   private final ICreateTablesService createTablesService;
 
   @PostMapping("tables/create")
-  @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
+  @PreAuthorize(Authority.OWNER_OR_MANAGER)
   public ResponseEntity<CreateTablesResponse> createTable(
       @AuthenticationPrincipal CustomUserDetail customUserDetail,
       @RequestBody @Valid CreateTablesRequest request) {

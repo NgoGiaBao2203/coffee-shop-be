@@ -4,12 +4,12 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import coffee.api.constants.ValidationMessage;
 import coffee.api.dto.request.table.SearchTablesRequest;
 import coffee.api.dto.response.base_response.PageResponse;
 import coffee.api.dto.result.TableResult;
 import coffee.api.enums.Roles;
 import coffee.api.enums.SortDirection;
-import coffee.api.enums.ValidationMessage;
 import coffee.api.exceptions.InvalidRequestException;
 import coffee.api.mapper.GetTablesMapper;
 import jakarta.validation.ConstraintViolation;
@@ -683,7 +683,7 @@ class GetTablesServiceImplTest {
   @Test
   void process_ValidationFails_WhenPageIsLessThanOne_TC023() {
     validRequest.setPage(0);
-    assertSingleViolation("page", ValidationMessage.Msg.PAGE_MIN);
+    assertSingleViolation("page", ValidationMessage.PAGE_MIN);
   }
 
   @ParameterizedTest
@@ -713,7 +713,7 @@ class GetTablesServiceImplTest {
   @Test
   void process_ValidationFails_WhenSortByIsInvalid_TC027() {
     validRequest.setSortBy("unsupported_column");
-    assertSingleViolation("sortBy", ValidationMessage.Msg.SORT_BY_INVALID);
+    assertSingleViolation("sortBy", ValidationMessage.SORT_BY_INVALID);
   }
 
   @Test
@@ -730,15 +730,15 @@ class GetTablesServiceImplTest {
     assertEquals(
         java.util.Map.of(
             "page",
-            ValidationMessage.Msg.PAGE_MIN,
+            ValidationMessage.PAGE_MIN,
             "size",
-            ValidationMessage.Msg.SIZE_MAX,
+            ValidationMessage.SIZE_MAX,
             "status",
-            ValidationMessage.Msg.SIZE_MAX,
+            ValidationMessage.SIZE_MAX,
             "search",
-            ValidationMessage.Msg.SPECIAL_CHARACTERS,
+            ValidationMessage.SPECIAL_CHARACTERS,
             "sortBy",
-            ValidationMessage.Msg.SORT_BY_INVALID),
+            ValidationMessage.SORT_BY_INVALID),
         violations.stream()
             .collect(
                 java.util.stream.Collectors.toMap(
@@ -813,19 +813,17 @@ class GetTablesServiceImplTest {
 
   static Stream<Arguments> invalidSizeCases() {
     return Stream.of(
-        Arguments.of(0, ValidationMessage.Msg.SIZE_MIN),
-        Arguments.of(101, ValidationMessage.Msg.SIZE_MAX));
+        Arguments.of(0, ValidationMessage.SIZE_MIN), Arguments.of(101, ValidationMessage.SIZE_MAX));
   }
 
   static Stream<Arguments> invalidStatusCases() {
     return Stream.of(
-        Arguments.of(0, ValidationMessage.Msg.SIZE_MIN),
-        Arguments.of(4, ValidationMessage.Msg.SIZE_MAX));
+        Arguments.of(0, ValidationMessage.SIZE_MIN), Arguments.of(4, ValidationMessage.SIZE_MAX));
   }
 
   static Stream<Arguments> invalidSearchCases() {
     return Stream.of(
-        Arguments.of("A".repeat(101), ValidationMessage.Msg.SIZE_MAX),
-        Arguments.of("Table @ 2026! #$%*", ValidationMessage.Msg.SPECIAL_CHARACTERS));
+        Arguments.of("A".repeat(101), ValidationMessage.SIZE_MAX),
+        Arguments.of("Table @ 2026! #$%*", ValidationMessage.SPECIAL_CHARACTERS));
   }
 }

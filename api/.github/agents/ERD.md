@@ -81,6 +81,7 @@
 | Column | Type | Constraints |
 |--------|------|-------------|
 | invoice_id | UUID | Primary Key |
+| invoice_code | VARCHAR(30) | Not Null, Unique |
 | profile_id | UUID | Not Null, FK → profiles.profile_id |
 | shop_id | UUID | Not Null, FK → shops.shop_id |
 | table_id | UUID | Not Null, FK → shop_tables.table_id |

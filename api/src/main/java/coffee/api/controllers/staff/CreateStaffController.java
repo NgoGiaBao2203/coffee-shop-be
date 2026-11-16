@@ -1,5 +1,6 @@
 package coffee.api.controllers.staff;
 
+import coffee.api.constants.Authority;
 import coffee.api.dto.request.user.CreateStaffRequest;
 import coffee.api.dto.response.staff.CreateStaffResponse;
 import coffee.api.enums.ResponseCode;
@@ -20,7 +21,7 @@ public class CreateStaffController {
   private final ICreateStaffService createStaffService;
 
   @PostMapping("staff/create")
-  @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
+  @PreAuthorize(Authority.OWNER_OR_MANAGER)
   public ResponseEntity<CreateStaffResponse> editStaff(
       @AuthenticationPrincipal CustomUserDetail customUserDetail,
       @RequestBody @Valid CreateStaffRequest request) {

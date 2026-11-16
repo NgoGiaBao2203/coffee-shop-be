@@ -1,5 +1,6 @@
 package coffee.api.controllers.category;
 
+import coffee.api.constants.Authority;
 import coffee.api.dto.request.category.CreateCategoriesRequest;
 import coffee.api.dto.response.category.CreateCategoriesResponse;
 import coffee.api.enums.ResponseCode;
@@ -20,7 +21,7 @@ public class CreateCategoryController {
   private final ICreateCategoriesService createCategoriesService;
 
   @PostMapping("category/create")
-  @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
+  @PreAuthorize(Authority.OWNER_OR_MANAGER)
   public ResponseEntity<CreateCategoriesResponse> createCategories(
       @AuthenticationPrincipal CustomUserDetail customUserDetail,
       @RequestBody @Valid CreateCategoriesRequest request) {

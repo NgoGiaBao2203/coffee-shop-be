@@ -1,4 +1,4 @@
-package coffee.api.config;
+package coffee.api.constants;
 
 public class MdcKey {
   public static final String TRACE_ID = "traceId";

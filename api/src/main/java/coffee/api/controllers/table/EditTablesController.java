@@ -1,5 +1,6 @@
 package coffee.api.controllers.table;
 
+import coffee.api.constants.Authority;
 import coffee.api.dto.request.table.EditTablesRequest;
 import coffee.api.dto.response.table.EditTablesResponse;
 import coffee.api.enums.ResponseCode;
@@ -20,7 +21,7 @@ public class EditTablesController {
   private final IEditTablesService editTablesService;
 
   @PutMapping("table/edit")
-  @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
+  @PreAuthorize(Authority.OWNER_OR_MANAGER)
   public ResponseEntity<EditTablesResponse> editTable(
       @AuthenticationPrincipal CustomUserDetail customUserDetail,
       @RequestBody @Valid EditTablesRequest request) {

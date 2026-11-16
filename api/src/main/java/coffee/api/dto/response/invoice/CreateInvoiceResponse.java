@@ -4,6 +4,7 @@ import coffee.api.dto.response.base_response.BaseApiResponse;
 import coffee.api.enums.ResponseCode;
 import coffee.api.utils.MdcUtil;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import java.util.UUID;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -15,11 +16,14 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 @JsonPropertyOrder({"code", "message", "errorDetails", "traceId"})
 public class CreateInvoiceResponse extends BaseApiResponse {
+  private UUID invoiceId;
 
-  public static CreateInvoiceResponse of(ResponseCode responseCode, String message) {
+  public static CreateInvoiceResponse of(
+      ResponseCode responseCode, String message, UUID invoiceId) {
     return CreateInvoiceResponse.builder()
         .code(responseCode.getCode())
         .message(message)
+        .invoiceId(invoiceId)
         .traceId(MdcUtil.getTraceId())
         .build();
   }

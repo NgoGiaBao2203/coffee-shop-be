@@ -1,5 +1,6 @@
 package coffee.api.exceptions;
 
+import coffee.api.constants.ErrorMessage;
 import coffee.api.dto.response.base_response.ErrorApiResponse;
 import coffee.api.dto.response.base_response.ErrorDetail;
 import coffee.api.enums.ResponseCode;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
@@ -37,7 +39,9 @@ public class GlobalExceptionHandler {
             .toList();
     log.error("Validation failed: {}", errorDetails);
     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-        .body(ErrorApiResponse.of(ResponseCode.INVALID_REQUEST, "Invalid request", errorDetails));
+        .body(
+            ErrorApiResponse.of(
+                ResponseCode.INVALID_REQUEST, ErrorMessage.INVALID_REQUEST, errorDetails));
   }
 
   @ExceptionHandler(HttpMessageNotReadableException.class)
@@ -83,6 +87,14 @@ public class GlobalExceptionHandler {
     log.error(message);
     return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
         .body(ErrorApiResponse.of(ResponseCode.METHOD_NOT_ALLOWED, message));
+  }
+
+  @ExceptionHandler(MaxUploadSizeExceededException.class)
+  public ResponseEntity<ErrorApiResponse> handleMaxUploadSizeExceeded(
+      MaxUploadSizeExceededException ex) {
+    log.error("Upload size exceeded: {}", ex.getMessage());
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+        .body(ErrorApiResponse.of(ResponseCode.INVALID_REQUEST, "Image file must not exceed 5MB"));
   }
 
   @ExceptionHandler(HttpMediaTypeNotSupportedException.class)

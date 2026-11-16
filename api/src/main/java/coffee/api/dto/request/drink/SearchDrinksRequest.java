@@ -1,7 +1,8 @@
 package coffee.api.dto.request.drink;
 
+import coffee.api.constants.ValidationMessage;
+import coffee.api.constants.ValidationPattern;
 import coffee.api.enums.SortDirection;
-import coffee.api.enums.ValidationMessage;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
@@ -14,23 +15,21 @@ public class SearchDrinksRequest {
 
   private UUID shopId;
 
-  @Min(value = 1, message = ValidationMessage.Msg.PAGE_MIN)
+  @Min(value = 1, message = ValidationMessage.PAGE_MIN)
   private int page = 1;
 
-  @Min(value = 1, message = ValidationMessage.Msg.SIZE_MIN)
-  @Max(value = 100, message = ValidationMessage.Msg.SIZE_MAX)
+  @Min(value = 1, message = ValidationMessage.SIZE_MIN)
+  @Max(value = 100, message = ValidationMessage.SIZE_MAX)
   private int size = 10;
 
   // Allows: Unicode letters, numbers, spaces, and punctuation: - & / ( ) , . '
-  @Size(max = 100, message = ValidationMessage.Msg.SIZE_MAX)
-  @Pattern(
-      regexp = "^\\s*$|^[\\p{L}\\p{N}\\s&/(),.'\\-]+$",
-      message = ValidationMessage.Msg.SPECIAL_CHARACTERS)
+  @Size(max = 100, message = ValidationMessage.SIZE_MAX)
+  @Pattern(regexp = ValidationPattern.OPTIONAL_TEXT, message = ValidationMessage.SPECIAL_CHARACTERS)
   private String search;
 
   @Pattern(
       regexp = "^(drinkId|shopId|drinkCategoryId|drinkName|status|isDeleted)$",
-      message = ValidationMessage.Msg.SORT_BY_INVALID)
+      message = ValidationMessage.SORT_BY_INVALID)
   private String sortBy = "drinkId";
 
   private SortDirection sortDirection = SortDirection.ASC;

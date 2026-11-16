@@ -1,5 +1,6 @@
 package coffee.api.controllers.staff;
 
+import coffee.api.constants.Authority;
 import coffee.api.dto.request.user.SearchUsersRequest;
 import coffee.api.dto.response.base_response.PageResponse;
 import coffee.api.dto.result.ProfileResult;
@@ -19,7 +20,7 @@ public class GetStaffsController {
   private final IGetStaffsService getStaffsrService;
 
   @PostMapping("staffs")
-  @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
+  @PreAuthorize(Authority.OWNER_OR_MANAGER)
   public PageResponse<ProfileResult> getUserList(
       @AuthenticationPrincipal CustomUserDetail customUserDetail,
       @RequestBody(required = false) @Valid SearchUsersRequest request) {

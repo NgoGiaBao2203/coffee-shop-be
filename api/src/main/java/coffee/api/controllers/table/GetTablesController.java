@@ -1,5 +1,6 @@
 package coffee.api.controllers.table;
 
+import coffee.api.constants.Authority;
 import coffee.api.dto.request.table.SearchTablesRequest;
 import coffee.api.dto.response.base_response.PageResponse;
 import coffee.api.dto.result.TableResult;
@@ -20,7 +21,7 @@ public class GetTablesController {
   private final IGetTablesService getTablesService;
 
   @PostMapping("tables")
-  @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'STAFF')")
+  @PreAuthorize(Authority.ANY_ROLE)
   public PageResponse<TableResult> getTablesList(
       @AuthenticationPrincipal CustomUserDetail customUserDetail,
       @RequestBody @Valid SearchTablesRequest request) {

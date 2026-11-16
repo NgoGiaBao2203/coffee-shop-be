@@ -4,11 +4,11 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import coffee.api.constants.ValidationMessage;
 import coffee.api.dto.request.category.EditCategoriesRequest;
 import coffee.api.dto.response.base_response.ErrorDetail;
 import coffee.api.enums.ResponseCode;
 import coffee.api.enums.Roles;
-import coffee.api.enums.ValidationMessage;
 import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.exceptions.InvalidRequestException;
 import coffee.api.exceptions.InvalidRequestWithErrorDetailsException;
@@ -460,7 +460,7 @@ public class EditCategoriesServiceImplTest {
     Set<ConstraintViolation<EditCategoriesRequest>> violations = validator.validate(validRequest);
 
     assertEquals(1, violations.size());
-    assertEquals(ValidationMessage.Msg.FIELD_REQUIRED, violations.iterator().next().getMessage());
+    assertEquals(ValidationMessage.FIELD_REQUIRED, violations.iterator().next().getMessage());
   }
 
   // =========================================================================
@@ -473,7 +473,7 @@ public class EditCategoriesServiceImplTest {
     Set<ConstraintViolation<EditCategoriesRequest>> violations = validator.validate(validRequest);
 
     assertEquals(1, violations.size());
-    assertEquals(ValidationMessage.Msg.FIELD_REQUIRED, violations.iterator().next().getMessage());
+    assertEquals(ValidationMessage.FIELD_REQUIRED, violations.iterator().next().getMessage());
   }
 
   @Test
@@ -482,7 +482,7 @@ public class EditCategoriesServiceImplTest {
     Set<ConstraintViolation<EditCategoriesRequest>> violations = validator.validate(validRequest);
 
     assertEquals(1, violations.size());
-    assertEquals(ValidationMessage.Msg.FIELD_REQUIRED, violations.iterator().next().getMessage());
+    assertEquals(ValidationMessage.FIELD_REQUIRED, violations.iterator().next().getMessage());
   }
 
   @Test
@@ -491,7 +491,7 @@ public class EditCategoriesServiceImplTest {
     Set<ConstraintViolation<EditCategoriesRequest>> violations = validator.validate(validRequest);
 
     assertEquals(1, violations.size());
-    assertEquals(ValidationMessage.Msg.SIZE_MAX, violations.iterator().next().getMessage());
+    assertEquals(ValidationMessage.SIZE_MAX, violations.iterator().next().getMessage());
   }
 
   @Test
@@ -500,8 +500,7 @@ public class EditCategoriesServiceImplTest {
     Set<ConstraintViolation<EditCategoriesRequest>> violations = validator.validate(validRequest);
 
     assertEquals(1, violations.size());
-    assertEquals(
-        ValidationMessage.Msg.SPECIAL_CHARACTERS, violations.iterator().next().getMessage());
+    assertEquals(ValidationMessage.SPECIAL_CHARACTERS, violations.iterator().next().getMessage());
   }
 
   // =========================================================================
@@ -514,7 +513,7 @@ public class EditCategoriesServiceImplTest {
     Set<ConstraintViolation<EditCategoriesRequest>> violations = validator.validate(validRequest);
 
     assertEquals(1, violations.size());
-    assertEquals(ValidationMessage.Msg.FIELD_REQUIRED, violations.iterator().next().getMessage());
+    assertEquals(ValidationMessage.FIELD_REQUIRED, violations.iterator().next().getMessage());
   }
 
   @Test
@@ -534,8 +533,7 @@ public class EditCategoriesServiceImplTest {
 
     assertEquals(2, violations.size());
     boolean allFieldRequired =
-        violations.stream()
-            .allMatch(v -> ValidationMessage.Msg.FIELD_REQUIRED.equals(v.getMessage()));
+        violations.stream().allMatch(v -> ValidationMessage.FIELD_REQUIRED.equals(v.getMessage()));
     assertTrue(allFieldRequired);
   }
 
@@ -548,8 +546,7 @@ public class EditCategoriesServiceImplTest {
 
     assertEquals(2, violations.size());
     boolean allFieldRequired =
-        violations.stream()
-            .allMatch(v -> ValidationMessage.Msg.FIELD_REQUIRED.equals(v.getMessage()));
+        violations.stream().allMatch(v -> ValidationMessage.FIELD_REQUIRED.equals(v.getMessage()));
     assertTrue(allFieldRequired);
   }
 
@@ -562,8 +559,7 @@ public class EditCategoriesServiceImplTest {
     // Chuỗi rỗng vi phạm @NotBlank và @Pattern
     assertFalse(violations.isEmpty());
     boolean hasNotBlankError =
-        violations.stream()
-            .anyMatch(v -> ValidationMessage.Msg.FIELD_REQUIRED.equals(v.getMessage()));
+        violations.stream().anyMatch(v -> ValidationMessage.FIELD_REQUIRED.equals(v.getMessage()));
     assertTrue(hasNotBlankError);
   }
 
@@ -575,8 +571,7 @@ public class EditCategoriesServiceImplTest {
 
     assertFalse(violations.isEmpty());
     boolean hasNotBlankError =
-        violations.stream()
-            .anyMatch(v -> ValidationMessage.Msg.FIELD_REQUIRED.equals(v.getMessage()));
+        violations.stream().anyMatch(v -> ValidationMessage.FIELD_REQUIRED.equals(v.getMessage()));
     assertTrue(hasNotBlankError);
   }
 

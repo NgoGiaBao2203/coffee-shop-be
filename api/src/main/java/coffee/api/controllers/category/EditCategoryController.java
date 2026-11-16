@@ -1,5 +1,6 @@
 package coffee.api.controllers.category;
 
+import coffee.api.constants.Authority;
 import coffee.api.dto.request.category.EditCategoriesRequest;
 import coffee.api.dto.response.category.EditCategoriesResponse;
 import coffee.api.enums.ResponseCode;
@@ -20,7 +21,7 @@ public class EditCategoryController {
   private final IEditCategoriesService editCategoriesService;
 
   @PutMapping("category/edit")
-  @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
+  @PreAuthorize(Authority.OWNER_OR_MANAGER)
   public ResponseEntity<EditCategoriesResponse> editCategories(
       @AuthenticationPrincipal CustomUserDetail customUserDetail,
       @RequestBody @Valid EditCategoriesRequest request) {

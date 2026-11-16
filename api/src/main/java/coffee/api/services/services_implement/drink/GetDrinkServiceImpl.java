@@ -1,5 +1,6 @@
 package coffee.api.services.services_implement.drink;
 
+import coffee.api.constants.ErrorMessage;
 import coffee.api.dto.request.drink.SearchDrinksRequest;
 import coffee.api.dto.response.base_response.PageResponse;
 import coffee.api.dto.response.base_response.PaginationMeta;
@@ -45,7 +46,7 @@ public class GetDrinkServiceImpl implements IGetDrinkService {
   // 1. Manager or Staff must have an assigned shop
   private void verifyShopBranchAssignment(String currentUserRoleName, UUID currentUserShopId) {
     if (!Roles.OWNER.getValue().equals(currentUserRoleName) && currentUserShopId == null) {
-      throw new InvalidRequestException("User is not assigned to any shop");
+      throw new InvalidRequestException(ErrorMessage.USER_NOT_ASSIGNED_TO_SHOP);
     }
   }
 

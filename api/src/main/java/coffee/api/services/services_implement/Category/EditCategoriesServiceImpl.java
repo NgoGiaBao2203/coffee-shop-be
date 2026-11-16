@@ -1,5 +1,6 @@
 package coffee.api.services.services_implement.category;
 
+import coffee.api.constants.ErrorMessage;
 import coffee.api.dto.request.category.EditCategoriesRequest;
 import coffee.api.dto.response.base_response.ErrorDetail;
 import coffee.api.enums.ResponseCode;
@@ -44,7 +45,7 @@ public class EditCategoriesServiceImpl implements IEditCategoriesService {
 
     // 1. Verify request, shop ID and category ID
     if (request == null || request.getShopId() == null) {
-      throw new InvalidRequestException("Shop ID is required");
+      throw new InvalidRequestException(ErrorMessage.SHOP_ID_REQUIRED);
     }
     if (request.getCategoryId() == null) {
       throw new InvalidRequestException("Category ID is required");
@@ -53,22 +54,22 @@ public class EditCategoriesServiceImpl implements IEditCategoriesService {
     // 2. Verify shop exists
     boolean isShopExisted = commonMapper.checkShopExisted(request.getShopId());
     if (!isShopExisted) {
-      throw new DataNotFoundException("Data not found", request.getShopId());
+      throw new DataNotFoundException(ErrorMessage.DATA_NOT_FOUND, request.getShopId());
     }
 
     // 3. Verify authorization and active assignment for MANAGER
     if (Roles.MANAGER.getValue().equals(currentUserRoleName)) {
       if (currentUserShopId == null) {
-        throw new InvalidRequestException("Manager is not assigned to any shop branch");
+        throw new InvalidRequestException(ErrorMessage.MANAGER_NOT_ASSIGNED_TO_SHOP_BRANCH);
       }
 
       if (!currentUserShopId.equals(request.getShopId())) {
-        throw new InvalidRequestException("You do not have permission to access this shop branch");
+        throw new InvalidRequestException(ErrorMessage.SHOP_BRANCH_ACCESS_DENIED);
       }
 
       boolean isShopMember = commonMapper.checkShopIdIsExisted(currentUserId, currentUserShopId);
       if (!isShopMember) {
-        throw new InvalidRequestException("You do not have permission to access this shop branch");
+        throw new InvalidRequestException(ErrorMessage.SHOP_BRANCH_ACCESS_DENIED);
       }
     }
 
@@ -77,7 +78,7 @@ public class EditCategoriesServiceImpl implements IEditCategoriesService {
         commonMapper.checkCategoryExisted(
             request.getCategoryId(), currentUserRoleName, currentUserShopId);
     if (!isCategoryExisted) {
-      throw new DataNotFoundException("Data not found", request.getCategoryId());
+      throw new DataNotFoundException(ErrorMessage.DATA_NOT_FOUND, request.getCategoryId());
     }
 
     // 5. OWNER can access any shop, but the category must actually belong to the shop it
@@ -85,7 +86,7 @@ public class EditCategoriesServiceImpl implements IEditCategoriesService {
       boolean categoryBelongsToRequestedShop =
           commonMapper.checkCategoryExistsInShop(request.getCategoryId(), request.getShopId());
       if (!categoryBelongsToRequestedShop) {
-        throw new DataNotFoundException("Data not found", request.getCategoryId());
+        throw new DataNotFoundException(ErrorMessage.DATA_NOT_FOUND, request.getCategoryId());
       }
     }
 
@@ -111,7 +112,7 @@ public class EditCategoriesServiceImpl implements IEditCategoriesService {
     }
 
     if (!errors.isEmpty()) {
-      throw new InvalidRequestWithErrorDetailsException("Invalid request", errors);
+      throw new InvalidRequestWithErrorDetailsException(ErrorMessage.INVALID_REQUEST, errors);
     }
   }
 }

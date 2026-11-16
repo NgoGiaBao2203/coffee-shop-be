@@ -4,11 +4,11 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import coffee.api.constants.ValidationMessage;
 import coffee.api.dto.request.shop.SearchShopRequest;
 import coffee.api.dto.response.base_response.PageResponse;
 import coffee.api.dto.result.ShopResult;
 import coffee.api.enums.SortDirection;
-import coffee.api.enums.ValidationMessage;
 import coffee.api.mapper.GetShopMapper;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
@@ -457,7 +457,7 @@ public class GetShopServiceImplTest {
     Set<ConstraintViolation<SearchShopRequest>> violations = validator.validate(validRequest);
 
     assertEquals(1, violations.size());
-    assertEquals(ValidationMessage.Msg.PAGE_MIN, violations.iterator().next().getMessage());
+    assertEquals(ValidationMessage.PAGE_MIN, violations.iterator().next().getMessage());
   }
 
   @Test
@@ -466,7 +466,7 @@ public class GetShopServiceImplTest {
     Set<ConstraintViolation<SearchShopRequest>> violations = validator.validate(validRequest);
 
     assertEquals(1, violations.size());
-    assertEquals(ValidationMessage.Msg.SIZE_MIN, violations.iterator().next().getMessage());
+    assertEquals(ValidationMessage.SIZE_MIN, violations.iterator().next().getMessage());
   }
 
   @Test
@@ -475,7 +475,7 @@ public class GetShopServiceImplTest {
     Set<ConstraintViolation<SearchShopRequest>> violations = validator.validate(validRequest);
 
     assertEquals(1, violations.size());
-    assertEquals(ValidationMessage.Msg.SIZE_MAX, violations.iterator().next().getMessage());
+    assertEquals(ValidationMessage.SIZE_MAX, violations.iterator().next().getMessage());
   }
 
   @Test
@@ -502,7 +502,7 @@ public class GetShopServiceImplTest {
     Set<ConstraintViolation<SearchShopRequest>> violations = validator.validate(validRequest);
 
     assertEquals(1, violations.size());
-    assertEquals(ValidationMessage.Msg.SIZE_MAX, violations.iterator().next().getMessage());
+    assertEquals(ValidationMessage.SIZE_MAX, violations.iterator().next().getMessage());
   }
 
   @Test
@@ -520,8 +520,7 @@ public class GetShopServiceImplTest {
     Set<ConstraintViolation<SearchShopRequest>> violations = validator.validate(validRequest);
 
     assertEquals(1, violations.size());
-    assertEquals(
-        ValidationMessage.Msg.SPECIAL_CHARACTERS, violations.iterator().next().getMessage());
+    assertEquals(ValidationMessage.SPECIAL_CHARACTERS, violations.iterator().next().getMessage());
   }
 
   @Test
@@ -530,6 +529,6 @@ public class GetShopServiceImplTest {
     Set<ConstraintViolation<SearchShopRequest>> violations = validator.validate(validRequest);
 
     assertEquals(1, violations.size());
-    assertEquals(ValidationMessage.Msg.SORT_BY_INVALID, violations.iterator().next().getMessage());
+    assertEquals(ValidationMessage.SORT_BY_INVALID, violations.iterator().next().getMessage());
   }
 }

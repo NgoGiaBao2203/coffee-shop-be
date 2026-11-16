@@ -4,118 +4,189 @@
 
 <mapper namespace="coffee.api.mapper.GetRevenueMapper">
 
+  <!-- 1. Map invoice fields to RevenueResult -->
   <resultMap id="RevenueResultMap" type="coffee.api.dto.result.RevenueResult">
-    <result property="invoiceId" column="invoice_id"/>
-    <result property="shopId" column="shop_id"/>
+    <id property="invoiceId" column="invoice_id" javaType="java.util.UUID"/>
+    <result property="invoiceCode" column="invoice_code"/>
+    <result property="shopId" column="shop_id" javaType="java.util.UUID"/>
     <result property="shopName" column="shop_name"/>
-    <result property="fullName" column="full_name"/>
-    <result property="drinkName" column="drink_name"/>
-    <result property="createdAt" column="created_at"/>
-    <result property="totalAmount" column="total_amount"/>
+    <result property="staffName" column="staff_name"/>
     <result property="tableNumber" column="table_number"/>
-    <result property="size" column="size"/>
-    <result property="quantity" column="quantity"/>
-    <result property="price" column="price"/>
-    <result property="note" column="note"/>
+    <result property="totalAmount" column="total_amount"/>
+    <result property="createdAt" column="created_at"/>
+
+    <!-- 2. Map invoice detail rows to the items collection -->
+    <collection property="items" ofType="coffee.api.dto.result.RevenueResult$RevenueItemResult">
+      <id property="invoiceDetailId" column="invoice_detail_id" javaType="java.util.UUID"/>
+      <result property="drinkDetailId" column="drink_detail_id" javaType="java.util.UUID"/>
+      <result property="drinkId" column="drink_id" javaType="java.util.UUID"/>
+      <result property="drinkName" column="drink_name"/>
+      <result property="size" column="size"/>
+      <result property="quantity" column="quantity"/>
+      <result property="unitPrice" column="unit_price"/>
+      <result property="itemTotal" column="item_total"/>
+      <result property="note" column="note"/>
+    </collection>
   </resultMap>
 
-  <!-- Base SQL query to select detailed revenue items -->
-  <sql id="selectRevenueSql">
-    SELECT
-    i.invoice_id,
-    s.shop_id,
-    s.shop_name,
-    p.full_name,
-    d.drink_name,
-    i.created_at,
-    i.total_amount,
-    i.table_number,
-    dd.size,
-    id.quantity,
-    id.unit_price AS price,
-    id.note
-    FROM invoices AS i
-    JOIN invoice_details AS id ON i.invoice_id = id.invoice_id
-    JOIN drink_details AS dd ON id.drink_detail_id = dd.drink_detail_id
-    JOIN drinks AS d ON dd.drink_id = d.drink_id
-    JOIN shops AS s ON i.shop_id = s.shop_id
-    JOIN profiles AS p ON i.profile_id = p.profile_id
-  </sql>
+  <!-- 3. Share paid invoice and shop filters between count, list and total queries -->
+  <sql id="revenueFilterCondition">
+    i.deleted_at IS NULL
+    AND i.is_deleted = FALSE
+    AND s.deleted_at IS NULL
+    AND s.is_deleted = FALSE
 
-  <!-- Common dynamic WHERE filtering conditions -->
-  <sql id="filterConditions">
-    <where>
-      i.is_deleted = false AND d.is_deleted = false
+    <!-- 4. Only paid invoices count as revenue (0 = unpaid, 1 = paid, 2 = cancelled) -->
+    AND i.status = 1
 
-      <!-- Filter by user shop if non-OWNER role -->
-      <if test="currentUserRoleName != 'OWNER'">
-        AND i.shop_id = #{currentUserShopId}
-      </if>
-
-      <!-- Filter by specific shop if current user is OWNER -->
-      <if test="currentUserRoleName == 'OWNER' and shopId != null">
-        AND i.shop_id = #{shopId}
-      </if>
-
-      <!-- Filter by specific invoice ID -->
-      <if test="invoiceId != null and invoiceId != ''">
-        AND i.invoice_id = #{invoiceId}::uuid
-      </if>
-
-      <!-- Date range filtering -->
-      <if test="startDateTime != null">
-        AND i.created_at &gt;= #{startDateTime}
-      </if>
-      <if test="endDateTime != null">
-        AND i.created_at &lt;= #{endDateTime}
-      </if>
-
-      <!-- Search keyword filtering across multiple fields -->
-      <if test="search != null and search != ''">
-        AND (
-        d.drink_name ILIKE '%' || #{search} || '%'
-        OR p.full_name ILIKE '%' || #{search} || '%'
-        OR s.shop_name ILIKE '%' || #{search} || '%'
-        OR CAST(i.table_number AS VARCHAR) ILIKE '%' || #{search} || '%'
-        OR CAST(i.invoice_id AS VARCHAR) ILIKE '%' || #{search} || '%'
-        )
-      </if>
-    </where>
-  </sql>
-
-  <!-- Fetch paginated revenue list with dynamic sorting -->
-  <select id="getRevenueFiltered" resultMap="RevenueResultMap">
-    <include refid="selectRevenueSql"/>
-    <include refid="filterConditions"/>
-    <if test="sortBy != null and sortBy != ''">
-      ORDER BY
-      <choose>
-        <when test="sortBy == 'invoiceId'">i.invoice_id</when>
-        <when test="sortBy == 'shopName'">s.shop_name</when>
-        <when test="sortBy == 'fullName'">p.full_name</when>
-        <when test="sortBy == 'drinkName'">d.drink_name</when>
-        <when test="sortBy == 'createdAt'">i.created_at</when>
-        <when test="sortBy == 'totalAmount'">i.total_amount</when>
-        <when test="sortBy == 'tableNumber'">i.table_number</when>
-        <when test="sortBy == 'quantity'">id.quantity</when>
-        <when test="sortBy == 'price'">id.unit_price</when>
-        <otherwise>i.created_at</otherwise>
-      </choose>
-      ${sortDirection}
+    <!-- 5. Restrict non-OWNER users to their assigned shop -->
+    <if test="currentUserRoleName != 'OWNER'">
+      AND i.shop_id = #{currentUserShopId}
     </if>
-    LIMIT #{size} OFFSET #{offset}
+
+    <!-- 6. Filter OWNER by the requested shop -->
+    <if test="currentUserRoleName == 'OWNER' and shopId != null">
+      AND i.shop_id = #{shopId}
+    </if>
+
+    <!-- 7. Filter by invoice ID -->
+    <if test="invoiceId != null">
+      AND i.invoice_id = #{invoiceId}::uuid
+    </if>
+
+    <!-- 8. Filter by date range -->
+    <if test="startDateTime != null">
+      AND i.created_at &gt;= #{startDateTime}
+    </if>
+    <if test="endDateTime != null">
+      AND i.created_at &lt;= #{endDateTime}
+    </if>
+
+    <!-- 9. Search invoice, shop, staff, table and drink name (deleted drinks included) -->
+    <if test="search != null and search != ''">
+      AND (
+        i.invoice_code ILIKE CONCAT('%', #{search}, '%')
+        OR i.invoice_id::text ILIKE CONCAT('%', #{search}, '%')
+        OR s.shop_name ILIKE CONCAT('%', #{search}, '%')
+        OR p.full_name ILIKE CONCAT('%', #{search}, '%')
+        OR st.table_number::text ILIKE CONCAT('%', #{search}, '%')
+        OR EXISTS (
+          SELECT 1
+          FROM invoice_details sid
+          JOIN drink_details sdd ON sid.drink_detail_id = sdd.drink_detail_id
+          JOIN drinks sd ON sdd.drink_id = sd.drink_id
+          WHERE sid.invoice_id = i.invoice_id
+            AND sid.deleted_at IS NULL
+            AND sd.drink_name ILIKE CONCAT('%', #{search}, '%')
+        )
+      )
+    </if>
+  </sql>
+
+  <!-- Whitelisted invoice sort column and direction (aliases i, s, p, st); also used by
+       ExportRevenueMapper.xml -->
+  <sql id="revenueInvoiceOrder">
+    <choose>
+      <when test="sortBy == 'invoiceId'">i.invoice_id</when>
+      <when test="sortBy == 'shopName'">s.shop_name</when>
+      <when test="sortBy == 'staffName'">p.full_name</when>
+      <when test="sortBy == 'tableNumber'">st.table_number</when>
+      <when test="sortBy == 'totalAmount'">i.total_amount</when>
+      <otherwise>i.created_at</otherwise>
+    </choose>
+    <choose>
+      <when test="sortDirection != null and sortDirection.toUpperCase() == 'ASC'">ASC</when>
+      <otherwise>DESC</otherwise>
+    </choose>
+  </sql>
+
+  <!-- 10. Count matching paid invoices before pagination -->
+  <select id="countRevenueFiltered" resultType="long">
+    SELECT COUNT(1)
+    FROM invoices i
+    JOIN shops s ON i.shop_id = s.shop_id
+    LEFT JOIN profiles p ON i.profile_id = p.profile_id
+    LEFT JOIN shop_tables st ON st.table_id = i.table_id
+    <where>
+      <include refid="revenueFilterCondition"/>
+    </where>
   </select>
 
-  <!-- Count total matching revenue records for pagination -->
-  <select id="countRevenueFiltered" resultType="long">
-    SELECT COUNT(*)
-    FROM invoices AS i
-    JOIN invoice_details AS id ON i.invoice_id = id.invoice_id
-    JOIN drink_details AS dd ON id.drink_detail_id = dd.drink_detail_id
-    JOIN drinks AS d ON dd.drink_id = d.drink_id
-    JOIN shops AS s ON i.shop_id = s.shop_id
-    JOIN profiles AS p ON i.profile_id = p.profile_id
-    <include refid="filterConditions"/>
+  <!-- 11. Fetch paid invoices and their drinks -->
+  <select id="getRevenueFiltered" resultMap="RevenueResultMap">
+    SELECT
+      pi.invoice_id,
+      pi.invoice_code,
+      pi.shop_id,
+      pi.shop_name,
+      pi.staff_name,
+      pi.table_number,
+      pi.total_amount,
+      pi.created_at,
+      id.invoice_detail_id,
+      id.drink_detail_id,
+      dd.drink_id,
+      d.drink_name,
+      dd.size,
+      id.quantity,
+      id.unit_price,
+      (id.unit_price * id.quantity) AS item_total,
+      id.note
+    <!-- 12. Sort and paginate invoices in a subquery before joining their detail rows -->
+    FROM (
+      SELECT
+        i.invoice_id,
+        i.invoice_code,
+        i.shop_id,
+        s.shop_name,
+        p.full_name AS staff_name,
+        st.table_number,
+        i.total_amount,
+        i.created_at
+      FROM invoices i
+      JOIN shops s ON i.shop_id = s.shop_id
+      LEFT JOIN profiles p ON i.profile_id = p.profile_id
+      LEFT JOIN shop_tables st ON st.table_id = i.table_id
+      <where>
+        <include refid="revenueFilterCondition"/>
+      </where>
+
+      ORDER BY <include refid="revenueInvoiceOrder"/>
+
+      LIMIT #{size} OFFSET #{offset}
+    ) pi
+    <!-- 13. Join active invoice details and keep deleted drinks for history -->
+    LEFT JOIN invoice_details id ON pi.invoice_id = id.invoice_id
+      AND id.deleted_at IS NULL
+    LEFT JOIN drink_details dd ON id.drink_detail_id = dd.drink_detail_id
+    LEFT JOIN drinks d ON dd.drink_id = d.drink_id
+    <!-- 14. Keep invoice order and order the drinks within each invoice -->
+    ORDER BY
+    <choose>
+      <when test="sortBy == 'invoiceId'">pi.invoice_id</when>
+      <when test="sortBy == 'shopName'">pi.shop_name</when>
+      <when test="sortBy == 'staffName'">pi.staff_name</when>
+      <when test="sortBy == 'tableNumber'">pi.table_number</when>
+      <when test="sortBy == 'totalAmount'">pi.total_amount</when>
+      <otherwise>pi.created_at</otherwise>
+    </choose>
+    <choose>
+      <when test="sortDirection != null and sortDirection.toUpperCase() == 'ASC'">ASC</when>
+      <otherwise>DESC</otherwise>
+    </choose>,
+    id.invoice_detail_id ASC
+  </select>
+
+  <!-- 15. Sum the total amount of all matching paid invoices on every page -->
+  <select id="getRevenueTotal" resultType="java.math.BigDecimal">
+    SELECT COALESCE(SUM(i.total_amount), 0)
+    FROM invoices i
+    JOIN shops s ON i.shop_id = s.shop_id
+    LEFT JOIN profiles p ON i.profile_id = p.profile_id
+    LEFT JOIN shop_tables st ON st.table_id = i.table_id
+    <where>
+      <include refid="revenueFilterCondition"/>
+    </where>
   </select>
 
 </mapper>

@@ -1,5 +1,6 @@
 package coffee.api.controllers.shop;
 
+import coffee.api.constants.Authority;
 import coffee.api.dto.request.shop.CreateShopRequest;
 import coffee.api.dto.response.shop.CreateShopResponse;
 import coffee.api.enums.ResponseCode;
@@ -21,7 +22,7 @@ public class CreateShopController {
   private final ICreateShopService createShopService;
 
   @PostMapping("shop/create")
-  @PreAuthorize("hasAnyRole('OWNER')")
+  @PreAuthorize(Authority.OWNER)
   public ResponseEntity<CreateShopResponse> createShop(
       @AuthenticationPrincipal CustomUserDetail customUserDetail,
       @RequestBody @Valid CreateShopRequest request) {

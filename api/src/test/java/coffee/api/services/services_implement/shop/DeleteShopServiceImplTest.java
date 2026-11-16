@@ -4,8 +4,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import coffee.api.constants.ValidationMessage;
 import coffee.api.dto.request.shop.DeleteShopRequest;
-import coffee.api.enums.ValidationMessage;
 import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.exceptions.InvalidRequestException;
 import coffee.api.mapper.DeleteShopMapper;
@@ -239,7 +239,7 @@ public class DeleteShopServiceImplTest {
     Set<ConstraintViolation<DeleteShopRequest>> violations = validator.validate(validRequest);
 
     assertEquals(1, violations.size());
-    assertEquals(ValidationMessage.Msg.FIELD_REQUIRED, violations.iterator().next().getMessage());
+    assertEquals(ValidationMessage.FIELD_REQUIRED, violations.iterator().next().getMessage());
   }
 
   @Test

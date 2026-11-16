@@ -1,5 +1,6 @@
 package coffee.api.services.services_implement.drink;
 
+import coffee.api.constants.ErrorMessage;
 import coffee.api.dto.request.drink.DeleteDrinksRequest;
 import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.exceptions.InvalidRequestException;
@@ -46,7 +47,7 @@ public class DeleteDrinkServiceImpl implements IDeleteDrinkService {
 
   private void validateRequest(DeleteDrinksRequest request) {
     if (request == null || request.getDrinkId() == null) {
-      throw new InvalidRequestException("Drink ID is required");
+      throw new InvalidRequestException(ErrorMessage.DRINK_ID_REQUIRED);
     }
   }
 

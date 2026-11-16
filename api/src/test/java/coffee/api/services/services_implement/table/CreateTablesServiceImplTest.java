@@ -4,9 +4,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import coffee.api.constants.ValidationMessage;
 import coffee.api.dto.request.table.CreateTablesRequest;
 import coffee.api.enums.Roles;
-import coffee.api.enums.ValidationMessage;
 import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.exceptions.InvalidRequestException;
 import coffee.api.mapper.CommonMapper;
@@ -556,7 +556,7 @@ class CreateTablesServiceImplTest {
   @Test
   void requestValidation_Fails_WhenShopIdIsNull_TC028() {
     validRequest.setShopId(null);
-    assertSingleViolation("shopId", ValidationMessage.Msg.FIELD_REQUIRED);
+    assertSingleViolation("shopId", ValidationMessage.FIELD_REQUIRED);
   }
 
   @Test
@@ -575,7 +575,7 @@ class CreateTablesServiceImplTest {
             .map(v -> v.getPropertyPath().toString())
             .collect(java.util.stream.Collectors.toSet()));
     assertEquals(
-        Set.of(ValidationMessage.Msg.FIELD_REQUIRED),
+        Set.of(ValidationMessage.FIELD_REQUIRED),
         violations.stream()
             .map(ConstraintViolation::getMessage)
             .collect(java.util.stream.Collectors.toSet()));
@@ -614,21 +614,21 @@ class CreateTablesServiceImplTest {
 
   static Stream<Arguments> invalidTableNumberCases() {
     return Stream.of(
-        Arguments.of(null, ValidationMessage.Msg.FIELD_REQUIRED),
-        Arguments.of(0, ValidationMessage.Msg.PAGE_MIN),
-        Arguments.of(10000, ValidationMessage.Msg.SIZE_MAX));
+        Arguments.of(null, ValidationMessage.FIELD_REQUIRED),
+        Arguments.of(0, ValidationMessage.PAGE_MIN),
+        Arguments.of(10000, ValidationMessage.SIZE_MAX));
   }
 
   static Stream<Arguments> invalidStatusCases() {
     return Stream.of(
-        Arguments.of(null, ValidationMessage.Msg.FIELD_REQUIRED),
-        Arguments.of(0, ValidationMessage.Msg.SIZE_MIN),
-        Arguments.of(4, ValidationMessage.Msg.SIZE_MAX));
+        Arguments.of(null, ValidationMessage.FIELD_REQUIRED),
+        Arguments.of(0, ValidationMessage.SIZE_MIN),
+        Arguments.of(4, ValidationMessage.SIZE_MAX));
   }
 
   static Stream<Arguments> invalidDescriptionCases() {
     return Stream.of(
-        Arguments.of("A".repeat(256), ValidationMessage.Msg.SIZE_MAX),
-        Arguments.of("Bàn VIP @ Cửa Sổ <script>!", ValidationMessage.Msg.SPECIAL_CHARACTERS));
+        Arguments.of("A".repeat(256), ValidationMessage.SIZE_MAX),
+        Arguments.of("Bàn VIP @ Cửa Sổ <script>!", ValidationMessage.SPECIAL_CHARACTERS));
   }
 }

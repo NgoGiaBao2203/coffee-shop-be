@@ -1,6 +1,7 @@
 package coffee.api.dto.request.category;
 
-import coffee.api.enums.ValidationMessage;
+import coffee.api.constants.ValidationMessage;
+import coffee.api.constants.ValidationPattern;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -12,13 +13,11 @@ import lombok.Data;
 public class CreateCategoriesRequest {
 
   // Allows: Unicode letters, numbers, spaces, and punctuation: - & / ( ) , . '
-  @NotBlank(message = ValidationMessage.Msg.FIELD_REQUIRED)
-  @Size(max = 100, message = ValidationMessage.Msg.SIZE_MAX)
-  @Pattern(
-      regexp = "^[\\p{L}\\p{N}\\s\\-&/(),.']+$",
-      message = ValidationMessage.Msg.SPECIAL_CHARACTERS)
+  @NotBlank(message = ValidationMessage.FIELD_REQUIRED)
+  @Size(max = 100, message = ValidationMessage.SIZE_MAX)
+  @Pattern(regexp = ValidationPattern.TEXT, message = ValidationMessage.SPECIAL_CHARACTERS)
   private String categoryName;
 
-  @NotNull(message = ValidationMessage.Msg.FIELD_REQUIRED)
+  @NotNull(message = ValidationMessage.FIELD_REQUIRED)
   private UUID shopId;
 }

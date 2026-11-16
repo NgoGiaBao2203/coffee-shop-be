@@ -1,5 +1,6 @@
 package coffee.api.services.services_implement.shop;
 
+import coffee.api.constants.ErrorMessage;
 import coffee.api.dto.request.shop.EditShopRequest;
 import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.exceptions.UserExistException;
@@ -25,7 +26,7 @@ public class EditShopServiceImpl implements IEditShopService {
     // 1. Verify existence of the shop
     Boolean isShopExisted = updateShopMapper.checkShopExistedById(shopId);
     if (!Boolean.TRUE.equals(isShopExisted)) {
-      throw new DataNotFoundException("Data not found", shopId);
+      throw new DataNotFoundException(ErrorMessage.DATA_NOT_FOUND, shopId);
     }
 
     // 2. Check if shop name is already taken by another active shop

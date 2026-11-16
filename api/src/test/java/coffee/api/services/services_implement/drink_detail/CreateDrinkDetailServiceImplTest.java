@@ -4,8 +4,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import coffee.api.constants.ValidationMessage;
 import coffee.api.dto.request.drink_detail.CreateDrinkDetailRequest;
-import coffee.api.enums.ValidationMessage;
 import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.exceptions.InvalidRequestException;
 import coffee.api.mapper.CommonMapper;
@@ -324,7 +324,7 @@ class CreateDrinkDetailServiceImplTest {
   void requestValidation_RejectsMissingId_TC016() {
     request.setDrinkId(null);
 
-    assertViolations(request, Map.of("drinkId", Set.of(ValidationMessage.Msg.FIELD_REQUIRED)));
+    assertViolations(request, Map.of("drinkId", Set.of(ValidationMessage.FIELD_REQUIRED)));
   }
 
   @ParameterizedTest
@@ -348,9 +348,9 @@ class CreateDrinkDetailServiceImplTest {
     assertViolations(
         new CreateDrinkDetailRequest(),
         Map.of(
-            "drinkId", Set.of(ValidationMessage.Msg.FIELD_REQUIRED),
-            "size", Set.of(ValidationMessage.Msg.FIELD_REQUIRED),
-            "price", Set.of(ValidationMessage.Msg.FIELD_REQUIRED)));
+            "drinkId", Set.of(ValidationMessage.FIELD_REQUIRED),
+            "size", Set.of(ValidationMessage.FIELD_REQUIRED),
+            "price", Set.of(ValidationMessage.FIELD_REQUIRED)));
   }
 
   // =========================================================================
@@ -381,26 +381,24 @@ class CreateDrinkDetailServiceImplTest {
 
   static Stream<Arguments> invalidSizeCases() {
     return Stream.of(
-        Arguments.of((String) null, Set.of(ValidationMessage.Msg.FIELD_REQUIRED)),
+        Arguments.of((String) null, Set.of(ValidationMessage.FIELD_REQUIRED)),
         Arguments.of(
-            "",
-            Set.of(ValidationMessage.Msg.FIELD_REQUIRED, ValidationMessage.Msg.SPECIAL_CHARACTERS)),
+            "", Set.of(ValidationMessage.FIELD_REQUIRED, ValidationMessage.SPECIAL_CHARACTERS)),
         Arguments.of(
-            "   ",
-            Set.of(ValidationMessage.Msg.FIELD_REQUIRED, ValidationMessage.Msg.SPECIAL_CHARACTERS)),
-        Arguments.of("m", Set.of(ValidationMessage.Msg.SPECIAL_CHARACTERS)),
-        Arguments.of(" M ", Set.of(ValidationMessage.Msg.SPECIAL_CHARACTERS)),
-        Arguments.of("XL", Set.of(ValidationMessage.Msg.SPECIAL_CHARACTERS)),
-        Arguments.of("XXL", Set.of(ValidationMessage.Msg.SPECIAL_CHARACTERS)),
-        Arguments.of("XXXL", Set.of(ValidationMessage.Msg.SPECIAL_CHARACTERS)));
+            "   ", Set.of(ValidationMessage.FIELD_REQUIRED, ValidationMessage.SPECIAL_CHARACTERS)),
+        Arguments.of("m", Set.of(ValidationMessage.SPECIAL_CHARACTERS)),
+        Arguments.of(" M ", Set.of(ValidationMessage.SPECIAL_CHARACTERS)),
+        Arguments.of("XL", Set.of(ValidationMessage.SPECIAL_CHARACTERS)),
+        Arguments.of("XXL", Set.of(ValidationMessage.SPECIAL_CHARACTERS)),
+        Arguments.of("XXXL", Set.of(ValidationMessage.SPECIAL_CHARACTERS)));
   }
 
   static Stream<Arguments> invalidPriceCases() {
     return Stream.of(
-        Arguments.of((BigDecimal) null, ValidationMessage.Msg.FIELD_REQUIRED),
-        Arguments.of(BigDecimal.ZERO, ValidationMessage.Msg.PRICE_MIN),
-        Arguments.of(new BigDecimal("-0.01"), ValidationMessage.Msg.PRICE_MIN),
-        Arguments.of(new BigDecimal("30000.123"), ValidationMessage.Msg.SIZE_MAX),
-        Arguments.of(new BigDecimal("12345678901234567"), ValidationMessage.Msg.SIZE_MAX));
+        Arguments.of((BigDecimal) null, ValidationMessage.FIELD_REQUIRED),
+        Arguments.of(BigDecimal.ZERO, ValidationMessage.PRICE_MIN),
+        Arguments.of(new BigDecimal("-0.01"), ValidationMessage.PRICE_MIN),
+        Arguments.of(new BigDecimal("30000.123"), ValidationMessage.SIZE_MAX),
+        Arguments.of(new BigDecimal("12345678901234567"), ValidationMessage.SIZE_MAX));
   }
 }

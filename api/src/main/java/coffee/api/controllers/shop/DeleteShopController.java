@@ -1,5 +1,6 @@
 package coffee.api.controllers.shop;
 
+import coffee.api.constants.Authority;
 import coffee.api.dto.request.shop.DeleteShopRequest;
 import coffee.api.dto.response.shop.DeleteShopResponse;
 import coffee.api.enums.ResponseCode;
@@ -21,7 +22,7 @@ public class DeleteShopController {
   private final IDeleteShopService deleteShopBranchService;
 
   @DeleteMapping("shop/delete")
-  @PreAuthorize("hasAnyRole('OWNER')")
+  @PreAuthorize(Authority.OWNER)
   public ResponseEntity<DeleteShopResponse> deleteShopBranch(
       @AuthenticationPrincipal CustomUserDetail customUserDetail,
       @RequestBody @Valid DeleteShopRequest request) {

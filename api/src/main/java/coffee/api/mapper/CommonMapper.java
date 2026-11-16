@@ -1,5 +1,6 @@
 package coffee.api.mapper;
 
+import coffee.api.dto.result.InvoiceResult;
 import java.util.UUID;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -7,10 +8,15 @@ import org.apache.ibatis.annotations.Param;
 @Mapper
 public interface CommonMapper {
 
-  boolean checkDrinkNameExisted(
-      @Param("drinkId") UUID drinkId,
-      @Param("drinkName") String drinkName,
-      @Param("shopId") UUID shopId);
+  InvoiceResult lockInvoice(@Param("invoiceId") UUID invoiceId);
+
+  UUID lockOccupiedInvoiceTable(@Param("tableId") UUID tableId, @Param("shopId") UUID shopId);
+
+  boolean hasUnpaidTableInvoices(@Param("tableId") UUID tableId);
+
+  int releaseInvoiceTable(@Param("tableId") UUID tableId, @Param("shopId") UUID shopId);
+
+  UUID findDrinkIdByName(@Param("drinkName") String drinkName, @Param("shopId") UUID shopId);
 
   boolean checkDrinkDetailSizeExisted(
       @Param("drinkId") UUID drinkId,

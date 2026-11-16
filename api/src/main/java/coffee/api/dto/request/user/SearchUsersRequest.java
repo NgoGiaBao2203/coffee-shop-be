@@ -1,7 +1,7 @@
 package coffee.api.dto.request.user;
 
+import coffee.api.constants.ValidationMessage;
 import coffee.api.enums.SortDirection;
-import coffee.api.enums.ValidationMessage;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
@@ -9,11 +9,11 @@ import lombok.Data;
 
 @Data
 public class SearchUsersRequest {
-  @Min(value = 1, message = ValidationMessage.Msg.PAGE_MIN)
+  @Min(value = 1, message = ValidationMessage.PAGE_MIN)
   private int page = 1;
 
-  @Min(value = 1, message = ValidationMessage.Msg.SIZE_MIN)
-  @Max(value = 100, message = ValidationMessage.Msg.SIZE_MAX)
+  @Min(value = 1, message = ValidationMessage.SIZE_MIN)
+  @Max(value = 100, message = ValidationMessage.SIZE_MAX)
   private int size = 10;
 
   private String roleId;
@@ -25,7 +25,7 @@ public class SearchUsersRequest {
   @Pattern(
       regexp =
           "^(profileId|email|username|fullName|phoneNumber|shopName|roleName|createdAt|updatedAt|isDeleted)$",
-      message = ValidationMessage.Msg.SORT_BY_INVALID)
+      message = ValidationMessage.SORT_BY_INVALID)
   private String sortBy = "profileId";
 
   private SortDirection sortDirection = SortDirection.ASC;

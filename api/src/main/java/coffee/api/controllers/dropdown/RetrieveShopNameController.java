@@ -1,5 +1,6 @@
 package coffee.api.controllers.dropdown;
 
+import coffee.api.constants.Authority;
 import coffee.api.dto.response.dropdown.ShopNameResponse;
 import coffee.api.dto.result.ShopNameResult;
 import coffee.api.enums.ResponseCode;
@@ -17,7 +18,7 @@ public class RetrieveShopNameController {
   private final IShopNameService shopNameService;
 
   @GetMapping("dropdown/shop-name")
-  @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
+  @PreAuthorize(Authority.OWNER_OR_MANAGER)
   public ResponseEntity<ShopNameResponse> retrieveShopName() {
     List<ShopNameResult> response = shopNameService.process();
     return ResponseEntity.ok()

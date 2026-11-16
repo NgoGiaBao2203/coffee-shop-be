@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="coffee.api.mapper.ExportRevenueMapper">
+
+  <!-- Filters, sort whitelist and result map are shared with the revenue list
+       (GetRevenueMapper.xml) so the export always matches what the screen shows; the size check
+       reuses GetRevenueMapper.countRevenueFiltered -->
+
+  <!-- 1. Fetch every matching paid invoice (no pagination) with its drinks -->
+  <select id="getRevenueForExport" resultMap="coffee.api.mapper.GetRevenueMapper.RevenueResultMap">
+    SELECT
+      i.invoice_id,
+      i.invoice_code,
+      i.shop_id,
+      s.shop_name,
+      p.full_name AS staff_name,
+      st.table_number,
+      i.total_amount,
+      i.created_at,
+      id.invoice_detail_id,
+      id.drink_detail_id,
+      dd.drink_id,
+      d.drink_name,
+      dd.size,
+      id.quantity,
+      id.unit_price,
+      (id.unit_price * id.quantity) AS item_total,
+      id.note
+    FROM invoices i
+    JOIN shops s ON i.shop_id = s.shop_id
+    LEFT JOIN profiles p ON i.profile_id = p.profile_id
+    LEFT JOIN shop_tables st ON st.table_id = i.table_id
+    <!-- 2. Active invoice details; deleted drinks are kept for history -->
+    LEFT JOIN invoice_details id ON i.invoice_id = id.invoice_id
+      AND id.deleted_at IS NULL
+    LEFT JOIN drink_details dd ON id.drink_detail_id = dd.drink_detail_id
+    LEFT JOIN drinks d ON dd.drink_id = d.drink_id
+    <where>
+      <include refid="coffee.api.mapper.GetRevenueMapper.revenueFilterCondition"/>
+    </where>
+    <!-- 3. Same invoice order as the screen; invoice_id keeps the rows of one invoice together -->
+    ORDER BY <include refid="coffee.api.mapper.GetRevenueMapper.revenueInvoiceOrder"/>,
+      i.invoice_id,
+      id.invoice_detail_id ASC
+  </select>
+
+  <!-- 4. Shop name for the report header -->
+  <select id="getShopName" resultType="string">
+    SELECT shop_name
+    FROM shops
+    WHERE shop_id = #{shopId}
+  </select>
+
+  <!-- 5. Full name of the user exporting the report, for the signature block -->
+  <select id="getProfileName" resultType="string">
+    SELECT full_name
+    FROM profiles
+    WHERE profile_id = #{profileId}
+  </select>
+
+</mapper>

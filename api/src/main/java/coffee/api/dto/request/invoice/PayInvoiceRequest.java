@@ -1,6 +1,6 @@
 package coffee.api.dto.request.invoice;
 
-import coffee.api.enums.ValidationMessage;
+import coffee.api.constants.ValidationMessage;
 import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
 import lombok.Data;
@@ -8,6 +8,6 @@ import lombok.Data;
 @Data
 public class PayInvoiceRequest {
 
-  @NotNull(message = ValidationMessage.Msg.FIELD_REQUIRED)
+  @NotNull(message = ValidationMessage.FIELD_REQUIRED)
   private UUID invoiceId;
 }

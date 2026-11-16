@@ -1,5 +1,6 @@
 package coffee.api.controllers.invoice;
 
+import coffee.api.constants.Authority;
 import coffee.api.dto.request.invoice.CancelInvoiceRequest;
 import coffee.api.dto.response.invoice.CancelInvoiceResponse;
 import coffee.api.enums.ResponseCode;
@@ -21,7 +22,7 @@ public class CancelInvoiceController {
   private final ICancelInvoiceService cancelInvoiceService;
 
   @PutMapping("invoice/cancel")
-  @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'STAFF')")
+  @PreAuthorize(Authority.ANY_ROLE)
   public ResponseEntity<CancelInvoiceResponse> cancelInvoice(
       @AuthenticationPrincipal CustomUserDetail customUserDetail,
       @RequestBody @Valid CancelInvoiceRequest request) {

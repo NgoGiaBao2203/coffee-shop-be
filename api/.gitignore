@@ -35,3 +35,10 @@ build/
 
 ### upload ###
 /uploads
+
+### Claude ###
+/.claude/
+/reports/
+
+### API docs ###
+/api-docs/

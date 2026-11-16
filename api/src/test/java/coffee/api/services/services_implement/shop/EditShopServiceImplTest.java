@@ -4,8 +4,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import coffee.api.constants.ValidationMessage;
 import coffee.api.dto.request.shop.EditShopRequest;
-import coffee.api.enums.ValidationMessage;
 import coffee.api.exceptions.DataNotFoundException;
 import coffee.api.exceptions.UserExistException;
 import coffee.api.mapper.UpdateShopMapper;
@@ -201,7 +201,7 @@ public class EditShopServiceImplTest {
     validRequest.setPhoneNumber(null);
     Set<ConstraintViolation<EditShopRequest>> violations = validator.validate(validRequest);
     assertEquals(1, violations.size());
-    assertEquals(ValidationMessage.Msg.FIELD_REQUIRED, violations.iterator().next().getMessage());
+    assertEquals(ValidationMessage.FIELD_REQUIRED, violations.iterator().next().getMessage());
   }
 
   @Test
@@ -209,7 +209,7 @@ public class EditShopServiceImplTest {
     validRequest.setPhoneNumber("");
     Set<ConstraintViolation<EditShopRequest>> violations = validator.validate(validRequest);
     assertEquals(1, violations.size());
-    assertEquals(ValidationMessage.Msg.FIELD_REQUIRED, violations.iterator().next().getMessage());
+    assertEquals(ValidationMessage.FIELD_REQUIRED, violations.iterator().next().getMessage());
   }
 
   @Test
@@ -217,7 +217,7 @@ public class EditShopServiceImplTest {
     validRequest.setPhoneNumber("     ");
     Set<ConstraintViolation<EditShopRequest>> violations = validator.validate(validRequest);
     assertEquals(1, violations.size());
-    assertEquals(ValidationMessage.Msg.FIELD_REQUIRED, violations.iterator().next().getMessage());
+    assertEquals(ValidationMessage.FIELD_REQUIRED, violations.iterator().next().getMessage());
   }
 
   @Test
@@ -244,7 +244,7 @@ public class EditShopServiceImplTest {
     Set<ConstraintViolation<EditShopRequest>> violations = validator.validate(validRequest);
 
     assertEquals(1, violations.size());
-    assertEquals(ValidationMessage.Msg.FIELD_REQUIRED, violations.iterator().next().getMessage());
+    assertEquals(ValidationMessage.FIELD_REQUIRED, violations.iterator().next().getMessage());
   }
 
   @Test
@@ -253,7 +253,7 @@ public class EditShopServiceImplTest {
     Set<ConstraintViolation<EditShopRequest>> violations = validator.validate(validRequest);
 
     assertEquals(1, violations.size());
-    assertEquals(ValidationMessage.Msg.FIELD_REQUIRED, violations.iterator().next().getMessage());
+    assertEquals(ValidationMessage.FIELD_REQUIRED, violations.iterator().next().getMessage());
   }
 
   @Test
@@ -262,7 +262,7 @@ public class EditShopServiceImplTest {
     Set<ConstraintViolation<EditShopRequest>> violations = validator.validate(validRequest);
 
     assertEquals(1, violations.size());
-    assertEquals(ValidationMessage.Msg.SIZE_MAX, violations.iterator().next().getMessage());
+    assertEquals(ValidationMessage.SIZE_MAX, violations.iterator().next().getMessage());
   }
 
   @Test
@@ -280,8 +280,7 @@ public class EditShopServiceImplTest {
     Set<ConstraintViolation<EditShopRequest>> violations = validator.validate(validRequest);
 
     assertEquals(1, violations.size());
-    assertEquals(
-        ValidationMessage.Msg.SPECIAL_CHARACTERS, violations.iterator().next().getMessage());
+    assertEquals(ValidationMessage.SPECIAL_CHARACTERS, violations.iterator().next().getMessage());
   }
 
   // =========================================================================
@@ -294,7 +293,7 @@ public class EditShopServiceImplTest {
     Set<ConstraintViolation<EditShopRequest>> violations = validator.validate(validRequest);
 
     assertEquals(1, violations.size());
-    assertEquals(ValidationMessage.Msg.FIELD_REQUIRED, violations.iterator().next().getMessage());
+    assertEquals(ValidationMessage.FIELD_REQUIRED, violations.iterator().next().getMessage());
   }
 
   @Test
@@ -303,7 +302,7 @@ public class EditShopServiceImplTest {
     Set<ConstraintViolation<EditShopRequest>> violations = validator.validate(validRequest);
 
     assertEquals(1, violations.size());
-    assertEquals(ValidationMessage.Msg.FIELD_REQUIRED, violations.iterator().next().getMessage());
+    assertEquals(ValidationMessage.FIELD_REQUIRED, violations.iterator().next().getMessage());
   }
 
   @Test
@@ -312,7 +311,7 @@ public class EditShopServiceImplTest {
     Set<ConstraintViolation<EditShopRequest>> violations = validator.validate(validRequest);
 
     assertEquals(1, violations.size());
-    assertEquals(ValidationMessage.Msg.SIZE_MAX, violations.iterator().next().getMessage());
+    assertEquals(ValidationMessage.SIZE_MAX, violations.iterator().next().getMessage());
   }
 
   @Test
@@ -330,8 +329,7 @@ public class EditShopServiceImplTest {
     Set<ConstraintViolation<EditShopRequest>> violations = validator.validate(validRequest);
 
     assertEquals(1, violations.size());
-    assertEquals(
-        ValidationMessage.Msg.SPECIAL_CHARACTERS, violations.iterator().next().getMessage());
+    assertEquals(ValidationMessage.SPECIAL_CHARACTERS, violations.iterator().next().getMessage());
   }
 
   // =========================================================================
@@ -344,8 +342,7 @@ public class EditShopServiceImplTest {
     Set<ConstraintViolation<EditShopRequest>> violations = validator.validate(validRequest);
 
     assertEquals(1, violations.size());
-    assertEquals(
-        ValidationMessage.Msg.SPECIAL_CHARACTERS, violations.iterator().next().getMessage());
+    assertEquals(ValidationMessage.SPECIAL_CHARACTERS, violations.iterator().next().getMessage());
   }
 
   @Test
@@ -354,8 +351,7 @@ public class EditShopServiceImplTest {
     Set<ConstraintViolation<EditShopRequest>> violations = validator.validate(validRequest);
 
     assertEquals(1, violations.size());
-    assertEquals(
-        ValidationMessage.Msg.PHONE_NUMBER_INVALID, violations.iterator().next().getMessage());
+    assertEquals(ValidationMessage.PHONE_NUMBER_INVALID, violations.iterator().next().getMessage());
   }
 
   @Test
@@ -364,8 +360,7 @@ public class EditShopServiceImplTest {
     Set<ConstraintViolation<EditShopRequest>> violations = validator.validate(validRequest);
 
     assertEquals(1, violations.size());
-    assertEquals(
-        ValidationMessage.Msg.PHONE_INVALID_LENGTH, violations.iterator().next().getMessage());
+    assertEquals(ValidationMessage.PHONE_INVALID_LENGTH, violations.iterator().next().getMessage());
   }
 
   @Test
@@ -374,8 +369,7 @@ public class EditShopServiceImplTest {
     Set<ConstraintViolation<EditShopRequest>> violations = validator.validate(validRequest);
 
     assertEquals(1, violations.size());
-    assertEquals(
-        ValidationMessage.Msg.PHONE_INVALID_LENGTH, violations.iterator().next().getMessage());
+    assertEquals(ValidationMessage.PHONE_INVALID_LENGTH, violations.iterator().next().getMessage());
   }
 
   @Test
