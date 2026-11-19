@@ -6,12 +6,10 @@
 
   <!-- 1. Count serving/pending invoices associated with this table -->
   <select id="countPendingInvoicesByTable" resultType="int">
-    SELECT COUNT(DISTINCT inv.invoice_id)
-    FROM invoices inv
-    WHERE inv.table_id = #{tableId}
-      AND inv.status = 0
-      AND inv.is_deleted = FALSE
-      AND inv.deleted_at IS NULL
+    SELECT COUNT(DISTINCT i.invoice_id)
+    FROM invoices i
+    WHERE i.table_id = #{tableId}
+    <include refid="coffee.api.mapper.CommonMapper.activeUnpaidInvoiceConditions"/>
   </select>
 
   <!-- 2. Soft delete the table -->
