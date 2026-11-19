@@ -1,6 +1,6 @@
 package coffee.api.services.services_implement.staff;
 
-import coffee.api.dto.request.user.SearchUsersRequest;
+import coffee.api.dto.request.staff.SearchStaffsRequest;
 import coffee.api.dto.response.base_response.PageResponse;
 import coffee.api.dto.response.base_response.PaginationMeta;
 import coffee.api.dto.result.ProfileResult;
@@ -9,7 +9,6 @@ import coffee.api.services.services_interface.staff.IGetStaffsService;
 import coffee.api.utils.ConvertRoleVN;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -20,7 +19,7 @@ public class GetStaffsServiceImpl implements IGetStaffsService {
 
   @Override
   public PageResponse<ProfileResult> process(
-      SearchUsersRequest request, String currentUserRoleName, UUID currentUserId) {
+      SearchStaffsRequest request, String currentUserRoleName, UUID currentUserId) {
     String search = request.trimmedSearch();
     String roleId = request.getRoleId();
     String branchShopId = request.getBranchShopId();
@@ -53,15 +52,9 @@ public class GetStaffsServiceImpl implements IGetStaffsService {
             currentUserRoleName,
             currentUserId);
 
-    List<ProfileResult> processedItems =
-        rawItems.stream()
-            .peek(
-                profile -> {
-                  String vnRole = ConvertRoleVN.toVietnamese(profile.getRoleName());
-                  profile.setRoleName(vnRole);
-                })
-            .collect(Collectors.toList());
+    rawItems.forEach(
+        profile -> profile.setRoleName(ConvertRoleVN.toVietnamese(profile.getRoleName())));
 
-    return PageResponse.of("Get staff list successfully", processedItems, pagination);
+    return PageResponse.of("Get staff list successfully", rawItems, pagination);
   }
 }

@@ -1,7 +1,7 @@
 package coffee.api.controllers.staff;
 
 import coffee.api.constants.Authority;
-import coffee.api.dto.request.user.EditStaffRequest;
+import coffee.api.dto.request.staff.EditStaffRequest;
 import coffee.api.dto.response.staff.EditStaffResponse;
 import coffee.api.enums.ResponseCode;
 import coffee.api.security.CustomUserDetail;
@@ -25,7 +25,11 @@ public class EditStaffController {
   public ResponseEntity<EditStaffResponse> editStaff(
       @AuthenticationPrincipal CustomUserDetail customUserDetail,
       @RequestBody @Valid EditStaffRequest request) {
-    editStaffService.process(request, customUserDetail.getRoleName());
+    editStaffService.process(
+        request,
+        customUserDetail.getRoleName(),
+        customUserDetail.getUserId(),
+        customUserDetail.getShopId());
     return ResponseEntity.ok()
         .body(EditStaffResponse.of(ResponseCode.SUCCESS, "Staff edited successfully"));
   }

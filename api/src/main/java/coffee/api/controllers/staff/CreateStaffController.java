@@ -1,7 +1,7 @@
 package coffee.api.controllers.staff;
 
 import coffee.api.constants.Authority;
-import coffee.api.dto.request.user.CreateStaffRequest;
+import coffee.api.dto.request.staff.CreateStaffRequest;
 import coffee.api.dto.response.staff.CreateStaffResponse;
 import coffee.api.enums.ResponseCode;
 import coffee.api.security.CustomUserDetail;
@@ -22,11 +22,14 @@ public class CreateStaffController {
 
   @PostMapping("staff/create")
   @PreAuthorize(Authority.OWNER_OR_MANAGER)
-  public ResponseEntity<CreateStaffResponse> editStaff(
+  public ResponseEntity<CreateStaffResponse> createStaff(
       @AuthenticationPrincipal CustomUserDetail customUserDetail,
       @RequestBody @Valid CreateStaffRequest request) {
     createStaffService.process(
-        request, customUserDetail.getUserId(), customUserDetail.getRoleName());
+        request,
+        customUserDetail.getRoleName(),
+        customUserDetail.getUserId(),
+        customUserDetail.getShopId());
     return ResponseEntity.ok()
         .body(CreateStaffResponse.of(ResponseCode.SUCCESS, "Staff created successfully"));
   }

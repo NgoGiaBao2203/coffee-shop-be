@@ -1,4 +1,4 @@
-package coffee.api.dto.request.user;
+package coffee.api.dto.request.staff;
 
 import coffee.api.constants.ValidationMessage;
 import jakarta.validation.constraints.NotNull;

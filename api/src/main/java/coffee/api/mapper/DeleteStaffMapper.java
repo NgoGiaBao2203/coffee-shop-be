@@ -6,5 +6,12 @@ import org.apache.ibatis.annotations.Param;
 
 @Mapper
 public interface DeleteStaffMapper {
-  void deleteStaff(@Param("profileId") UUID profileId);
+  int softDeleteStaffShops(
+      @Param("profileId") UUID profileId,
+      @Param("shopId") UUID shopId,
+      @Param("deletedBy") UUID deletedBy);
+
+  int countActiveStaffShops(@Param("profileId") UUID profileId);
+
+  int softDeleteStaff(@Param("profileId") UUID profileId);
 }

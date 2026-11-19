@@ -1,7 +1,7 @@
 package coffee.api.controllers.staff;
 
 import coffee.api.constants.Authority;
-import coffee.api.dto.request.user.SearchUsersRequest;
+import coffee.api.dto.request.staff.SearchStaffsRequest;
 import coffee.api.dto.response.base_response.PageResponse;
 import coffee.api.dto.result.ProfileResult;
 import coffee.api.security.CustomUserDetail;
@@ -17,17 +17,17 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 public class GetStaffsController {
-  private final IGetStaffsService getStaffsrService;
+  private final IGetStaffsService getStaffsService;
 
   @PostMapping("staffs")
   @PreAuthorize(Authority.OWNER_OR_MANAGER)
-  public PageResponse<ProfileResult> getUserList(
+  public PageResponse<ProfileResult> getStaffs(
       @AuthenticationPrincipal CustomUserDetail customUserDetail,
-      @RequestBody(required = false) @Valid SearchUsersRequest request) {
+      @RequestBody(required = false) @Valid SearchStaffsRequest request) {
     if (request == null) {
-      request = new SearchUsersRequest();
+      request = new SearchStaffsRequest();
     }
-    return getStaffsrService.process(
+    return getStaffsService.process(
         request, customUserDetail.getRoleName(), customUserDetail.getUserId());
   }
 }

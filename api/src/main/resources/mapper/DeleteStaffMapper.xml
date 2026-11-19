@@ -5,18 +5,36 @@
 
 <mapper namespace="coffee.api.mapper.DeleteStaffMapper">
 
-  <update id="deleteStaff">
-    <!-- 1. HARD DELETE the staff-shop relationship assignment -->
-    DELETE FROM profile_shops
-    WHERE profile_id = #{profileId};
-
-    <!-- 2. SOFT DELETE the user profile -->
-    UPDATE profiles
-    SET
-    updated_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh',
-    deleted_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh'
+  <!-- 2. Soft delete the staff-shop assignment (one shop, or every shop when shopId is null) -->
+  <update id="softDeleteStaffShops">
+    UPDATE profile_shops
+    SET deleted_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh',
+    deleted_by = #{deletedBy},
+    update_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh'
     WHERE profile_id = #{profileId}
-    AND deleted_at IS NULL;
+    AND deleted_at IS NULL
+    <if test="shopId != null">
+      AND shop_id = #{shopId}
+    </if>
+  </update>
+
+  <!-- 3. Count the shops the staff still works in -->
+  <select id="countActiveStaffShops" resultType="int">
+    SELECT COUNT(*)
+    FROM profile_shops
+    WHERE profile_id = #{profileId}
+    AND deleted_at IS NULL
+  </select>
+
+  <!-- 4. Soft delete the profile (is_deleted also blocks login) -->
+  <update id="softDeleteStaff">
+    UPDATE profiles
+    SET deleted_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh',
+    is_deleted = true,
+    updated_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh'
+    WHERE profile_id = #{profileId}
+    AND deleted_at IS NULL
+    AND is_deleted = false
   </update>
 
 </mapper>

@@ -23,16 +23,23 @@ public interface CommonMapper {
       @Param("size") String size,
       @Param("excludedDrinkDetailId") UUID excludedDrinkDetailId);
 
-  Boolean checkStaffExisted(@Param("profileId") UUID profileId);
-
   Boolean checkStaffExistedByUsername(@Param("username") String username);
-
-  Boolean checkStaffPhoneExistedForCreate(@Param("phoneNumber") String phoneNumber);
 
   Boolean checkStaffEmailExisted(@Param("email") String email);
 
   Boolean checkStaffPhoneExisted(
-      @Param("profileId") UUID profileId, @Param("phoneNumber") String phoneNumber);
+      @Param("phoneNumber") String phoneNumber, @Param("excludedProfileId") UUID excludedProfileId);
+
+  int countOtherActiveStaffShops(@Param("profileId") UUID profileId, @Param("shopId") UUID shopId);
+
+  int countPendingInvoicesByStaff(@Param("profileId") UUID profileId, @Param("shopId") UUID shopId);
+
+  Boolean checkStaffManageable(
+      @Param("profileId") UUID profileId,
+      @Param("currentUserRoleName") String currentUserRoleName,
+      @Param("currentUserId") UUID currentUserId);
+
+  String findRoleNameById(@Param("roleId") UUID roleId);
 
   Boolean checkShopExisted(@Param("shopId") UUID shopId);
 

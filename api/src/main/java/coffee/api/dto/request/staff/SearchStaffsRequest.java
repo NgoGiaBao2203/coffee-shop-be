@@ -1,4 +1,4 @@
-package coffee.api.dto.request.user;
+package coffee.api.dto.request.staff;
 
 import coffee.api.constants.ValidationMessage;
 import coffee.api.enums.SortDirection;
@@ -8,7 +8,7 @@ import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
 @Data
-public class SearchUsersRequest {
+public class SearchStaffsRequest {
   @Min(value = 1, message = ValidationMessage.PAGE_MIN)
   private int page = 1;
 

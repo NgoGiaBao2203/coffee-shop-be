@@ -14,6 +14,7 @@ public final class ValidationMessage {
   public static final String PHONE_INVALID_LENGTH = "EV009";
   public static final String PRICE_MIN = "EV010";
   public static final String STATUS_INVALID = "EV011";
+  public static final String EMAIL_INVALID = "EV012";
 
   private ValidationMessage() {}
 }

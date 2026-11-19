@@ -7,6 +7,7 @@ import coffee.api.enums.ResponseCode;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -135,6 +136,13 @@ public class GlobalExceptionHandler {
         .body(
             ErrorApiResponse.of(
                 ResponseCode.INTERNAL_SERVER_ERROR, "An unexpected error occurred"));
+  }
+
+  @ExceptionHandler(DuplicateKeyException.class)
+  public ResponseEntity<ErrorApiResponse> handleDuplicateKeyException(DuplicateKeyException ex) {
+    log.error("Duplicate key: {}", ex.getMessage());
+    return ResponseEntity.status(HttpStatus.CONFLICT)
+        .body(ErrorApiResponse.of(ResponseCode.CONFLICT, ErrorMessage.DUPLICATE_DATA));
   }
 
   @ExceptionHandler(UserExistException.class)

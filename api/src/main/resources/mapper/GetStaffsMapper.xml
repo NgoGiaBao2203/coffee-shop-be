@@ -23,6 +23,7 @@
   <sql id="staffsFilterCondition">
     <!-- Exclude soft-deleted profiles -->
     u.deleted_at IS NULL
+    AND u.is_deleted = false
 
     <!-- Role-based security scoping rules -->
     AND
@@ -38,10 +39,12 @@
         AND u.profile_id IN (
         SELECT target_ps.profile_id
         FROM profile_shops target_ps
-        WHERE target_ps.shop_id IN (
+        WHERE target_ps.deleted_at IS NULL
+        AND target_ps.shop_id IN (
         SELECT mgr_ps.shop_id
         FROM profile_shops mgr_ps
         WHERE mgr_ps.profile_id = #{currentUserId}
+        AND mgr_ps.deleted_at IS NULL
         )
         )
       </when>
@@ -87,7 +90,7 @@
     u.deleted_at
     FROM profiles u
     LEFT JOIN roles r ON u.role_id = r.role_id
-    LEFT JOIN profile_shops ps ON u.profile_id = ps.profile_id
+    LEFT JOIN profile_shops ps ON u.profile_id = ps.profile_id AND ps.deleted_at IS NULL
     LEFT JOIN shops s ON ps.shop_id = s.shop_id
     <where>
       <include refid="staffsFilterCondition"/>
@@ -119,11 +122,11 @@
     SELECT COUNT(*)
     FROM profiles u
     LEFT JOIN roles r ON u.role_id = r.role_id
-    LEFT JOIN profile_shops ps ON u.profile_id = ps.profile_id
+    LEFT JOIN profile_shops ps ON u.profile_id = ps.profile_id AND ps.deleted_at IS NULL
     LEFT JOIN shops s ON ps.shop_id = s.shop_id
     <where>
       <include refid="staffsFilterCondition"/>
     </where>
   </select>
 
-</mapper>
+</mapper>

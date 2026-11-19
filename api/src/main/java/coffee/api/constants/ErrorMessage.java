@@ -6,6 +6,7 @@ public final class ErrorMessage {
   // ── Generic ──────────────────────────────────────────────────────
   public static final String DATA_NOT_FOUND = "Data not found";
   public static final String INVALID_REQUEST = "Invalid request";
+  public static final String DUPLICATE_DATA = "Data already exists";
 
   // ── Required ids ─────────────────────────────────────────────────
   public static final String SHOP_ID_REQUIRED = "Shop ID is required";
@@ -27,6 +28,14 @@ public final class ErrorMessage {
       "Table is unavailable or does not exist in this shop";
   public static final String CURRENT_TABLE_UNAVAILABLE =
       "Current table is unavailable or does not belong to this shop";
+
+  // ── Staff ───────────────────────────────────────────────────────
+  public static final String STAFF_USERNAME_EXISTED = "Staff is existed";
+  public static final String STAFF_EMAIL_EXISTED = "Staff email is existed";
+  public static final String STAFF_PHONE_EXISTED = "Staff phone number is existed";
+  public static final String STAFF_HAS_PENDING_INVOICES =
+      "Can not delete staff with pending invoices";
+  public static final String ROLE_NOT_ASSIGNABLE = "Role can not be assigned to staff";
 
   private ErrorMessage() {}
 }

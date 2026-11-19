@@ -3,7 +3,7 @@ package coffee.api.services.services_implement.staff;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import coffee.api.dto.request.user.SearchUsersRequest;
+import coffee.api.dto.request.staff.SearchStaffsRequest;
 import coffee.api.dto.response.base_response.PageResponse;
 import coffee.api.dto.result.ProfileResult;
 import coffee.api.enums.SortDirection;
@@ -26,7 +26,7 @@ public class GetStaffsServiceImplTest {
 
   @InjectMocks private GetStaffsServiceImpl getStaffsService;
 
-  private SearchUsersRequest validRequest;
+  private SearchStaffsRequest validRequest;
   private ProfileResult sampleStaffResult;
   private UUID currentUserId;
   private String currentUserRoleName;
@@ -34,7 +34,7 @@ public class GetStaffsServiceImplTest {
   @BeforeEach
   void setUp() {
     // Initialize standard valid request with dropdown filters (roleId & branchShopId)
-    validRequest = new SearchUsersRequest();
+    validRequest = new SearchStaffsRequest();
     validRequest.setPage(1);
     validRequest.setSize(10);
     validRequest.setSearch("Nguyen");

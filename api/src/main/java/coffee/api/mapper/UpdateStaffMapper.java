@@ -6,11 +6,25 @@ import org.apache.ibatis.annotations.Param;
 
 @Mapper
 public interface UpdateStaffMapper {
-  void updateStaff(
+  int updateStaff(
       @Param("profileId") UUID profileId,
       @Param("fullName") String fullName,
       @Param("phoneNumber") String phoneNumber,
       @Param("roleId") UUID roleId,
-      @Param("shopId") UUID shopId,
       @Param("currentUserRoleName") String currentUserRoleName);
+
+  int updateStaffShop(
+      @Param("profileId") UUID profileId,
+      @Param("shopId") UUID shopId,
+      @Param("roleId") UUID roleId);
+
+  int removeOtherStaffShops(
+      @Param("profileId") UUID profileId,
+      @Param("shopId") UUID shopId,
+      @Param("deletedBy") UUID deletedBy);
+
+  void insertStaffShop(
+      @Param("profileId") UUID profileId,
+      @Param("shopId") UUID shopId,
+      @Param("roleId") UUID roleId);
 }

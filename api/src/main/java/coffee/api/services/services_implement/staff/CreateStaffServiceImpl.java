@@ -1,42 +1,58 @@
 package coffee.api.services.services_implement.staff;
 
-import coffee.api.dto.request.user.CreateStaffRequest;
+import coffee.api.constants.ErrorMessage;
+import coffee.api.dto.request.staff.CreateStaffRequest;
 import coffee.api.exceptions.EmailExistedException;
-import coffee.api.exceptions.PhoneNumberExistedException;
 import coffee.api.exceptions.UserExistException;
 import coffee.api.mapper.CommonMapper;
 import coffee.api.mapper.CreateStaffMapper;
+import coffee.api.services.services_implement.staff.common.StaffValidator;
 import coffee.api.services.services_interface.staff.ICreateStaffService;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 public class CreateStaffServiceImpl implements ICreateStaffService {
   private final CommonMapper commonMapper;
   private final CreateStaffMapper createStaffMapper;
+  private final StaffValidator staffValidator;
 
   @Override
-  public void process(CreateStaffRequest request, UUID currentUserId, String currentUserRoleName) {
-    Boolean isStaffExited = commonMapper.checkStaffExistedByUsername(request.getUsername());
-    if (isStaffExited) {
-      throw new UserExistException("Staff is existed");
+  @Transactional(rollbackFor = Exception.class)
+  public void process(
+      CreateStaffRequest request,
+      String currentUserRoleName,
+      UUID currentUserId,
+      UUID currentUserShopId) {
+    // 1. Verify shop access and the role that will be assigned
+    staffValidator.validateShopAccess(
+        request.getShopId(), currentUserRoleName, currentUserId, currentUserShopId);
+    staffValidator.validateAssignableRole(request.getRoleId(), currentUserRoleName);
+
+    // 2. Normalize input
+    String username = request.getUsername().trim();
+    String email = request.getEmail().trim();
+    String phoneNumber = request.getPhoneNumber().trim();
+    String fullName = request.getFullName().trim();
+
+    // 3. Verify username, email and phone number are not used by an active account
+    if (commonMapper.checkStaffExistedByUsername(username)) {
+      throw new UserExistException(ErrorMessage.STAFF_USERNAME_EXISTED);
     }
-    Boolean isPhoneNumberExisted =
-        commonMapper.checkStaffPhoneExistedForCreate(request.getPhoneNumber());
-    if (isPhoneNumberExisted) {
-      throw new PhoneNumberExistedException("Staff phone is existed", request.getPhoneNumber());
+    if (commonMapper.checkStaffEmailExisted(email)) {
+      throw new EmailExistedException(ErrorMessage.STAFF_EMAIL_EXISTED, email);
     }
-    Boolean isEmailExisted = commonMapper.checkStaffEmailExisted(request.getEmail());
-    if (isEmailExisted) {
-      throw new EmailExistedException("Staff email is existed", request.getEmail());
-    }
+    staffValidator.validatePhoneNotUsed(phoneNumber, null);
+
+    // 4. Insert profile and shop assignment
     createStaffMapper.createStaff(
-        request.getEmail(),
-        request.getUsername(),
-        request.getFullName(),
-        request.getPhoneNumber(),
+        email,
+        username,
+        fullName,
+        phoneNumber,
         request.getRoleId(),
         request.getShopId(),
         currentUserId,

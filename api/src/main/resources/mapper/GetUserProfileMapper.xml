@@ -33,7 +33,8 @@
       p.is_deleted,
       r.role_name
     FROM profiles p
-           LEFT JOIN profile_shops ps ON ps.profile_id = p.profile_id
+           LEFT JOIN profile_shops ps ON ps.profile_id = p.profile_id 
+           AND ps.deleted_at IS NULL
            LEFT JOIN shops s          ON s.shop_id = ps.shop_id AND s.is_deleted = false
            INNER JOIN roles r         ON r.role_id = COALESCE(ps.role_id, p.role_id)
     WHERE p.username = #{username}

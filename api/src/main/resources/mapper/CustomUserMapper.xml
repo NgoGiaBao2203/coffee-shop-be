@@ -32,7 +32,8 @@
            ps.shop_id
     FROM profiles p
            INNER JOIN roles r ON r.role_id = p.role_id
-           LEFT JOIN profile_shops ps ON ps.profile_id = p.profile_id
+           LEFT JOIN profile_shops ps ON ps.profile_id = p.profile_id 
+           AND ps.deleted_at IS NULL
     WHERE p.profile_id = #{userId}
       AND p.deleted_at IS NULL
       AND r.deleted_at IS NULL
@@ -54,7 +55,7 @@
            ps.shop_id
     FROM profiles p
            INNER JOIN roles r ON r.role_id = p.role_id
-           LEFT JOIN profile_shops ps ON ps.profile_id = p.profile_id
+           LEFT JOIN profile_shops ps ON ps.profile_id = p.profile_id AND ps.deleted_at IS NULL
     WHERE p.email = #{email}
       AND p.deleted_at IS NULL
       AND r.deleted_at IS NULL
