@@ -5,36 +5,38 @@
 
 <mapper namespace="coffee.api.mapper.DeleteStaffMapper">
 
-  <!-- 2. Soft delete the staff-shop assignment (one shop, or every shop when shopId is null) -->
+  <!-- 1. Soft delete the staff-shop assignment (one shop, or every shop when shopId is null) -->
   <update id="softDeleteStaffShops">
     UPDATE profile_shops
-    SET deleted_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh',
-    deleted_by = #{deletedBy},
-    update_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh'
+    SET
+      deleted_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh',
+      deleted_by = #{deletedBy},
+      update_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh'
     WHERE profile_id = #{profileId}
-    AND deleted_at IS NULL
+      AND deleted_at IS NULL
     <if test="shopId != null">
       AND shop_id = #{shopId}
     </if>
   </update>
 
-  <!-- 3. Count the shops the staff still works in -->
+  <!-- 2. Count the shops the staff still works in -->
   <select id="countActiveStaffShops" resultType="int">
     SELECT COUNT(*)
     FROM profile_shops
     WHERE profile_id = #{profileId}
-    AND deleted_at IS NULL
+      AND deleted_at IS NULL
   </select>
 
-  <!-- 4. Soft delete the profile (is_deleted also blocks login) -->
+  <!-- 3. Soft delete the profile (is_deleted also blocks login) -->
   <update id="softDeleteStaff">
     UPDATE profiles
-    SET deleted_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh',
-    is_deleted = true,
-    updated_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh'
+    SET
+      deleted_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh',
+      is_deleted = true,
+      updated_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh'
     WHERE profile_id = #{profileId}
-    AND deleted_at IS NULL
-    AND is_deleted = false
+      AND deleted_at IS NULL
+      AND is_deleted = false
   </update>
 
 </mapper>

@@ -5,33 +5,35 @@
 
 <mapper namespace="coffee.api.mapper.CreateStaffMapper">
 
+  <!-- Insert the profile and its shop assignment in one statement.
+       Only an OWNER chooses the role; a MANAGER always creates a STAFF. -->
   <insert id="createStaff">
     WITH new_profile AS (
       INSERT INTO profiles (
-                            profile_id,
-                            email,
-                            username,
-                            full_name,
-                            password,
-                            phone_number,
-                            role_id,
-                            is_deleted,
-                            created_at
-        ) VALUES (
-                   gen_random_uuid(),
-                   #{email},
-                   #{username},
-                   #{fullName},
-                   '$2a$10$bb2BXUmirgikrz7RMR1D9OV69RBckkaNZMV8dva.3WjggnOIhLudW',
-                   #{phoneNumber},
-                   CASE
-                     WHEN #{currentUserRoleName} = 'OWNER' THEN #{roleId}
-                     ELSE (SELECT role_id FROM roles WHERE role_name = 'STAFF' AND is_deleted = false LIMIT 1)
-                     END,
-                   false,
-                   NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh'
-                 )
-        RETURNING profile_id
+        profile_id,
+        email,
+        username,
+        full_name,
+        password,
+        phone_number,
+        role_id,
+        is_deleted,
+        created_at
+      ) VALUES (
+        gen_random_uuid(),
+        #{email},
+        #{username},
+        #{fullName},
+        '$2a$10$bb2BXUmirgikrz7RMR1D9OV69RBckkaNZMV8dva.3WjggnOIhLudW',
+        #{phoneNumber},
+        CASE
+          WHEN #{currentUserRoleName} = 'OWNER' THEN #{roleId}
+          ELSE (SELECT role_id FROM roles WHERE role_name = 'STAFF' AND is_deleted = false LIMIT 1)
+        END,
+        false,
+        NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh'
+      )
+      RETURNING profile_id
     )
     INSERT INTO profile_shops (
       profile_shop_id,
@@ -47,9 +49,9 @@
       CASE
         WHEN #{currentUserRoleName} = 'OWNER' THEN #{roleId}
         ELSE (SELECT role_id FROM roles WHERE role_name = 'STAFF' AND is_deleted = false LIMIT 1)
-        END,
+      END,
       NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh'
-    FROM new_profile np;
+    FROM new_profile np
   </insert>
 
 </mapper>

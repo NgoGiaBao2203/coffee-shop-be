@@ -18,30 +18,31 @@
       </if>
     </set>
     WHERE profile_id = #{profileId}
-    AND deleted_at IS NULL
-    AND is_deleted = false
+      AND deleted_at IS NULL
+      AND is_deleted = false
   </update>
 
   <!-- 2. Update the assignment of this staff in ONE shop only (a staff may work in many shops) -->
   <update id="updateStaffShop">
     UPDATE profile_shops
     SET
-    role_id = #{roleId},
-    update_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh'
+      role_id = #{roleId},
+      update_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh'
     WHERE profile_id = #{profileId}
-    AND shop_id = #{shopId}
-    AND deleted_at IS NULL
+      AND shop_id = #{shopId}
+      AND deleted_at IS NULL
   </update>
 
   <!-- 3. Move: remove the staff from every other shop (soft delete, keeps history) -->
   <update id="removeOtherStaffShops">
     UPDATE profile_shops
-    SET deleted_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh',
-    deleted_by = #{deletedBy},
-    update_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh'
+    SET
+      deleted_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh',
+      deleted_by = #{deletedBy},
+      update_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh'
     WHERE profile_id = #{profileId}
-    AND shop_id != #{shopId}
-    AND deleted_at IS NULL
+      AND shop_id != #{shopId}
+      AND deleted_at IS NULL
   </update>
 
   <!-- 4. Assign the staff to a shop where they had no active assignment yet -->
