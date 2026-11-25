@@ -15,6 +15,9 @@ public final class ValidationMessage {
   public static final String PRICE_MIN = "EV010";
   public static final String STATUS_INVALID = "EV011";
   public static final String EMAIL_INVALID = "EV012";
+  public static final String PASSWORD_WHITESPACE = "EV013";
+  public static final String PASSWORD_WEAK = "EV014";
+  public static final String PASSWORD_NON_ASCII = "EV015";
 
   private ValidationMessage() {}
 }

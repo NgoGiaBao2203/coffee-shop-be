@@ -37,5 +37,13 @@ public final class ErrorMessage {
       "Can not delete staff with pending invoices";
   public static final String ROLE_NOT_ASSIGNABLE = "Role can not be assigned to staff";
 
+  // ── Profile / password ──────────────────────────────────────────
+  public static final String CURRENT_PASSWORD_INCORRECT = "Current password is incorrect";
+  public static final String CONFIRM_PASSWORD_MISMATCH =
+      "Confirm password does not match new password";
+  public static final String PASSWORD_CONTAINS_WHITESPACE = "Password must not contain whitespace";
+  public static final String NEW_PASSWORD_SAME_AS_CURRENT =
+      "New password must be different from current password";
+
   private ErrorMessage() {}
 }
