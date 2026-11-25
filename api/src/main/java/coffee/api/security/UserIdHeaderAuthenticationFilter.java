@@ -34,8 +34,21 @@ public class UserIdHeaderAuthenticationFilter extends OncePerRequestFilter {
     String userIdHeader = request.getHeader(USER_ID_HEADER);
 
     if (userIdHeader != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+      UUID userId;
       try {
-        UUID userId = UUID.fromString(userIdHeader);
+        userId = UUID.fromString(userIdHeader);
+      } catch (IllegalArgumentException ex) {
+        // Also covers NumberFormatException: a wrong length (e.g. "abc123") throws
+        // IllegalArgumentException, wrong characters in a 36-char value throw NumberFormatException
+        writeError(
+            response,
+            HttpServletResponse.SC_BAD_REQUEST,
+            ResponseCode.BAD_REQUEST,
+            "X-USER-ID header must be a valid UUID");
+        return;
+      }
+
+      try {
         CustomUserDetail userDetail = customUserDetailsService.loadUserById(userId);
 
         UsernamePasswordAuthenticationToken authentication =
@@ -45,14 +58,6 @@ public class UserIdHeaderAuthenticationFilter extends OncePerRequestFilter {
 
         // Make userId available to every log statement in this request
         MDC.put(MdcKey.USER_ID, userId.toString());
-
-      } catch (NumberFormatException ex) {
-        writeError(
-            response,
-            HttpServletResponse.SC_BAD_REQUEST,
-            ResponseCode.BAD_REQUEST,
-            "X-USER-ID header must be a valid UUID");
-        return;
       } catch (UsernameNotFoundException ex) {
         writeError(
             response,
