@@ -116,8 +116,7 @@ public class EditTablesServiceImpl implements IEditTablesService {
         editTablesMapper.updateTable(request, currentUserRoleName, currentUserShopId);
     if (affectedRows == 0) {
       if (commonMapper.hasUnpaidTableInvoices(request.getTableId())) {
-        throw new InvalidRequestException(
-            "Can not change table status while pending invoices exist");
+        throw new InvalidRequestException(ErrorMessage.TABLE_HAS_PENDING_INVOICES);
       }
       throw new DataNotFoundException(
           "Table has already been deleted or modified by another request", request.getTableId());

@@ -3,18 +3,28 @@ package coffee.api.services.services_implement.staff;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import coffee.api.constants.ValidationMessage;
 import coffee.api.dto.request.staff.SearchStaffsRequest;
 import coffee.api.dto.response.base_response.PageResponse;
 import coffee.api.dto.result.ProfileResult;
 import coffee.api.enums.SortDirection;
 import coffee.api.mapper.GetStaffsMapper;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -23,6 +33,36 @@ import org.mockito.junit.jupiter.MockitoExtension;
 public class GetStaffsServiceImplTest {
 
   @Mock private GetStaffsMapper getStaffsMapper;
+
+  private static ValidatorFactory validatorFactory;
+  private static Validator validator;
+
+  @BeforeAll
+  static void initValidator() {
+    validatorFactory = Validation.buildDefaultValidatorFactory();
+    validator = validatorFactory.getValidator();
+  }
+
+  @AfterAll
+  static void closeValidator() {
+    validatorFactory.close();
+  }
+
+  private void assertSearchValid(String search) {
+    SearchStaffsRequest request = new SearchStaffsRequest();
+    request.setSearch(search);
+    assertTrue(validator.validate(request).isEmpty());
+  }
+
+  private void assertSingleSearchViolation(String search, String expectedCode) {
+    SearchStaffsRequest request = new SearchStaffsRequest();
+    request.setSearch(search);
+    Set<ConstraintViolation<SearchStaffsRequest>> violations = validator.validate(request);
+    assertEquals(1, violations.size());
+    ConstraintViolation<SearchStaffsRequest> violation = violations.iterator().next();
+    assertEquals("search", violation.getPropertyPath().toString());
+    assertEquals(expectedCode, violation.getMessage());
+  }
 
   @InjectMocks private GetStaffsServiceImpl getStaffsService;
 
@@ -233,5 +273,61 @@ public class GetStaffsServiceImplTest {
             offset,
             currentUserRoleName,
             currentUserId);
+  }
+
+  // =========================================================================
+  // REQUEST BEAN VALIDATION - NORMAL CASES
+  // =========================================================================
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "nguyen.van-a",
+        "staff_01@gmail.com",
+        "Nguyễn Văn A",
+        "0901234567",
+        "Q.1, 12/3 & Co #2"
+      })
+  void requestValidation_Success_WhenSearchUsesAllowedCharacters_TC004(String search) {
+    assertSearchValid(search);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"", "   "})
+  void requestValidation_Success_WhenSearchIsBlank_TC005(String search) {
+    assertSearchValid(search);
+  }
+
+  @Test
+  void requestValidation_Success_WhenSearchIsNullOrExactlyMaxLength_TC006() {
+    assertSearchValid(null);
+    assertSearchValid("a".repeat(100));
+  }
+
+  // =========================================================================
+  // REQUEST BEAN VALIDATION - ABNORMAL CASES
+  // =========================================================================
+
+  @Test
+  void requestValidation_ReportsSizeMax_WhenSearchExceedsMaxLength_TC007() {
+    assertSingleSearchViolation("a".repeat(101), ValidationMessage.SIZE_MAX);
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "(A)",
+        "O'Neil",
+        "a+b@gmail.com",
+        "staff%",
+        "a;DROP",
+        "<script>",
+        "name*",
+        "x=1",
+        "😀"
+      })
+  void requestValidation_ReportsSpecialCharacters_WhenSearchHasForbiddenCharacter_TC008(
+      String search) {
+    assertSingleSearchViolation(search, ValidationMessage.SPECIAL_CHARACTERS);
   }
 }

@@ -28,6 +28,8 @@ public final class ErrorMessage {
       "Table is unavailable or does not exist in this shop";
   public static final String CURRENT_TABLE_UNAVAILABLE =
       "Current table is unavailable or does not belong to this shop";
+  public static final String TABLE_HAS_PENDING_INVOICES =
+      "Can not change table status while pending invoices exist";
 
   // ── Staff ───────────────────────────────────────────────────────
   public static final String STAFF_USERNAME_EXISTED = "Staff is existed";

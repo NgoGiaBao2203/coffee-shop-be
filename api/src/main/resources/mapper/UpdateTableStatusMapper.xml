@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="coffee.api.mapper.UpdateTableStatusMapper">
+
+  <!-- 1. Lock an active table of an active shop inside the caller's scope -->
+  <select id="lockTable" resultType="coffee.api.dto.result.TableResult">
+    SELECT st.table_id AS tableId, st.shop_id AS shopId,
+      st.table_number AS tableNumber, st.status AS status
+    FROM shop_tables st
+    INNER JOIN shops s ON s.shop_id = st.shop_id
+    WHERE st.table_id = #{tableId}
+    AND st.deleted_at IS NULL
+    AND st.is_deleted = FALSE
+    AND s.deleted_at IS NULL
+    AND s.is_deleted = FALSE
+    <choose>
+      <!-- OWNER: any table regardless of shop -->
+      <when test="currentUserRoleName == 'OWNER'">
+        <!-- No shop restriction -->
+      </when>
+      <!-- MANAGER and STAFF: only tables of their assigned shop -->
+      <when test="currentUserRoleName == 'MANAGER' or currentUserRoleName == 'STAFF'">
+        AND st.shop_id = #{currentUserShopId}
+      </when>
+      <otherwise>
+        AND 1 = 0
+      </otherwise>
+    </choose>
+    FOR UPDATE OF st
+  </select>
+
+  <!-- 2. Move the table to a server-decided status; available/reserved only without unpaid invoices -->
+  <update id="updateTableStatus">
+    UPDATE shop_tables
+    SET status = #{status}, updated_at = NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh'
+    WHERE table_id = #{tableId}
+    AND shop_id = #{shopId}
+    AND deleted_at IS NULL
+    AND is_deleted = FALSE
+    AND #{status} IN (1, 2, 3)
+    AND status != #{status}
+    AND (
+      #{status} = 2
+      OR NOT EXISTS (
+        <include refid="coffee.api.mapper.CommonMapper.activeUnpaidTableInvoicesSql"/>
+      )
+    )
+  </update>
+</mapper>

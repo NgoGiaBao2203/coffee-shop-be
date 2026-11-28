@@ -1,10 +1,12 @@
 package coffee.api.dto.request.staff;
 
 import coffee.api.constants.ValidationMessage;
+import coffee.api.constants.ValidationPattern;
 import coffee.api.enums.SortDirection;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
@@ -20,6 +22,8 @@ public class SearchStaffsRequest {
 
   private String branchShopId;
 
+  @Size(max = 100, message = ValidationMessage.SIZE_MAX)
+  @Pattern(regexp = ValidationPattern.STAFF_SEARCH, message = ValidationMessage.SPECIAL_CHARACTERS)
   private String search;
 
   @Pattern(

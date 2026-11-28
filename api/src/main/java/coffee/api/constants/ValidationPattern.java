@@ -31,6 +31,9 @@ public final class ValidationPattern {
   // ── Staff / account fields ───────────────────────────────────────
   // Required. Allowed: ASCII letters (A-Z, a-z), digits (0-9), and symbols: . _ -
   public static final String USERNAME = "^[A-Za-z0-9._-]+$";
+  // Blank is allowed. Allowed: Unicode letters and numbers, spaces, and . , / & @ _ # -
+  // Not allowed: ( ) ' + and any other symbol
+  public static final String STAFF_SEARCH = "^[\\p{L}\\p{N}\\s.,/&@_#-]*$";
   // Blank is allowed (left to @NotBlank). Not allowed: any whitespace (leading, trailing, inside)
   public static final String PASSWORD_NO_WHITESPACE = "^\\S*$";
   // Blank is allowed. Allowed: printable ASCII only (no Vietnamese accents, no emoji), so one
